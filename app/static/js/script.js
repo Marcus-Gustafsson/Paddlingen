@@ -72,7 +72,7 @@ function testBookingState(booked, total) {
 // ===== Example test run =====
 // When the DOM is loaded, run a test where 50 of 50 canoes are booked.
 document.addEventListener('DOMContentLoaded', () => {
-  testBookingState(35, 50);
+  testBookingState(49, 50);
 });
 
 
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, {
     root: null,        // Use the browser viewport
-    threshold: 0.35     // Fire when 20% of the element is visible
+    threshold: 0.25     // Fire when 20% of the element is visible
   });
 
   // 3. Observe each target element
