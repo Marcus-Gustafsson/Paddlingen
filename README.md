@@ -11,25 +11,31 @@ Why it’s here:
 -->
 
 
-# requirements.txt — project dependencies
-# -------------------------------------------------------
-# This file lists all Python packages (and pinned versions)
-# that your app needs to run.
-#
-# To update this list after adding/removing a package:
-#  1. Activate your virtual environment:
-#       source .venv/bin/activate
-#  2. Run:
-#       pip freeze > requirements.txt
-#
-# Why we use .venv:
-#  - Isolates this project’s packages from other projects/system.
-#  - Prevents version conflicts.
-#
-# In production (on e.g. Render, Heroku), the deploy process
-# reads this file and does:
-#     pip install -r requirements.txt
-# to recreate your environment remotely.
+## requirements.txt — project dependencies
+-------------------------------------------------------
+This file lists all Python packages (and pinned versions)
+that your app needs to run.
+
+To update this list after adding/removing a package:
+ 1. Activate your virtual environment:
+```bash
+      source .venv/bin/activate
+```
+2. Run:
+```bash
+      pip freeze > requirements.txt
+```
+
+ Why we use .venv:
+ - Isolates this project’s packages from other projects/system.
+ - Prevents version conflicts.
+
+ In production (on e.g. Render, Heroku), the deploy process
+reads this file and does:
+```bash
+    pip install -r requirements.txt
+```
+ to recreate your environment remotely.
 
 
 
