@@ -1,0 +1,103 @@
+<!--
+File: app/templates/index.html
+
+What it does:
+  - The main web page users see.
+  - Contains buttons to open FAQ, payment, overview pop-ups.
+
+Why it’s here:
+  - Flask uses this template to render the homepage at “/”.
+-->
+
+
+
+<!DOCTYPE html>
+<html lang="sv"> <!-- 'sv' for Swedish, assists screen readers & search engines -->
+
+<head>
+  <!-- 1. Character encoding so ÅÄÖ render correctly -->
+  <meta charset="UTF-8">
+
+  <!-- 2. Responsive viewport: makes CSS percent and rem units adapt to mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 3. Page title shown in browser tab -->
+  <title>Paddlingen 2025</title>
+
+  <!-- 4. Link to our custom CSS served by Flask -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header>
+    <!-- 5. Site logo/name on the left -->
+    <div class="logo no-select">Paddlingen</div>
+
+    <!-- 6. Navigation buttons on the right -->
+    <!-- Buttons are naturally tappable on mobile -->
+    <nav class="header-nav">
+      <button id="faqBtn">FAQ</button>
+      <button id="contactBtn">Kontakt</button>
+    </nav>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <!-- Using <main> for semantic clarity (only one main per page) -->
+  <main class="main-center">
+
+    <!-- 7. Main title (large, prominent) -->
+    <h1 class="main-title no-select">Paddlingen 2025</h1>
+
+    <!-- 8. Subtitle or location name -->
+    <h2 class="main-subtitle no-select">Nittälven</h2>
+
+    <!-- ===== DATE & TIME ===== -->
+    <!-- A simple div works; we’ll style it to be mobile-friendly -->
+    <div class="date-time no-select" id="dateTime">
+      28 juni – Kl 10:00
+    </div>
+
+    <!-- ===== ASSEMBLY POINT ===== -->
+    <div class="location">
+      Samlingsplats:
+      <a 
+        href="https://www.google.com/maps/search/?api=1&query=Nitt%C3%A4lven"
+        target="_blank"    <!-- opens link in new tab -->
+        rel="noopener"     <!-- security best practice -->
+      >
+        Nittälven
+      </a>
+    </div>
+
+
+    <!-- ===== PROGRESS BAR ===== -->
+    <!-- Wrap in a container for background + rounded corners -->
+    <div class="progress-container" aria-label="Bokningsstatus">
+      <!--
+        9. progress-bar fill; initial width of 0%.
+        We'll update this via JS: progressBar.style.width = '50%';
+      -->
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- 10. Textual status under the bar -->
+    <div class="progress-text" id="progressText">
+      0 / 20 kanoter bokade
+    </div>
+
+    <!-- ===== “Book a Canoe” BUTTON ===== -->
+    <!-- Placeholder button; will open a modal later -->
+    <button id="bookBtn" class="book-btn">
+      Boka kanot
+    </button>
+
+  </main>
+
+  <!-- 11. Our JS for interactivity, served by Flask -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+
+

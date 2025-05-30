@@ -1,0 +1,219 @@
+/*
+
+File: app/static/css/styles.css
+
+What it does:
+  - Defines all the styles (colors, fonts, layout, modal boxes).
+
+Why it’s here:
+  - Keeps CSS separate from HTML and JavaScript for clarity.
+
+*/
+
+
+
+
+
+
+
+
+/* 1. Font + reset */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:…&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* 2. Body background */
+body {
+  background: url("/static/images/nitten.png") no-repeat center/cover;
+  /* remove flex-centering here; we'll handle layout in specific containers */
+}
+
+/* 3. Header */
+header {
+  display: flex;                  /* Use Flexbox to lay out child elements in a row */
+  justify-content: space-between; /* Push logo to the far left and nav to the far right */
+  align-items: center;            /* Vertically center items inside the header */
+  padding: 1rem 2rem;             /* Add 1rem space top/bottom, 2rem left/right */
+  position: absolute;             /* Position header relative to viewport */
+  top: 0;                         /* Stick header to the very top */
+  left: 0;                        /* Align header to the very left */
+  width: 100%;                    /* Make header span the full browser width */
+  background: rgba(0,0,0,0.3);    /* Semi-transparent dark background for contrast */
+  z-index: 100;                   /* Ensure header sits above other content */
+}
+
+/* Logo text */
+.logo {
+  font-size: 1.5rem;              /* Make the logo text larger for emphasis */
+  color: #fff;                    /* White text for clear visibility on dark background */
+}
+
+/* 4. Nav buttons (FAQ, Contact) */
+.header-nav button {
+  padding: 0.5rem 1rem;           /* Space inside button: 0.5rem top/bottom, 1rem left/right */
+  margin-left: 1rem;              /* Space between each button */
+  background: transparent;        /* Transparent background to blend with header */
+  border: 2px solid #fff;         /* White border to outline button on dark header */
+  border-radius: 0.5rem;          /* Rounded corners for a modern look */
+  color: #fff;                    /* White text to match border and stand out */
+  font-weight: 500;               /* Medium font weight for readability */
+  cursor: pointer;                /* Show pointer cursor on hover to indicate clickability */
+  transition: background 0.3s,    /* Smooth transition when background changes */
+              color 0.3s;         /* Smooth transition when text color changes */
+}
+
+/* Hover state for nav buttons */
+.header-nav button:hover {
+  background: #fff;               /* Fill button with white on hover */
+  color: #162938;                 /* Change text to dark color for contrast */
+}
+
+/* 5. Center container & text (updated for global offsets) */
+.main-center {
+  position: absolute;                                        /* Position relative to viewport */
+  top:    calc(55%);               /* 50% down + extra Y-offset */
+  left:   calc(50%);               /* 50% in  + extra X-offset */
+  transform: translate(-50%, -50%);                          /* Pull back by half its own size to truly center */
+  text-align: center;                                        /* Center text inside */
+  width: 100%;                                               /* Full width so no clipping */
+  max-width: 600px;                                          /* Optional: limit max width */
+  padding: 0 1rem;                                           /* Horizontal padding on small screens */
+}
+
+
+/* Main heading style */
+.main-title {
+  font-size: 3rem;                /* Very large text for the main event title */
+  margin-bottom: 0.5rem;          /* Space below the title before the subtitle */
+  color: #ffffff;                 /* White text for clear contrast on any background */
+}
+
+/* Subtitle style */
+.main-subtitle {
+  font-size: 1.5rem;              /* Smaller than main title but still prominent */
+  margin-bottom: 2rem;            /* Space below subtitle before next elements */
+  color: #ffffff;                 /* White text to match the title */
+}
+
+
+/* ===== DATE & TIME STYLING ===== */
+.date-time {
+  font-size: 1.2rem;             /* Larger text for readability */
+  margin-bottom: 1rem;           /* Space below before the bar */
+  color: #ffffff;                /* White text to stand out */
+}
+
+/* Assembly point line */
+.location {
+  font-size: 1rem;               /* Match progress-text size */
+  margin-bottom: 1rem;           /* Space below before progress bar */
+  color: #ffffff;                /* White text for contrast */
+}
+
+/* Hyperlink style */
+.location a {
+  color: #FFD700;                /* Gold color to match progress bar */
+  text-decoration: underline;    /* Underline to indicate link */
+}
+
+.location a:hover {
+  color: #fff;                   /* Brighten on hover */
+}
+
+
+/* ===== PROGRESS BAR TRACK ===== */
+.progress-container {
+  width: 100%;                   /* Full width of parent (.main-center) */
+  max-width: 400px;              /* Limit width on large screens */
+  height: 1rem;                  /* Bar height */
+  background-color: rgba(255,255,255,0.3); /* Light semi-transparent background */
+  border-radius: 0.5rem;         /* Rounded ends */
+  overflow: hidden;              /* Clip inner bar at the corners */
+  margin: 0 auto;                /* Center horizontally */
+}
+
+/* ===== PROGRESS BAR FILL ===== */
+.progress-bar {
+  height: 100%;                  /* Fill full height of the container */
+  width: 0%;                     /* Start at 0% (no bookings yet) */
+  background-color: #FFD700;     /* Gold color to stand out */
+  transition: width 0.5s ease;   /* Smooth animation when updated */
+}
+
+/* ===== PROGRESS TEXT ===== */
+.progress-text {
+  font-size: 1rem;               /* Standard readable size */
+  margin-top: 0.5rem;            /* Space above from the bar */
+  text-align: center;            /* Center text under the bar */
+  color: #ffffff;                /* White text for contrast */
+}
+
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+/* ===== MOBILE TWEAKS @ max-width 600px ===== */
+@media (max-width: 600px) {
+  /* Allow header items to wrap and reduce padding/font-size */
+  header {
+    flex-wrap: wrap;               /* Let logo/nav wrap onto a second line if needed */
+    padding: 0.5rem 1rem;          /* Less padding on small screens */
+  }
+  .logo {
+    font-size: 1.25rem;            /* Slightly smaller logo text */
+  }
+  .header-nav {
+    margin-top: 0.5rem;            /* Space below logo if nav wraps */
+    width: 100%;                   /* Let buttons span full width if it wraps */
+    display: flex;                 
+    justify-content: center;       /* Center nav buttons on second line */
+  }
+  .header-nav button {
+    margin: 0.25rem;               /* Smaller margins between buttons */
+    padding: 0.4rem 0.8rem;        /* Slightly smaller touch targets */
+    font-size: 0.9rem;             /* Smaller font for buttons */
+  }
+
+  /* Shift the center block up a bit on small/tall screens */
+  .main-center {
+    top: 45%;                      /* Sit higher than true center */
+  }
+
+  /* Scale down heading sizes */
+  .main-title {
+    font-size: 2rem;               /* Smaller main title */
+  }
+  .main-subtitle {
+    font-size: 1.2rem;             /* Smaller subtitle */
+  }
+
+  /* Progress bar & date-time already adjusted, but confirm date-time font */
+  .date-time {
+    font-size: 1rem;               /* Scale down date/time text */
+  }
+}
+
+
+
+/* Prevent text from being highlighted/selected */
+.no-select {
+  user-select: none;          /* Standard */
+  -webkit-user-select: none;  /* Chrome/Safari */
+  -moz-user-select: none;     /* Firefox */
+  -ms-user-select: none;      /* IE/Edge */
+}
+
+/* Force text to be selectable even if a parent disallows it */
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+
+
+
