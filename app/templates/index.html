@@ -30,10 +30,28 @@ Why it’s here:
 
 <body>
 
+
+     <!-- ===== YEAR SIDEBAR (OVERLAY) ===== -->
+  <aside class="year-sidebar">
+    <!-- 1. Current year as a link -->
+    <a href="#year-2025" class="current-year">2025</a>
+
+    <!-- 2. Divider -->
+    <hr class="sidebar-divider">
+
+    <!-- 3. Subtitle -->
+    <div class="sidebar-subtitle">Tidigare år</div>
+
+    <!-- 4. Previous years links -->
+    <nav class="previous-years">
+      <a href="#year-2024">2024</a>
+      <a href="#year-2023">2023</a>
+    </nav>
+  </aside>
+
+
   <!-- ===== HEADER ===== -->
   <header>
-    <!-- 5. Site logo/name on the left -->
-    <div class="logo no-select">Paddlingen</div>
 
     <!-- 6. Navigation buttons on the right -->
     <!-- Buttons are naturally tappable on mobile -->
@@ -43,57 +61,146 @@ Why it’s here:
     </nav>
   </header>
 
+
   <!-- ===== MAIN CONTENT ===== -->
-  <!-- Using <main> for semantic clarity (only one main per page) -->
-  <main class="main-center">
+  <!-- One <main> per page; here we’ll include each year’s section -->
+    <!-- MAIN: one section per year, in normal document flow -->
+  <main>
 
-    <!-- 7. Main title (large, prominent) -->
-    <h1 class="main-title no-select">Paddlingen 2025</h1>
+    <!-- ===== SECTION: 2025 ===== -->
+    <!-- “year-section” will now handle centering for us -->
+    <section id="year-2025" class="year-section current-year-section scroll-animate">
+      <h1 class="main-title no-select scroll-animate">Paddlingen 2025</h1>
+      <h2 class="main-subtitle no-select scroll-animate">"Bästa dagen på hela året!" – Mathias Axelsson</h2>
+      <div class="date-time no-select scroll-animate" id="dateTime">28 juni – Kl 10:00</div>
+      <div class="location scroll-animate">
+        Samlingsplats:
+        <a href="https://…Havsjomossen…"
+           target="_blank" rel="noopener">
+          Havsjömossen
+        </a>
+      </div>
 
-    <!-- 8. Subtitle or location name -->
-    <h2 class="main-subtitle no-select">Nittälven</h2>
+      <!-- Weather widget -->
+      <div class="weather-widget weather-widget-inline scroll-animate" id="weatherWidget">
+        <h4 class="widget-title">
+          Väder för <span id="eventDateText">28 juni 2025</span>
+        </h4>
+        <p class="widget-status" id="weatherStatus">
+          Prognos kommer vara tillgänglig om <span id="daysUntil">14</span> dagar
+        </p>
+        <div class="widget-forecast" id="widgetForecast" style="display:none;">
+          <div>
+            <span id="weatherIcon">☀️</span>
+            <span id="temperature">22</span> °C
+            – Regnchans: <span id="rainChance">10</span> %
+          </div>
+        </div>
+        <small class="widget-source">(Prognos från SMHI • uppdateras dagligen)</small>
+      </div>
 
-    <!-- ===== DATE & TIME ===== -->
-    <!-- A simple div works; we’ll style it to be mobile-friendly -->
-    <div class="date-time no-select" id="dateTime">
-      28 juni – Kl 10:00
+      <!-- Progress bar -->
+      <div class="progress-container scroll-animate" aria-label="Bokningsstatus">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-text" id="progressText"></div>
+      </div>
+
+      <!-- Booking button -->
+      <button id="bookBtn" class="book-btn scroll-animate" type="button" aria-disabled="false">
+        Boka kanot
+      </button>
+    </section>
+
+    <section id="year-2024" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2024 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2024/' ~ img) }});"
+        ></div>
+        {% endfor %}
     </div>
 
-    <!-- ===== ASSEMBLY POINT ===== -->
-    <div class="location">
-      Samlingsplats:
-      <a 
-        href="https://www.google.com/maps/search/?api=1&query=Nitt%C3%A4lven"
-        target="_blank"    <!-- opens link in new tab -->
-        rel="noopener"     <!-- security best practice -->
-      >
-        Nittälven
-      </a>
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2024</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2024">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+
+
+    <section id="year-2023" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2023 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2023/' ~ img) }});"
+        ></div>
+        {% endfor %}
     </div>
 
-
-    <!-- ===== PROGRESS BAR ===== -->
-    <!-- Wrap in a container for background + rounded corners -->
-    <div class="progress-container" aria-label="Bokningsstatus">
-      <!--
-        9. progress-bar fill; initial width of 0%.
-        We'll update this via JS: progressBar.style.width = '50%';
-      -->
-      <div class="progress-bar" id="progressBar"></div>
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2023</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2023">
+        Visa bilder
+        </button>
     </div>
-
-    <!-- 10. Textual status under the bar -->
-    <div class="progress-text" id="progressText">
-      0 / 20 kanoter bokade
-    </div>
-
-    <!-- ===== “Book a Canoe” BUTTON ===== -->
-    <!-- Placeholder button; will open a modal later -->
-    <button id="bookBtn" class="book-btn">
-      Boka kanot
-    </button>
+    </section>
 
   </main>
+
+
+    <!-- ===== OVERVIEW PANEL ===== -->
+  <div class="overview scroll-animate">
+    <!-- 1. Section heading -->
+    <h3 class="overview-title scroll-animate">Bokningar</h3>
+    <!-- 2. Table for names and canoe counts -->
+    <table class="overview-table scroll-animate">
+      <thead>
+        <tr>
+          <th>Namn</th>       <!-- Column for person’s name -->
+          <th>Kanoter</th>    <!-- Column for how many canoes they booked -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dummy rows for testing -->
+        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
+        <tr><td>Eljefe Stabil</td><td>1</td></tr>
+        <tr><td>Skägg Larsson</td><td>3</td></tr>
+        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
+        <tr><td>Gösta Eriksson</td><td>2</td></tr>
+        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
+        <tr><td>Eljefe Stabil</td><td>1</td></tr>
+        <tr><td>Skägg Larsson</td><td>3</td></tr>
+        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
+        <tr><td>Gösta Eriksson</td><td>2</td></tr>
+        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
+        <tr><td>Eljefe Stabil</td><td>1</td></tr>
+        <tr><td>Skägg Larsson</td><td>3</td></tr>
+        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
+        <tr><td>Gösta Eriksson</td><td>2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
 
   <!-- 11. Our JS for interactivity, served by Flask -->
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>

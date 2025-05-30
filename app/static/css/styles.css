@@ -12,11 +12,6 @@ Why it’s here:
 
 
 
-
-
-
-
-
 /* 1. Font + reset */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:…&display=swap');
 
@@ -27,36 +22,43 @@ Why it’s here:
   font-family: 'Poppins', sans-serif;
 }
 
-/* 2. Body background */
-body {
-  background: url("/static/images/nitten.png") no-repeat center/cover;
-  /* remove flex-centering here; we'll handle layout in specific containers */
+/* Make body at least as tall as the viewport */
+html, body {
+  height: 100%;
 }
+
+
+body {
+  /* 1. Load the image */
+  background-image: url("/static/images/2025/nitten.png");
+  /* 2. Don’t tile it */
+  background-repeat: no-repeat;
+  /* 3. Center it in both axes */
+  background-position: center center;
+  /* 4. Scale it to fill the screen, cropping as needed */
+  background-size: cover;
+}
+
 
 /* 3. Header */
 header {
   display: flex;                  /* Use Flexbox to lay out child elements in a row */
-  justify-content: space-between; /* Push logo to the far left and nav to the far right */
-  align-items: center;            /* Vertically center items inside the header */
-  padding: 1rem 2rem;             /* Add 1rem space top/bottom, 2rem left/right */
+  justify-content: right; /* Push logo to the far left and nav to the far right */
+  align-items: right;            /* Vertically center items inside the header */
+  padding: 1rem 8rem;             /* Add 1rem space top/bottom, 2rem left/right */
   position: absolute;             /* Position header relative to viewport */
   top: 0;                         /* Stick header to the very top */
   left: 0;                        /* Align header to the very left */
   width: 100%;                    /* Make header span the full browser width */
-  background: rgba(0,0,0,0.3);    /* Semi-transparent dark background for contrast */
   z-index: 100;                   /* Ensure header sits above other content */
 }
 
-/* Logo text */
-.logo {
-  font-size: 1.5rem;              /* Make the logo text larger for emphasis */
-  color: #fff;                    /* White text for clear visibility on dark background */
-}
 
 /* 4. Nav buttons (FAQ, Contact) */
 .header-nav button {
   padding: 0.5rem 1rem;           /* Space inside button: 0.5rem top/bottom, 1rem left/right */
   margin-left: 1rem;              /* Space between each button */
+  align-items: right;
   background: transparent;        /* Transparent background to blend with header */
   border: 2px solid #fff;         /* White border to outline button on dark header */
   border-radius: 0.5rem;          /* Rounded corners for a modern look */
@@ -88,6 +90,7 @@ header {
 
 /* Main heading style */
 .main-title {
+  background: transparent;
   font-size: 3rem;                /* Very large text for the main event title */
   margin-bottom: 0.5rem;          /* Space below the title before the subtitle */
   color: #ffffff;                 /* White text for clear contrast on any background */
@@ -95,7 +98,7 @@ header {
 
 /* Subtitle style */
 .main-subtitle {
-  font-size: 1.5rem;              /* Smaller than main title but still prominent */
+  font-size: 1.0rem;              /* Smaller than main title but still prominent */
   margin-bottom: 2rem;            /* Space below subtitle before next elements */
   color: #ffffff;                 /* White text to match the title */
 }
@@ -104,20 +107,20 @@ header {
 /* ===== DATE & TIME STYLING ===== */
 .date-time {
   font-size: 1.2rem;             /* Larger text for readability */
-  margin-bottom: 1rem;           /* Space below before the bar */
+  margin-bottom: 0.5rem;           /* Space below before the bar */
   color: #ffffff;                /* White text to stand out */
 }
 
 /* Assembly point line */
 .location {
-  font-size: 1rem;               /* Match progress-text size */
-  margin-bottom: 1rem;           /* Space below before progress bar */
+  font-size: 1.2rem;               /* Match progress-text size */
+  margin-bottom: 0.5rem;           /* Space below before progress bar */
   color: #ffffff;                /* White text for contrast */
 }
 
 /* Hyperlink style */
 .location a {
-  color: #FFD700;                /* Gold color to match progress bar */
+  color: #ffee00;                /* Gold color to match progress bar */
   text-decoration: underline;    /* Underline to indicate link */
 }
 
@@ -126,32 +129,440 @@ header {
 }
 
 
+
 /* ===== PROGRESS BAR TRACK ===== */
 .progress-container {
-  width: 100%;                   /* Full width of parent (.main-center) */
-  max-width: 400px;              /* Limit width on large screens */
-  height: 1rem;                  /* Bar height */
-  background-color: rgba(255,255,255,0.3); /* Light semi-transparent background */
-  border-radius: 0.5rem;         /* Rounded ends */
-  overflow: hidden;              /* Clip inner bar at the corners */
-  margin: 0 auto;                /* Center horizontally */
+  position: relative;             /* 1. Establish a positioning context for children */
+  width: 100%;                    
+  max-width: 500px;               /* Widened so the text fits comfortably */
+  height: 2rem;                   /* Tall enough for legible text */
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 1rem;
+  overflow: hidden;               /* Clip the colored fill at the corners */
+  margin: 0 auto;                 
 }
 
-/* ===== PROGRESS BAR FILL ===== */
+/* ===== COLORED FILL ===== */
+/* Styles for the inner bar that fills up to show booking progress */
 .progress-bar {
-  height: 100%;                  /* Fill full height of the container */
-  width: 0%;                     /* Start at 0% (no bookings yet) */
-  background-color: #FFD700;     /* Gold color to stand out */
-  transition: width 0.5s ease;   /* Smooth animation when updated */
+  height: 100%;                                  /* Make the fill as tall as the container */
+  width: 0%;                                     /* Start with 0% fill; JS will update this */
+  background-color: hsl(120, 100%, 50%);         /* Initial color: green (120° hue in HSL) */
+  transition: 
+    width 3s ease,                             /* Smoothly animate width changes over 0.5 seconds */
+    background-color 3s ease;                  /* Smoothly animate color changes over 0.5 seconds */
+  display: flex;                                 /* Turn this into a flex container */
+  align-items: center;                           /* Vertically center any text inside */
+  justify-content: center;                       /* Horizontally center any text inside */
+  color: #162938;                                /* Dark text color for good contrast on light-blue/red */
+  font-weight: 600;                              /* Semi-bold text for better legibility */
+  font-size: 1rem;                               /* Readable font size inside the bar */
 }
 
-/* ===== PROGRESS TEXT ===== */
+
+/* ===== TEXT OVERLAY ===== */
 .progress-text {
-  font-size: 1rem;               /* Standard readable size */
-  margin-top: 0.5rem;            /* Space above from the bar */
-  text-align: center;            /* Center text under the bar */
-  color: #ffffff;                /* White text for contrast */
+  position: absolute;             /* Remove from normal flow and position relative to container */
+  top: 50%;                       /* 50% down the container */
+  left: 50%;                      /* 50% across the container */
+  transform: translate(-50%, -50%); /* Pull back by half its own size to truly center */
+  
+  width: 100%;                    /* Span full container (so text-align works) */
+  text-align: center;             /* Center text horizontally */
+  
+  color: #162938;                 /* Dark text for contrast on gold */
+  font-weight: 600;              
+  font-size: 1rem;              
+  pointer-events: none;           /* Let clicks pass through to the bar or underlying elements if needed */
 }
+
+
+/* ===== “Book a Canoe” Button Styling ===== */
+.book-btn {
+  /* 1. Spacing */
+  margin-top: 2rem;            /* Space above the button so it’s not too close to the bar */
+  
+  /* 2. Size & padding */
+  padding: 0.75rem 1.5rem;     /* Top/bottom 0.75rem, left/right 1.5rem for a larger click target */
+  font-size: 1.25rem;          /* Larger text for readability and emphasis */
+  
+  /* 3. Colors & background */
+  background-color: #28a745;   /* Bootstrap green for primary action */
+  color: #ffffff;              /* White text for contrast */
+  
+  /* 4. Border & shape */
+  border: none;                /* Remove default border */
+  border-radius: 0.75rem;      /* Rounded corners for a friendly look */
+  
+  /* 5. Cursor & transition */
+  cursor: pointer;             /* Pointer on hover indicates clickability */
+  transition: background-color 0.3s ease, /* Smooth color fade on hover */
+              transform 0.1s ease;        /* Tiny scale on click-down if added */
+}
+
+/* ===== Hover & Active States ===== */
+.book-btn:hover:not(:disabled) {
+  background-color: #218838;   /* Darker green on hover for feedback */
+}
+
+.book-btn:active:not(:disabled) {
+  transform: scale(0.98);      /* Slightly shrink on click for tactile feel */
+}
+
+/* ===== Disabled State ===== */
+.book-btn:disabled,
+.book-btn[aria-disabled="true"] {
+  background-color: #6c757d;   /* Gray background to indicate disabled */
+  color: #e2e6ea;              /* Light gray text */
+  cursor: not-allowed;         /* Show “not-allowed” cursor */
+  opacity: 0.7;                /* Slight transparency to further signal disabled */
+}
+
+
+/* ===== OVERVIEW PANEL (SCROLLABLE) ===== */
+.overview {
+  position: absolute;           /* Float it to the right of the main content */
+  top: 25%;                     /* Center vertically */
+  right: 3rem;                  /* Push in from the right edge */
+  transform: translateY(-50%);  /* Perfect vertical centering */
+  
+  /* 
+    1. Fix the height so only 8 rows + header show, then scroll.
+       Assuming each row ~2rem tall + header ~2.5rem, we use 18rem.
+  */
+  max-height: 26.5rem;            
+  
+  /* 2. Allow vertical scrolling when content exceeds max-height */
+  overflow-y: auto;             
+  
+  /* 3. Padding & shape */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  
+  /* 4. Semi-opaque background for readability over the photo */
+  background: rgba(69, 69, 69, 0.9);
+  
+  /* 5. Subtle shadow for depth */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  
+  /* 6. Limit width so it doesn’t get too wide */
+  max-width: 330px;
+  width: 100%;
+}
+
+.overview-title {
+  margin-bottom: 0.5rem;           /* Space below the title */
+  font-size: 1.35rem;              /* Slightly larger than body text */
+  text-align: center;
+  color: white;
+}
+
+/* ===== OVERVIEW TABLE STYLES ===== */
+.overview-table {
+  width: 100%;                   /* Fill the panel’s width */
+  border-collapse: collapse;     /* Single lines between rows */
+  text-align: center;              /* Left-align text */
+  font-size: 0.9rem;             /* Slightly small for fitting 8 rows */
+  color: white;
+}
+
+/* Table header cells */
+.overview-table th {
+  padding: 0.5rem;                 /* Space inside headers */
+  border-bottom: 2px solid #162938;/* Dark line under header */
+  font-size: 1.1rem;             /* Slightly small for fitting 8 rows */
+}
+
+/* Table data cells */
+.overview-table td {
+  padding: 0.5rem;                 /* Space inside cells */
+  border-bottom: 1px solid #ccc;   /* Light line under each row */
+}
+
+
+/* ===== WEATHER WIDGET SHARED STYLE ===== */
+.weather-widget {
+  /* 1. Background & contrast */
+  background: rgba(0,0,0,0.6);    /* Dark translucent pill */
+  color: #fff;                    /* White text for readability */
+
+  /* 2. Padding & spacing (adjust to fit longer text) */
+  padding: 0.5rem 1rem;           /* Top/bottom 0.5rem, left/right 1rem */
+
+  /* 3. Shape & shadow */
+  border-radius: 2rem;            /* Round “pill” ends */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Subtle depth */
+
+  /* 4. Layering */
+  z-index: 110;                   /* Sit above most content */
+
+  /* 5. Font sizing (tweak for readability) */
+  font-size: 0.9rem;              /* Base size for widget text */
+}
+
+/* ===== OPTION 2 DEFAULT: FIXED POSITION ===== */
+.weather-widget-fixed {
+  /* Keep it stuck in the viewport corner */
+  position: fixed;
+  bottom: 1.5rem;     /* Distance from the bottom of the screen */
+  left:   1.5rem;     /* Distance from the left edge */
+}
+
+/* ===== INLINE OVERRIDE (Center in flow) ===== */
+.weather-widget-inline {
+  /* 1. Positioning override */
+  position: relative !important;  
+  bottom:   auto     !important;  
+  left:     auto     !important;  
+
+  /* 2. Display & centering */
+  display: block;                
+  margin: 1rem auto;           /* 1.5rem top/bottom, auto left/right */
+
+  /* 3. Width control (adjust for content) */
+  width: 100%;                   
+  max-width: 325px;              /* Maximum width of the pill */
+
+  /* 4. Extra padding for title + status lines */
+  padding: 1rem;                
+
+  /* 5. Title font-size override (optional tweak) */
+}
+
+
+/* ===== YEAR SIDEBAR (OVERLAY) ===== */
+.year-sidebar {
+  position: fixed;             /* Float it on top of everything */
+  top: 0;                      /* Align to the top of viewport */
+  left: 0;                     /* Stick to the left edge */
+  height: 100vh;               /* Full viewport height */
+  width: 120px;                /* Wider than before—adjust as desired */
+  
+  background: rgba(0,0,0,0.6); /* Dark translucent overlay */
+  color: #fff;                 /* White text */
+  
+  display: flex;               
+  flex-direction: column;      /* Stack items vertically */
+  align-items: center;         
+  
+  padding: 1rem 0;             /* Vertical padding, no horizontal padding */
+  box-shadow: 2px 0 6px rgba(0,0,0,0.2); /* Right‐side shadow */
+  z-index: 120;                /* Ensure it sits above header/main */
+}
+
+/* Current year (clickable link) */
+.year-sidebar .current-year {
+  display: block;              /* Full width clickable area */
+  font-size: 1.25rem;          /* Larger than the rest */
+  font-weight: bold;
+  color: #fff;                 /* White link text */
+  text-decoration: none;       /* No underline */
+  margin-bottom: 1rem;         
+  width: 100%;                 
+  text-align: center;          
+  padding: 0.5rem 0;           /* Increase hit‐area vertically */
+  transition: background 0.2s; /* Hover feedback */
+}
+.year-sidebar .current-year:hover {
+  text-decoration: none;
+  font-size: 1.25rem;
+  transition: color 0.5s;
+  color: #ffd9004f;
+}
+
+/* Previous years links */
+.year-sidebar .current-year {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.year-sidebar .current-year a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: color 0.5s;
+}
+.year-sidebar .current-year a:hover {
+  color: #ffd9004f;
+}
+
+/* Divider line */
+.year-sidebar .sidebar-divider {
+  width: 70%;                  
+  border: none;
+  border-top: 1px solid #fff;
+  margin-bottom: 1rem;
+}
+
+/* “Tidigare år” subtitle */
+.year-sidebar .sidebar-subtitle {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Previous years links */
+.year-sidebar .previous-years {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.year-sidebar .previous-years a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: color 0.5s;
+}
+.year-sidebar .previous-years a:hover {
+  color: #ffd9004f;
+}
+
+/* Sidebar link active styling */
+.year-sidebar a.active {
+  background: #0000001c;      /* gold background for the “current” year */
+  color: #162938;           /* dark text on gold */
+  border-radius: 5rem;      /* pill shape */
+}
+
+
+/* ===== SCROLL-ANIMATION BASE STATE ===== */
+/* Elements with .scroll-animate start hidden & shifted down */
+.scroll-animate {
+  opacity: 0;                            /* Invisible at start */
+  transform: translateY(20px);           /* Shift down 20px off their final spot */
+  transition:
+    opacity 0.8s ease-out,               /* Fade in over 0.6s */
+    transform 0.8s ease-out;             /* Slide up over 0.6s */
+}
+
+/* ===== SCROLL-ANIMATION VISIBLE STATE ===== */
+/* When .in-view is added, element returns to normal position & fully opaque */
+.scroll-animate.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+   /* Smooth in‐page scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---------------------------------------- */
+/*  A) SHARED FOR ALL YEAR-SECTIONS        */
+/* ---------------------------------------- */
+.year-section {
+  min-height: 100vh;            /* each “page” fills one viewport */
+  position: relative;           /* for absolute children on prev years */
+  padding: 2rem 1rem;           /* inner breathing room */
+  box-sizing: border-box;
+}
+
+
+/* ---------------------------------------- */
+/*  B) CURRENT YEAR (2025) STYLING         */
+/* ---------------------------------------- */
+/* You can add any special background or overlay for current year here */
+.current-year-section {
+  /* e.g. slightly darker tint to show “live” section */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(0,0,0,0.15);
+}
+
+
+/* 1) Make sure the parent section is positioned & tall */
+.year-section.previous-year-section.with-bg-grid {
+  position: relative;      /* for its abs-positioned children */
+  min-height: 100vh;       /* fill the viewport */
+    /* e.g. slightly darker tint to show “live” section */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(0,0,0,0.15);
+}
+
+/* 2) Turn your photo-grid-bg into a true CSS Grid that spans the whole section */
+.year-section.previous-year-section.with-bg-grid
+     .photo-grid-bg {
+  position: absolute;      /* layer 0 (behind overlay-content) */
+  top: 0; left: 0;
+  width: 100%; 
+  height: 100%;            /* fill the entire section */
+  display: grid;           /* activate CSS Grid */
+  grid-template-columns:
+    repeat(auto-fit, minmax(150px, 1fr));
+  /* auto-create as many 150px-min rows as needed, stretching each equally */
+  grid-auto-rows: minmax(150px, 1fr);
+  gap: 5px;                /* small gap between photos */
+  z-index: 0;              /* keep behind your overlay-content */
+  overflow: hidden;        /* crop any overflow */
+}
+
+/* 3) Make each cell cover & center its background image */
+.year-section.previous-year-section.with-bg-grid
+     .photo-grid-bg .grid-cell {
+  background-size: cover;
+  background-position: center;
+  border-radius: 0.5rem;
+}
+
+/* overlay content sits above the grid */
+.previous-year-section.with-bg-grid .overlay-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------- */
+/*  D) HORIZONTAL LINES TO DELIMIT YEARS   */
+/* ---------------------------------------- */
+.year-section {
+  border-top:    2px solid rgba(255,255,255,0.5);
+  border-bottom: 2px solid rgba(255,255,255,0.5);
+}
+
+/* ---------------------------------------- */
+/*  E) SCROLL-ANIMATE (unchanged)          */
+/* ---------------------------------------- */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.scroll-animate.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+
+/* ===== PHOTO GRID LAYOUT ===== */
+.photo-grid {
+  display: grid;  
+  /* auto-fit: fill row with 150px cells, wrap as needed */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-auto-rows: 150px;   /* force square cells */
+  gap: 1rem;               /* space between pictures */
+  width: 100%;
+  max-width: 800px;        /* optional cap on total width */
+  margin: 2rem auto;       /* center horizontally with vertical gap */
+}
+
+/* ===== GRID ITEMS ===== */
+.grid-item {
+  background-size: cover;     /* fill each square */
+  background-position: center;/* center the image */
+  border-radius: 0.5rem;      /* rounded corners */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
 
 
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
@@ -193,6 +604,20 @@ header {
   /* Progress bar & date-time already adjusted, but confirm date-time font */
   .date-time {
     font-size: 1rem;               /* Scale down date/time text */
+  }
+
+  .book-btn {
+    width: 100%;               /* Full-width button on mobile for easy tapping */
+    max-width: 300px;          /* But no wider than 300px for readability */
+    margin-left: auto;         /* Center horizontally */
+    margin-right: auto;
+  }
+
+  .overview {
+    position: static;              /* Flow normally below main */
+    transform: none;               /* Remove centering transform */
+    margin: 2rem auto 0;           /* Space above, centered horizontally */
+    max-width: 90%;                /* Nearly full-width on mobile */
   }
 }
 
