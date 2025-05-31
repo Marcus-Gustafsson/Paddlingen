@@ -27,16 +27,22 @@ html, body {
   height: 100%;
 }
 
-
-body {
-  /* 1. Load the image */
+/* === 2. Move the “background” onto html instead of body === */
+html {
+  /* 1. Load the same image (so it’s always behind everything, even as you scroll) */
   background-image: url("/static/images/2025/nitten.png");
+
   /* 2. Don’t tile it */
   background-repeat: no-repeat;
+
   /* 3. Center it in both axes */
   background-position: center center;
-  /* 4. Scale it to fill the screen, cropping as needed */
+
+  /* 4. Scale it to fill the entire content area */
   background-size: cover;
+
+  /* 5. Ensure the background scrolls with the content */
+  background-attachment: fixed;
 }
 
 
@@ -453,6 +459,7 @@ html {
 /*  A) SHARED FOR ALL YEAR-SECTIONS        */
 /* ---------------------------------------- */
 .year-section {
+
   min-height: 100vh;            /* each “page” fills one viewport */
   position: relative;           /* for absolute children on prev years */
   padding: 2rem 1rem;           /* inner breathing room */
@@ -471,60 +478,74 @@ html {
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: rgba(0,0,0,0.15);
 }
 
 
-/* 1) Make sure the parent section is positioned & tall */
+/* Target ONLY the “previous‐year” sections that use the photo grid */
 .year-section.previous-year-section.with-bg-grid {
-  position: relative;      /* for its abs-positioned children */
-  min-height: 100vh;       /* fill the viewport */
-    /* e.g. slightly darker tint to show “live” section */
+  /* 1. Use the same background as the <body> so there’s never white 
+        “flash” before the grid animates in. */
+  background-image: url("/static/images/2025/nitten.png");
+  background-repeat: no-repeat;           /* Don’t tile */
+  background-position: center center;     /* Always center */
+  background-size: cover;                 /* Fill entire section */
+
+  /* 2. Ensure the section itself is positioned & full‐height */
+  position: relative;     /* parent for absolutely‐positioned grid inside */
+  min-height: 100vh;      /* fill exactly one viewport height */
+  overflow: hidden;       /* clip any overflow from the grid behind */
+
+  /* 3. Center overlay content (optional, your existing rules) */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: rgba(0,0,0,0.15);
 }
 
-/* 2) Turn your photo-grid-bg into a true CSS Grid that spans the whole section */
-.year-section.previous-year-section.with-bg-grid
-     .photo-grid-bg {
-  position: absolute;      /* layer 0 (behind overlay-content) */
-  top: 0; left: 0;
-  width: 100%; 
+/* ------------------------------------------------------ */
+/* C) THE PHOTO‐GRID (LAYER 0) BEHIND THE OVERLAY CONTENT  */
+/* ------------------------------------------------------ */
+.year-section.previous-year-section.with-bg-grid .photo-grid-bg {
+  position: absolute;      /* Sit behind any overlay (z-index:0) */
+  top: 0; 
+  left: 0;
+  width: 100%;
   height: 100%;            /* fill the entire section */
-  display: grid;           /* activate CSS Grid */
-  grid-template-columns:
-    repeat(auto-fit, minmax(150px, 1fr));
-  /* auto-create as many 150px-min rows as needed, stretching each equally */
-  grid-auto-rows: minmax(150px, 1fr);
-  gap: 5px;                /* small gap between photos */
-  z-index: 0;              /* keep behind your overlay-content */
-  overflow: hidden;        /* crop any overflow */
+
+  display: grid;           /* Activate CSS Grid */
+  grid-template-columns: repeat(9, 1fr);                 /* exactly 9 columns */
+  grid-auto-rows: minmax(150px, 1fr);                    /* up to 2 rows if 10–18 items */
+  gap: 3px;                  /* small gap between photos */
+
+  z-index: 0;                /* behind overlay content */
+  overflow: hidden;          /* crop any overflow */
 }
 
-/* 3) Make each cell cover & center its background image */
-.year-section.previous-year-section.with-bg-grid
-     .photo-grid-bg .grid-cell {
-  background-size: cover;
-  background-position: center;
-  border-radius: 0.5rem;
+/* EACH GRID CELL (THUMBNAIL)                          */
+.year-section.previous-year-section.with-bg-grid .photo-grid-bg .grid-cell {
+  background-size: cover;     /* fill each square (crop as needed) */
+  background-position: center;/* center the image in its cell */
+  border-radius: 0.5rem;      /* slightly rounded corners */
 }
 
-/* overlay content sits above the grid */
-.previous-year-section.with-bg-grid .overlay-content {
-  position: relative;
-  z-index: 1;
-}
+/* ------------------------------------------------------ */
+/* E) OVERLAY CONTENT (LAYER 1), ON TOP OF GRID           */
+/* ------------------------------------------------------ */
+.year-section.previous-year-section.with-bg-grid .overlay-content {
+  position: relative;   /* sits “over” the absolute grid behind */
+  z-index: 1;           /* higher than 0, so it displays on top of the grid */
 
-/* ---------------------------------------- */
-/*  D) HORIZONTAL LINES TO DELIMIT YEARS   */
-/* ---------------------------------------- */
-.year-section {
-  border-top:    2px solid rgba(255,255,255,0.5);
-  border-bottom: 2px solid rgba(255,255,255,0.5);
+  display: flex;        /* center text/buttons */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  /* If you want a translucent backdrop behind the text: */
+  /* background: rgba(0,0,0,0.25); */
+  /* padding: 2rem; */
+  /* border-radius: 1rem; */
 }
 
 /* ---------------------------------------- */
