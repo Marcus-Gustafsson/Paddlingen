@@ -46,6 +46,7 @@ Why it’s here:
     <nav class="previous-years">
       <a href="#year-2024">2024</a>
       <a href="#year-2023">2023</a>
+      <a href="#year-2022">2022</a>
     </nav>
   </aside>
 
@@ -130,6 +131,22 @@ Why it’s here:
         <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
         <!-- Date line (optional) -->
         <div class="date-time no-select">29 juni – Kl 10:00</div>
+
+                <!-- ── STATIC PROGRESS BAR FOR 2024 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2024">
+          <!-- 
+            • Give each “.progress-bar” a hard‐coded width (e.g. 80% → 40/50 bokade). 
+            • Remove any “id” attributes here; use only class="progress-bar". 
+          -->
+          <div
+            class="progress-bar"
+            style="width: 80%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            48 / 50 kanoter bokade
+          </div>
+        </div>
+     
         <!-- Button to open your gallery viewer -->
         <button class="book-btn scroll-animate" id="showPhotos2024">
         Visa bilder
@@ -158,8 +175,56 @@ Why it’s here:
         <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
         <!-- Date line (optional) -->
         <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- ── STATIC PROGRESS BAR FOR 2023 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2023">
+          <div
+            class="progress-bar"
+            style="width: 64%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            42 / 50 kanoter bokade
+          </div>
+        </div>
         <!-- Button to open your gallery viewer -->
         <button class="book-btn scroll-animate" id="showPhotos2023">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+
+
+    <section id="year-2022" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2022 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2022/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2022</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- ── STATIC PROGRESS BAR FOR 2022 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2022">
+          <div
+            class="progress-bar"
+            style="width: 100%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            47 / 50 kanoter bokade
+          </div>
+        </div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2022">
         Visa bilder
         </button>
     </div>
