@@ -54,10 +54,17 @@ Why it’s here:
   <!-- ===== HEADER ===== -->
   <header>
 
-    <!-- 6. Navigation buttons on the right -->
+    <!-- ── INSERT START ── -->
+    <!-- Hamburger toggle: hidden on desktop, shown on mobile -->
+    <!-- Place this at the very top of <header> -->
+    <button id="sidebarToggle" class="sidebar-toggle no-select" aria-label="Visa år-menyn">
+      ☰
+    </button>
+    <!-- ── INSERT END ── -->
+
     <!-- Buttons are naturally tappable on mobile -->
     <nav class="header-nav">
-      <button id="faqBtn">FAQ</button>
+      <button id="faqBtn">Frågor/Regler</button>
       <button id="contactBtn">Kontakt</button>
     </nav>
   </header>
@@ -110,6 +117,14 @@ Why it’s here:
       <button id="bookBtn" class="book-btn scroll-animate" type="button" aria-disabled="false">
         Boka kanot
       </button>
+
+      <!-- ── INSERT START ── -->
+      <!-- Översikt button: only visible on mobile -->
+      <button id="mobileOverviewBtn" class="book-btn mobile-only scroll-animate" type="button">
+        Översikt
+      </button>
+      <!-- ── INSERT END ── -->
+
     </section>
 
     <section id="year-2024" class="year-section previous-year-section with-bg-grid scroll-animate">
@@ -234,7 +249,7 @@ Why it’s here:
 
 
     <!-- ===== OVERVIEW PANEL ===== -->
-  <div class="overview scroll-animate">
+  <div class="overview scroll-animate" id="overviewPanel">
     <!-- 1. Section heading -->
     <h3 class="overview-title scroll-animate">Bokningar</h3>
     <!-- 2. Table for names and canoe counts -->

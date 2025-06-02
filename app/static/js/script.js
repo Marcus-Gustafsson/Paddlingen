@@ -203,4 +203,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+document.addEventListener("DOMContentLoaded", () => {
+  // ── 1) MOBILE SIDEBAR TOGGLE ─────────────────────────────────────────────
+  const toggleBtn = document.getElementById("sidebarToggle");
+  const sidebar  = document.querySelector(".year-sidebar");
+
+  if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener("click", () => {
+      // Check computed style so we respect media-query hiding/showing
+      const currentDisplay = window.getComputedStyle(sidebar).display;
+      if (currentDisplay === "none") {
+        sidebar.style.display = "block";
+      } else {
+        sidebar.style.display = "none";
+      }
+    });
+  }
+
+  // ── 2) MOBILE ÖVERSIKT (OVERVIEW) POP-UP TOGGLE ─────────────────────────
+  const overviewBtn  = document.getElementById("mobileOverviewBtn");
+  const overviewDiv  = document.getElementById("overviewPanel");
+
+  if (overviewBtn && overviewDiv) {
+    // Show the overlay
+    overviewBtn.addEventListener("click", () => {
+      overviewDiv.classList.add("scrolled");
+    });
+
+    // Hide when tapping the “✕” in the top-right
+    overviewDiv.addEventListener("click", (e) => {
+      // If the user clicks anywhere on the overlay background or the “X” pseudo-element,
+      // close the overview. (We can detect clicks outside the table easily.)
+      // We check if the click target is exactly the outer overlay, not inside the table.
+      if (e.target === overviewDiv) {
+        overviewDiv.classList.remove("scrolled");
+      }
+    });
+  }
+
+  // ── 3) OPTIONAL: Close “Översikt” when pressing “Escape” on mobile/desktop ─
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overviewDiv.classList.contains("scrolled")) {
+      overviewDiv.classList.remove("scrolled");
+    }
+  });
+});
+
+
+
 

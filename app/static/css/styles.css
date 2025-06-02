@@ -344,7 +344,7 @@ header {
   height: 100vh;               /* Full viewport height */
   width: 120px;                /* Wider than before—adjust as desired */
   
-  background: rgba(0,0,0,0.6); /* Dark translucent overlay */
+  background: rgba(0,0,0,0.3); /* Dark translucent overlay */
   color: #fff;                 /* White text */
   
   display: flex;               
@@ -402,10 +402,10 @@ header {
 
 /* “Tidigare år” subtitle */
 .year-sidebar .sidebar-subtitle {
-  font-size: 0.9rem;
+  font-size: 1.0rem;
   margin-bottom: 0.5rem;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-weight: bold;
 }
 
 /* Previous years links */
@@ -419,6 +419,7 @@ header {
   text-decoration: none;
   font-size: 1.1rem;
   transition: color 0.5s;
+  padding: 0.6rem 0;           /* Increase hit‐area vertically */
 }
 .year-sidebar .previous-years a:hover {
   color: #ffd9004f;
@@ -427,7 +428,7 @@ header {
 /* Sidebar link active styling */
 .year-sidebar a.active {
   background: #0000001c;      /* gold background for the “current” year */
-  color: #162938;           /* dark text on gold */
+  color: #ffd9004f;
   border-radius: 5rem;      /* pill shape */
 }
 
@@ -586,62 +587,249 @@ html {
 
 
 
+/* 1) Hide the hamburger toggle on desktop by default */
+.sidebar-toggle {
+  display: none;
+}
+
+/* 2) Hide the "Översikt" button on desktop by default */
+.mobile-only {
+  display: none;
+}
+
+
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
 /* ===== MOBILE TWEAKS @ max-width 600px ===== */
+/* ===== MOBILE SPECIFIC STYLES (max-width: 600px) ===== */
 @media (max-width: 600px) {
-  /* Allow header items to wrap and reduce padding/font-size */
-  header {
-    flex-wrap: wrap;               /* Let logo/nav wrap onto a second line if needed */
-    padding: 0.5rem 1rem;          /* Less padding on small screens */
+
+  /* ── A) SIDEBAR TOGGLE ───────────────────────────────────────────── */
+  .sidebar-toggle {
+    display: block;            /* Show hamburger on mobile */
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.3rem;
+    z-index: 200;              /* Above header content */
+    cursor: pointer;
   }
-  .logo {
-    font-size: 1.25rem;            /* Slightly smaller logo text */
+
+  /* ── B) HIDE FIXED SIDEBAR ───────────────────────────────────────── */
+  .year-sidebar {
+    display: none;             /* Completely hide the year-sidebar on mobile */
+    position: fixed;             /* Float it on top of everything */
+    top: 0;                      /* Align to the top of viewport */
+    left: 0;                     /* Stick to the left edge */
+    height: 100vh;               /* Full viewport height */
+    width: 80px;                /* Wider than before—adjust as desired */
+    
+    background: rgba(0,0,0,0.6); /* Dark translucent overlay */
+    color: #fff;                 /* White text */
+    
+    display: flex;               
+    flex-direction: column;      /* Stack items vertically */
+    align-items: center;         
+    
+    padding: 1rem 0;             /* Vertical padding, no horizontal padding */
+    box-shadow: 2px 0 6px rgba(0,0,0,0.2); /* Right‐side shadow */
+    z-index: 120;                /* Ensure it sits above header/main */
+  }
+
+  .year-sidebar .current-year {
+  display: block;              /* Full width clickable area */
+  font-size: 1.0rem;          /* Larger than the rest */
+  font-weight: bold;
+  color: #fff;                 /* White link text */
+  text-decoration: none;       /* No underline */
+  margin-bottom: 1rem;         
+  width: 100%;                 
+  text-align: center;          
+  padding: 1.0rem 0;           /* Increase hit‐area vertically */
+  transition: background 0.2s; /* Hover feedback */
+  }
+
+  /* “Tidigare år” subtitle */
+.year-sidebar .sidebar-subtitle {
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  font-weight: bold;
+}
+
+  .year-sidebar .previous-years a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: color 0.5s;
+  padding: 0.8rem 0;           /* Increase hit‐area vertically */
+}
+
+  /* ── C) SHOW "ÖVERSIKT" BUTTON ───────────────────────────────────── */
+  .mobile-only {
+    display: block;            /* Show Översikt button under "Boka kanot" */
+    margin-top: 1rem;          /* Give a bit of vertical spacing */
+  }
+
+  /* ── 4) SHRINK TITLES & BUTTONS, REPOSITION ELEMENTS ────────────────── */
+
+  /* Header: wrap nav buttons and reduce padding */
+  header {
+    flex-wrap: wrap;             /* Let nav buttons wrap to new line */
+    padding: 0.5rem 1rem;        /* Less padding for mobile */
   }
   .header-nav {
-    margin-top: 0.5rem;            /* Space below logo if nav wraps */
-    width: 100%;                   /* Let buttons span full width if it wraps */
-    display: flex;                 
-    justify-content: center;       /* Center nav buttons on second line */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;          /* Space below hamburger if it exists */
   }
   .header-nav button {
-    margin: 0.25rem;               /* Smaller margins between buttons */
-    padding: 0.4rem 0.8rem;        /* Slightly smaller touch targets */
-    font-size: 0.9rem;             /* Smaller font for buttons */
+    margin: 0.25rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
   }
 
-  /* Shift the center block up a bit on small/tall screens */
+  /* Slightly shift main-year content up (so it’s easier to see on tall screens) */
   .main-center {
-    top: 45%;                      /* Sit higher than true center */
+    top: 45%;
   }
 
-  /* Scale down heading sizes */
+  /* Shrink large headings */
   .main-title {
-    font-size: 2rem;               /* Smaller main title */
+    font-size: 2rem;
   }
   .main-subtitle {
-    font-size: 1.2rem;             /* Smaller subtitle */
+    font-size: 1.2rem;
   }
 
-  /* Progress bar & date-time already adjusted, but confirm date-time font */
+  /* Date/time smaller on mobile */
   .date-time {
-    font-size: 1rem;               /* Scale down date/time text */
+    font-size: 1rem;
   }
 
+  /* Make both “Boka kanot” and “Visa bilder” fill most of the width */
   .book-btn {
-    width: 100%;               /* Full-width button on mobile for easy tapping */
-    max-width: 300px;          /* But no wider than 300px for readability */
-    margin-left: auto;         /* Center horizontally */
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
     margin-right: auto;
   }
 
+  /* Shrink weather widget pill if it’s too wide */
+  .weather-widget-inline {
+    max-width: 90%;
+    padding: 0.8rem;      /* A bit more padding for legibility */
+    font-size: 0.85rem;
+  }
+
+  /* 1. Target BOTH possible grid wrappers you’re using
+        a) .photo-grid           – the generic grid in your markup
+        b) .photo-grid-bg        – the background grid that lives
+           inside a “previous-year” section                     */
+  .photo-grid,
+  .year-section.previous-year-section.with-bg-grid .photo-grid-bg {
+
+    /* ---- LAYOUT -------------------------------------------------- */
+    display: grid;                           /* turn the element into a grid */
+    grid-template-columns: repeat(4, 1fr);   /* exactly 4 equal-width columns */
+    grid-template-rows:    repeat(3, 1fr);   /* exactly 2 equal-height rows   */
+    gap: 0.5rem;                             /* space between the cells       */
+
+    /* ---- OPTIONAL SIZING ----------------------------------------- */
+    /* If the parent should occupy the full width/height you can keep
+       these – but remove them if they conflict with your design      */
+    width: 100%;
+    height: 100%;
+
+    /* ---- CLIPPING ------------------------------------------------ */
+    /* Anything that would normally flow into a 3rd row is simply
+       clipped away so only 8 cells are visible.                      */
+    overflow: hidden;
+  }
+
+  /* 2. (Nice-to-have) Don’t render items #9 and onward at all.
+        This avoids unnecessary downloads/paint work.                 */
+  .photo-grid  > :nth-child(n+13),
+  .photo-grid-bg > :nth-child(n+13) {
+    display: none !important;                /* hide everything after #8 */
+  }
+
+
+  /* ── 6) OVERVIEW PANEL AS FULL-SCREEN POP-UP ───────────────────────── */
   .overview {
-    position: static;              /* Flow normally below main */
-    transform: none;               /* Remove centering transform */
-    margin: 2rem auto 0;           /* Space above, centered horizontally */
-    max-width: 90%;                /* Nearly full-width on mobile */
+    /* 0. Replace the desktop placement -------------------------------- */
+    position: fixed;
+    transform: none !important;   /* <-- cancel the desktop translateY    */
+    left: 10%;          /* start 10 % in from the left edge   */
+    width: 80%;         /* so the right edge still lines up   */
+    
+
+    /* 1. The dark backdrop -------------------------------------------- */
+    background: rgba(0,0,0,0.8);
+    box-sizing: border-box;
+    z-index: 300;
+    overflow-y: auto;            /* scroll if the table gets very tall    */
+
+    /* 2. Make the whole overlay a flex-box and centre its children ----- */
+    display: none;               /* hidden until JS adds `.scrolled`      */
+    flex-direction: column;      /* keep heading above the table          */
+    justify-content: center;     /* centre vertically                     */
+    align-items:  center;        /* centre horizontally                   */
+  }
+
+  .overview.scrolled {
+    display: block;             /* Use this class (or toggle style) to show it */
+  }
+
+  /* Center the table inside the dark overlay */
+  .overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto;             /* Center horizontally */
+    max-width: 500px;           /* Don’t let it get too wide */
+    background: rgba(69, 69, 69, 0.9);      /* White background so text is readable */
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .overview-title {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+  }
+
+  /* Table header on white bg */
+  .overview-table th {
+    padding: 0.5rem;
+    border-bottom: 2px solid #162938;
+    font-size: 1rem;
+    background: #162938;
+    color: #fff;
+  }
+  .overview-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #ccc;
+    color: #162938;
+    background: #fff;
+  }
+
+  /* Ensure the “Ojborde” button that closes overview sits at top-right */
+  #overviewPanel::before {
+    content: "✕";             /* “X” to close */
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
   }
 }
-
 
 
 /* Prevent text from being highlighted/selected */
