@@ -327,7 +327,7 @@ header {
 
   /* 3. Width control (adjust for content) */
   width: 100%;                   
-  max-width: 325px;              /* Maximum width of the pill */
+  max-width: 300px;              /* Maximum width of the pill */
 
   /* 4. Extra padding for title + status lines */
   padding: 1rem;                
@@ -356,6 +356,7 @@ header {
   z-index: 120;                /* Ensure it sits above header/main */
 }
 
+
 /* Current year (clickable link) */
 .year-sidebar .current-year {
   display: block;              /* Full width clickable area */
@@ -373,15 +374,9 @@ header {
   text-decoration: none;
   font-size: 1.25rem;
   transition: color 0.5s;
-  color: #ffd9004f;
+  color: #ffd900;
 }
 
-/* Previous years links */
-.year-sidebar .current-year {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 .year-sidebar .current-year a {
   color: #fff;
   text-decoration: none;
@@ -414,6 +409,7 @@ header {
   flex-direction: column;
   gap: 0.5rem;
 }
+
 .year-sidebar .previous-years a {
   color: #fff;
   text-decoration: none;
@@ -422,14 +418,13 @@ header {
   padding: 0.6rem 0;           /* Increase hit‐area vertically */
 }
 .year-sidebar .previous-years a:hover {
-  color: #ffd9004f;
+  color: #ffd900;
 }
 
 /* Sidebar link active styling */
 .year-sidebar a.active {
-  background: #0000001c;      /* gold background for the “current” year */
-  color: #ffd9004f;
-  border-radius: 5rem;      /* pill shape */
+  color: #ffd900;
+  border-radius: 1rem;      /* pill shape */
 }
 
 
@@ -601,7 +596,7 @@ html {
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
 /* ===== MOBILE TWEAKS @ max-width 600px ===== */
 /* ===== MOBILE SPECIFIC STYLES (max-width: 600px) ===== */
-@media (max-width: 600px) {
+@media (max-width: 1050px) {
 
   /* ── A) SIDEBAR TOGGLE ───────────────────────────────────────────── */
   .sidebar-toggle {
@@ -722,7 +717,7 @@ html {
 
   /* Shrink weather widget pill if it’s too wide */
   .weather-widget-inline {
-    max-width: 90%;
+    max-width: 325px;
     padding: 0.8rem;      /* A bit more padding for legibility */
     font-size: 0.85rem;
   }
@@ -821,10 +816,10 @@ html {
 
   /* Ensure the “Ojborde” button that closes overview sits at top-right */
   #overviewPanel::before {
-    content: "✕";             /* “X” to close */
+    content: "X";             /* “X” to close */
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.7rem;
+    right: 1.4rem;
     font-size: 1.5rem;
     color: #fff;
     cursor: pointer;
