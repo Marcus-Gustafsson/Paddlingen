@@ -565,7 +565,7 @@ html {
   /* auto-fit: fill row with 150px cells, wrap as needed */
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   grid-auto-rows: 150px;   /* force square cells */
-  gap: 1rem;               /* space between pictures */
+  gap: 1.5rem;               /* space between pictures */
   width: 100%;
   max-width: 800px;        /* optional cap on total width */
   margin: 2rem auto;       /* center horizontally with vertical gap */
@@ -733,7 +733,7 @@ html {
     display: grid;                           /* turn the element into a grid */
     grid-template-columns: repeat(4, 1fr);   /* exactly 4 equal-width columns */
     grid-template-rows:    repeat(3, 1fr);   /* exactly 2 equal-height rows   */
-    gap: 0.5rem;                             /* space between the cells       */
+    gap: 0.2rem;                             /* space between the cells       */
 
     /* ---- OPTIONAL SIZING ----------------------------------------- */
     /* If the parent should occupy the full width/height you can keep
