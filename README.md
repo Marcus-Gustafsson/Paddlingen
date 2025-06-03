@@ -143,7 +143,7 @@ If a command is entered in the wrong place it simply will not work, so use the l
 2. Find out which IP your WSL instance received  
 ────────────────────────────────  
 (WSL) `hostname -I` # ← notice: NO “wsl” in front  
-Example output: `172.23.127.84`  
+Example output: `172.23.115.255`  
 Write that number down – we call it WSL_IP from now on.
 
 Tip: If it prints nothing, just carry on to step 3, start Flask once, then run `hostname -I` again; WSL occasionally waits for a socket before it asks DHCP for an address.
@@ -186,7 +186,7 @@ You said you already disabled the firewall once; doing it the precise way is saf
 (WIN) `ipconfig`
 
 Under “Wireless LAN adapter Wi-Fi” read the line  
-IPv4 Address . . . : 192.168.1.35 ← example, call it WINDOWS_IP
+IPv4 Address . . . : 192.168.10.122 ← example, call it WINDOWS_IP
 
 ────────────────────────────────  
 7. Test locally first  
