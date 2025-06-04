@@ -11,6 +11,8 @@
 
 // script.js
 
+
+
 /**
  * Update the progress bar fill, text, and use a smooth green→red gradient.
  *
@@ -204,51 +206,322 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ── 1) MOBILE SIDEBAR TOGGLE ─────────────────────────────────────────────
-  const toggleBtn = document.getElementById("sidebarToggle");
-  const sidebar  = document.querySelector(".year-sidebar");
-
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener("click", () => {
-      // Check computed style so we respect media-query hiding/showing
-      const currentDisplay = window.getComputedStyle(sidebar).display;
-      if (currentDisplay === "none") {
-        sidebar.style.display = "block";
-      } else {
-        sidebar.style.display = "none";
-      }
-    });
-  }
-
-  // ── 2) MOBILE ÖVERSIKT (OVERVIEW) POP-UP TOGGLE ─────────────────────────
-  const overviewBtn  = document.getElementById("mobileOverviewBtn");
-  const overviewDiv  = document.getElementById("overviewPanel");
+  const overviewBtn = document.getElementById("mobileOverviewBtn");
+  const overviewDiv = document.getElementById("overviewPanel");
 
   if (overviewBtn && overviewDiv) {
-    // Show the overlay
+    // Show overview on “Översikt” click
     overviewBtn.addEventListener("click", () => {
       overviewDiv.classList.add("scrolled");
     });
 
-    // Hide when tapping the “✕” in the top-right
-    overviewDiv.addEventListener("click", (e) => {
-      // If the user clicks anywhere on the overlay background or the “X” pseudo-element,
-      // close the overview. (We can detect clicks outside the table easily.)
-      // We check if the click target is exactly the outer overlay, not inside the table.
+    // Hide when tapping outside the table (backdrop)
+    overviewDiv.addEventListener("click", e => {
       if (e.target === overviewDiv) {
         overviewDiv.classList.remove("scrolled");
       }
     });
+
+    // ===== OUR NEW CLOSE-BUTTON =====
+    const closeBtn = overviewDiv.querySelector(".overview-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        overviewDiv.classList.remove("scrolled");
+      });
+    }
+
+    // Hide on Escape key
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && overviewDiv.classList.contains("scrolled")) {
+        overviewDiv.classList.remove("scrolled");
+      }
+    });
+  }
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Grab our buttons and modals
+  const faqBtn      = document.getElementById("faqBtn");
+  const contactBtn  = document.getElementById("contactBtn");
+  const faqModal    = document.getElementById("faqModal");
+  const contactModal= document.getElementById("contactModal");
+  const closeBtns   = document.querySelectorAll(".modal-close");
+  const tabButtons = faqModal.querySelectorAll(".modal-tab");
+  const tabPanels  = faqModal.querySelectorAll(".modal-body");
+
+  // 2. Utility to open a modal
+  function openModal(modal) {
+    modal.style.display = "flex";
   }
 
-  // ── 3) OPTIONAL: Close “Översikt” when pressing “Escape” on mobile/desktop ─
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overviewDiv.classList.contains("scrolled")) {
-      overviewDiv.classList.remove("scrolled");
+  // 3. Utility to close a modal
+  function closeModal(modal) {
+    modal.style.display = "none";
+  }
+
+  // 4. Hook up button clicks to open
+  faqBtn.addEventListener("click",   () => openModal(faqModal));
+  contactBtn.addEventListener("click", () => openModal(contactModal));
+
+  // 5. Hook up each “×” close button
+  closeBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const modal = btn.closest(".modal");
+      closeModal(modal);
+    });
+  });
+
+  // 6. Click outside content box to close
+  [faqModal, contactModal].forEach(modal => {
+    modal.addEventListener("click", e => {
+      if (e.target === modal) {         // only if we click the backdrop
+        closeModal(modal);
+      }
+    });
+  });
+
+  // 7. Press Escape to close any open modal
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      [faqModal, contactModal].forEach(closeModal);
     }
+  });
+
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.getAttribute("data-tab");  // "questions" or "rules"
+
+      // a) Remove active class from all tabs
+      tabButtons.forEach(t => t.classList.remove("modal-tab--active"));
+      // b) Hide all panels
+      tabPanels.forEach(p => p.classList.add("modal-body--hidden"));
+
+      // c) Activate clicked tab
+      btn.classList.add("modal-tab--active");
+      // d) Show the matching panel
+      faqModal.querySelector(`#${target}`).classList.remove("modal-body--hidden");
+    });
   });
 });
 
 
 
 
+// ===== IMAGE GALLERY (LIGHTBOX) =====
+document.addEventListener("DOMContentLoaded", () => {
+  // 1) Grab modal elements
+  const modal       = document.getElementById("galleryModal");
+  const imgEl       = modal.querySelector(".gallery-image");
+  const counterEl   = modal.querySelector(".gallery-counter");
+  const btnClose    = modal.querySelector(".gallery-close");
+  const btnPrev     = modal.querySelector(".gallery-prev");
+  const btnNext     = modal.querySelector(".gallery-next");
+
+  // 2) State: current image list and index
+  let galleryImages = [];
+  let currentIndex  = 0;
+
+  // 3) Utility: show modal
+  function openGallery(images, startIndex = 0) {
+    galleryImages = images;         // store URLs
+    currentIndex  = startIndex;     // start on chosen image
+    updateGallery();                // show image & caption
+    modal.style.display = "flex";   // reveal the modal
+  }
+
+  // 4) Utility: hide modal
+  function closeGallery() {
+    modal.style.display = "none";
+    galleryImages = [];
+  }
+
+  // 5) Utility: refresh the <img> and caption
+  function updateGallery() {
+    const url = galleryImages[currentIndex];
+    imgEl.src = url;                          // update image
+    counterEl.innerText = `${currentIndex+1} / ${galleryImages.length}`;
+    // Show or hide arrows if only one image
+    btnPrev.style.display = galleryImages.length > 1 ? "block" : "none";
+    btnNext.style.display = galleryImages.length > 1 ? "block" : "none";
+  }
+
+  // 6) Wire up Prev/Next buttons
+  btnPrev.addEventListener("click", () => {
+    currentIndex = (currentIndex - 1 + galleryImages.length) % galleryImages.length;
+    updateGallery();
+  });
+  btnNext.addEventListener("click", () => {
+    currentIndex = (currentIndex + 1) % galleryImages.length;
+    updateGallery();
+  });
+
+  // 7) Close by × or backdrop click
+  btnClose.addEventListener("click", closeGallery);
+  modal.addEventListener("click", e => {
+    if (e.target === modal) closeGallery();
+  });
+
+  // 8) Close on Escape, Left/Right arrows for navigation
+  document.addEventListener("keydown", e => {
+    if (modal.style.display !== "flex") return; // only if open
+    if (e.key === "Escape")      closeGallery();
+    if (e.key === "ArrowLeft")   btnPrev.click();
+    if (e.key === "ArrowRight")  btnNext.click();
+  });
+
+  // 9) Hook up each "Visa bilder" button
+  //    Buttons have IDs like "showPhotos2024" in each .year-section
+  const galleryButtons = document.querySelectorAll("button[id^='showPhotos']");
+  galleryButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // a) Find this button's section
+      const section = btn.closest(".year-section");
+      // b) Collect all .grid-cell background-image URLs
+      const cells   = section.querySelectorAll(".photo-grid-bg .grid-cell");
+      const urls    = Array.from(cells).map(cell => {
+        // cell.style.backgroundImage is like 'url("…/img.jpg")'
+        const bg = cell.style.backgroundImage;
+        // remove url("…") wrapper:
+        return bg.slice(5, -2);
+      });
+      // c) Open gallery starting at the first image
+      openGallery(urls, 0);
+    });
+  });
+});
+
+
+
+// ===== BOOKING MODAL & FORM LOGIC =====
+document.addEventListener("DOMContentLoaded", () => {
+  // 0) CONSTANTS
+  const PRICE_PER_CANOE = 900;   // cost per canoe in SEK
+
+  // 1) GRAB ALL THE ELEMENTS WE’LL NEED
+  const openBtn    = document.getElementById("bookBtn");           // “Boka kanot” button
+  const modal      = document.getElementById("bookingModal");      // The whole modal overlay
+  const form       = document.getElementById("bookingForm");       // The <form> inside the modal
+  const select     = document.getElementById("canoeCount");        // <select> for number of canoes
+  const namesWrap  = document.getElementById("nameFieldsContainer"); // Where we inject name inputs
+  const priceInfo  = document.getElementById("priceInfo");         // Shows “Totalt: … kr”
+  const cancelBtn  = document.getElementById("cancelBooking");     // “Avbryt” button
+  const submitBtn  = document.getElementById("confirmBooking");    // “Betala” button
+
+  // 2) OPEN THE MODAL
+  openBtn.addEventListener("click", () => {
+    // a) Show the modal
+    modal.style.display = "flex";
+
+    // b) Reset any previous state
+    form.reset();                   // clear select + inputs
+    namesWrap.innerHTML = "";       // remove old name fields
+    priceInfo.textContent = 
+      `Totalt: 0 kr (${PRICE_PER_CANOE} kr per kanot)`;
+    submitBtn.disabled = true;      // disable “Betala” until ready
+    cancelBtn.disabled = false;     // ensure “Avbryt” is clickable
+  });
+
+  // 3) CLOSE HELPER FUNCTION
+  function closeModal() {
+    modal.style.display = "none";
+  }
+  // a) Clicking “Avbryt”
+  cancelBtn.addEventListener("click", closeModal);
+  // b) Clicking outside the content box (the backdrop)
+  modal.addEventListener("click", e => {
+    if (e.target === modal) closeModal();
+  });
+  // c) Pressing Escape
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && modal.style.display === "flex") {
+      closeModal();
+    }
+  });
+
+  // 4) WHEN USER CHOOSES NUMBER OF CANOES
+  select.addEventListener("change", () => {
+    const count = parseInt(select.value, 10); // how many canoes
+    namesWrap.innerHTML = "";                 // clear old fields
+
+    // a) Build one pair of inputs (first + last name) per canoe
+    for (let i = 1; i <= count; i++) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "canoe-field";
+
+      // Label above the inputs
+      const lbl = document.createElement("label");
+      lbl.setAttribute("for", `canoe${i}_fname`);
+      lbl.innerText = 
+        `Kanot ${i}: \n (Ange namn på den som hämtar ut kanoten)`;
+      wrapper.appendChild(lbl);
+
+      // Container for two side-by-side inputs
+      const inputsDiv = document.createElement("div");
+      inputsDiv.className = "inputs";
+
+      // First name input
+      const first = document.createElement("input");
+      first.type        = "text";
+      first.id          = `canoe${i}_fname`;
+      first.name        = `canoe${i}_fname`;
+      first.placeholder = "Förnamn";
+      first.required    = true;
+
+      // Last name input
+      const last = document.createElement("input");
+      last.type         = "text";
+      last.id           = `canoe${i}_lname`;
+      last.name         = `canoe${i}_lname`;
+      last.placeholder  = "Efternamn";
+      last.required     = true;
+
+      // Assemble the two inputs
+      inputsDiv.appendChild(first);
+      inputsDiv.appendChild(last);
+      wrapper.appendChild(inputsDiv);
+      namesWrap.appendChild(wrapper);
+    }
+
+    // b) Update the total price display
+    priceInfo.textContent = 
+      `Totalt: ${count * PRICE_PER_CANOE} kr (${PRICE_PER_CANOE} kr per kanot)`;
+
+    // c) Form validation: only enable “Betala” when ALL inputs are non-empty
+    const allInputs = namesWrap.querySelectorAll("input");
+    function validate() {
+      // Check every input has some non-whitespace text
+      const allFilled = Array.from(allInputs)
+        .every(inp => inp.value.trim() !== "");
+      submitBtn.disabled = !allFilled;
+    }
+    // Attach an ‘input’ listener to each field
+    allInputs.forEach(i => i.addEventListener("input", validate));
+    validate(); // run once in case there’s only one canoe
+  });
+
+  // 5) HANDLE FORM SUBMISSION (BETALA)
+  form.addEventListener("submit", e => {
+    e.preventDefault();  // prevent page reload
+
+    // a) Gather the data
+    const count = parseInt(select.value, 10);
+    const names = Array.from(
+      namesWrap.querySelectorAll("input")
+    ).map(inp => inp.value.trim());
+    console.log("▶️ Redirecting to payment with:", { count, names });
+
+    // b) Lock the UI to prevent double-clicks
+    submitBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.textContent = "Betalar…"; // give user feedback
+
+    // c) SIMULATE an async Stripe payment (replace this with real API/redirect)
+    setTimeout(() => {
+      console.log("✅ Payment successful!");
+      closeModal();                // hide the modal
+      submitBtn.textContent = "Betala"; // restore button text
+    }, 2000);  // 2 second “processing” delay
+  });
+});
