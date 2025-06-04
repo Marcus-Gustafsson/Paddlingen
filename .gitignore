@@ -1,0 +1,22 @@
+# Byte-compiled Python files
+__pycache__/
+*.py[cod]
+
+
+# Virtual environment
+.venv/
+
+# Local environment file (never commit your secrets!)
+.env
+
+# SQLite database
+instance/
+
+# VSCode settings
+.vscode/
+
+# macOS metadata
+.DS_Store
+
+# Other artifacts
+*.log

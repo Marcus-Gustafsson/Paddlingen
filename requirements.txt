@@ -1,0 +1,33 @@
+# requirements.txt — project dependencies
+# -------------------------------------------------------
+# This file lists all Python packages (and pinned versions)
+# that your app needs to run.
+#
+# To update this list after adding/removing a package:
+#  1. Activate your virtual environment:
+#       source .venv/bin/activate
+#  2. Run:
+#       pip freeze > requirements.txt
+#
+# Why we use .venv:
+#  - Isolates this project’s packages from other projects/system.
+#  - Prevents version conflicts.
+#
+# In production (on e.g. Render, Heroku), the deploy process
+# reads this file and does:
+#     pip install -r requirements.txt
+# to recreate your environment remotely.
+
+
+blinker==1.9.0
+click==8.2.1
+Flask==3.1.1
+Flask-SQLAlchemy==3.1.1
+greenlet==3.2.2
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+python-dotenv==1.1.0
+SQLAlchemy==2.0.41
+typing_extensions==4.13.2
+Werkzeug==3.1.3

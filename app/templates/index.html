@@ -1,0 +1,411 @@
+<!--
+File: app/templates/index.html
+
+What it does:
+  - The main web page users see.
+  - Contains buttons to open FAQ, payment, overview pop-ups.
+
+Why it’s here:
+  - Flask uses this template to render the homepage at “/”.
+-->
+
+
+
+<!DOCTYPE html>
+<html lang="sv"> <!-- 'sv' for Swedish, assists screen readers & search engines -->
+
+<head>
+  <!-- 1. Character encoding so ÅÄÖ render correctly -->
+  <meta charset="UTF-8">
+
+  <!-- 2. Responsive viewport: makes CSS percent and rem units adapt to mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 3. Page title shown in browser tab -->
+  <title>Paddlingen 2025</title>
+
+  <!-- 4. Link to our custom CSS served by Flask -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+
+
+     <!-- ===== YEAR SIDEBAR (OVERLAY) ===== -->
+  <aside class="year-sidebar">
+    <!-- 1. Current year as a link -->
+    <a href="#year-2025" class="current-year">2025</a>
+
+    <!-- 2. Divider -->
+    <hr class="sidebar-divider">
+
+    <!-- 3. Subtitle -->
+    <div class="sidebar-subtitle">Tidigare år</div>
+
+    <!-- 4. Previous years links -->
+    <nav class="previous-years">
+      <a href="#year-2024">2024<br></a>
+      <a href="#year-2023">2023<br></a>
+      <a href="#year-2022">2022<br></a>
+    </nav>
+  </aside>
+
+
+  <!-- ===== HEADER ===== -->
+  <header>
+
+    <!-- ── INSERT START ── -->
+    <!-- Hamburger toggle: hidden on desktop, shown on mobile -->
+    <!-- Place this at the very top of <header> -->
+    <button id="sidebarToggle" class="sidebar-toggle no-select" aria-label="Visa år-menyn">
+      ☰
+    </button>
+    <!-- ── INSERT END ── -->
+
+    <!-- Buttons are naturally tappable on mobile -->
+    <nav class="header-nav">
+      <button id="faqBtn">Regler/Frågor</button>
+      <button id="contactBtn">Kontakt</button>
+    </nav>
+  </header>
+
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <!-- One <main> per page; here we’ll include each year’s section -->
+    <!-- MAIN: one section per year, in normal document flow -->
+  <main>
+
+    <!-- ===== SECTION: 2025 ===== -->
+    <!-- “year-section” will now handle centering for us -->
+    <section id="year-2025" class="year-section current-year-section scroll-animate">
+      <h1 class="main-title no-select scroll-animate">Paddlingen 2025</h1>
+      <h2 class="main-subtitle no-select scroll-animate">"Bästa dagen på hela året!" – Mathias Axelsson</h2>
+      <div class="date-time no-select scroll-animate" id="dateTime">28 juni – Kl 10:00</div>
+      <div class="location scroll-animate">
+        Samlingsplats:
+        <a href="https://www.google.com/maps/dir/Kopparberg/Havsjomossen,+714+92+Kopparberg/@59.8803129,14.8725218,12.45z/data=!4m14!4m13!1m5!1m1!1s0x465da83f08095abd:0x5881b6deffa02146!2m2!1d15.00051!2d59.87549!1m5!1m1!1s0x465d07135a643b4d:0xd9ffac76e697a6b5!2m2!1d14.8500001!2d59.8666667!3e0?entry=ttu&g_ep=EgoyMDI1MDUyNy4wIKXMDSoASAFQAw%3D%3D"
+           target="_blank" rel="noopener">
+          Havsjömossen
+        </a>
+      </div>
+
+      <!-- Weather widget -->
+      <div class="weather-widget weather-widget-inline scroll-animate" id="weatherWidget">
+        <h4 class="widget-title">
+          Väder för <span id="eventDateText">28 juni 2025</span>
+        </h4>
+        <p class="widget-status" id="weatherStatus">
+          Prognos kommer vara tillgänglig om <span id="daysUntil">14</span> dagar
+        </p>
+        <div class="widget-forecast" id="widgetForecast" style="display:none;">
+          <div>
+            <span id="weatherIcon">☀️</span>
+            <span id="temperature">22</span> °C
+            – Regnchans: <span id="rainChance">10</span> %
+          </div>
+        </div>
+        <small class="widget-source">(Prognos från SMHI • uppdateras dagligen)</small>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-container scroll-animate" aria-label="Bokningsstatus">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-text" id="progressText"></div>
+      </div>
+
+      <!-- Booking button -->
+      <button id="bookBtn" class="book-btn scroll-animate" type="button" aria-disabled="false">
+        Boka kanot
+      </button>
+
+      <!-- ── INSERT START ── -->
+      <!-- Översikt button: only visible on mobile -->
+      <button id="mobileOverviewBtn" class="book-btn mobile-only scroll-animate" type="button">
+        Översikt
+      </button>
+
+      <h1 class="previous-year-heading no-select mobile-only scroll-animate">Tidigare år</h1>
+      <h2 class="downward-arrow no-select mobile-only scroll-animate">↓</h2>
+
+    </section>
+
+    <section id="year-2024" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2024 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2024/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2024</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+
+                <!-- ── STATIC PROGRESS BAR FOR 2024 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2024">
+          <!-- 
+            • Give each “.progress-bar” a hard‐coded width (e.g. 80% → 40/50 bokade). 
+            • Remove any “id” attributes here; use only class="progress-bar". 
+          -->
+          <div
+            class="progress-bar"
+            style="width: 80%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            48 / 50 kanoter bokade
+          </div>
+        </div>
+     
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2024">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+
+
+    <section id="year-2023" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2023 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2023/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2023</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- ── STATIC PROGRESS BAR FOR 2023 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2023">
+          <div
+            class="progress-bar"
+            style="width: 64%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            42 / 50 kanoter bokade
+          </div>
+        </div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2023">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+
+
+    <section id="year-2022" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2022 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2022/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2022</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- ── STATIC PROGRESS BAR FOR 2022 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2022">
+          <div
+            class="progress-bar"
+            style="width: 100%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            47 / 50 kanoter bokade
+          </div>
+        </div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2022">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+  </main>
+
+
+    <!-- ===== OVERVIEW PANEL ===== -->
+   <div class="overview scroll-animate" id="overviewPanel">
+    <!-- REAL CLOSE BUTTON -->
+    <button class="overview-close" aria-label="Stäng översikt">×</button>
+
+    <!-- Section heading -->
+    <h3 class="overview-title scroll-animate">Bokningar</h3>
+
+    <table class="overview-table scroll-animate">
+      <thead>
+        <tr>
+          <th>Namn</th>       <!-- Column for person’s name -->
+          <th>Kanoter</th>    <!-- Column for how many canoes they booked -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dummy rows for testing -->
+        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
+        <tr><td>Eljefe Stabil</td><td>1</td></tr>
+        <tr><td>Skägg Larsson</td><td>3</td></tr>
+        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
+        <tr><td>Gösta Eriksson</td><td>2</td></tr>
+        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
+        <tr><td>Eljefe Stabil</td><td>1</td></tr>
+        <tr><td>Skägg Larsson</td><td>3</td></tr>
+        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
+        <tr><td>Gösta Eriksson</td><td>2</td></tr>
+        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
+        <tr><td>Eljefe Stabil</td><td>1</td></tr>
+        <tr><td>Skägg Larsson</td><td>3</td></tr>
+        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
+        <tr><td>Gösta Eriksson</td><td>2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== FAQ MODAL WITH TABS ===== -->
+  <div id="faqModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
+    <div class="modal-content modal-content--dark">
+      <!-- Close button -->
+      <button class="modal-close" aria-label="Stäng">&times;</button>
+      <!-- Modal title -->
+      <h2 id="faqTitle">Regler & Frågor</h2>
+      <!-- Tab buttons -->
+      <div class="modal-tabs">
+        <button class="modal-tab modal-tab--active" data-tab="rules">Regler</button>
+        <button class="modal-tab"                data-tab="questions">Frågor</button>
+      </div>
+      <!-- Tab content: Questions -->
+      <div class="modal-body modal-body--hidden" id="questions">
+        <ul>
+          <li><strong>Hur många kanoter?</strong> Max 50 – först till kvarn.</li>
+          <li><strong>Ålder:</strong> Barn under 12 år måste ha vuxet sällskap.</li>
+          <li><strong>Avbokning:</strong> Senast 7 dagar före eventet.</li>
+          <!-- …fler frågor här… -->
+        </ul>
+      </div>
+      <!-- Tab content: Rules (hidden by default) -->
+      <div class="modal-body modal-content--dark" id="rules">
+        <ul>
+          <li>Håll avstånd i kanoten – max 2 personer.</li>
+          <li>Flytväst är obligatorisk under hela turen.</li>
+          <li>Plocka upp ditt skräp – lämna naturen ren.</li>
+          <!-- …fler regler här… -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONTACT MODAL ===== -->
+  <div id="contactModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
+    <div class="modal-content modal-content--dark">
+      <button class="modal-close" aria-label="Stäng">&times;</button>
+      <h2 id="contactTitle">Kontakt</h2>
+      <div class="modal-body">
+        <p>Har du frågor eller behöver hjälp? Kontakta oss gärna:</p>
+        <ul>
+          <li>E-post: <a href="mailto:info@paddlingen2025.se">info@paddlingen2025.se</a></li>
+          <li>Telefon: <a href="tel:+46123456789">012-345 6789</a></li>
+          <li>Adress: PaddlingsKlubben, Storgatan 1, 123 45 Kopparberg</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BOOKING MODAL ===== -->
+  <div id="bookingModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
+    <div class="modal-content modal-content--dark">
+      <!-- Close button (reuses .modal-close styling) -->
+      <button class="modal-close" aria-label="Stäng">&times;</button>
+
+      <!-- Title -->
+      <h2 id="bookingTitle">Boka kanot</h2>
+
+      <!-- Our booking form -->
+      <form id="bookingForm">
+        <!-- 1) Select number of canoes -->
+        <label for="canoeCount">Antal kanoter:</label>
+        <select id="canoeCount" name="canoeCount" required>
+          <!-- options 1–10 -->
+          <option value="" disabled selected>Välj antal</option>
+          <!-- JS will react to this change -->
+          <script>
+            // Dynamically insert options 1–10 so you don't write them by hand
+            for(let i=1;i<=10;i++){
+              document.write(`<option value="${i}">${i}</option>`);
+            }
+          </script>
+        </select>
+
+        <!-- 2) Container for person‐name inputs -->
+        <div id="nameFieldsContainer">
+          <!-- JS will inject one input per canoe here -->
+        </div>
+
+        <!-- 3) Price info -->
+        <div id="priceInfo">Totalt: 0 kr (900 kr per kanot)</div>
+
+        <!-- 4) Action buttons -->
+        <div class="booking-buttons">
+          <button type="button" id="cancelBooking" class="button-secondary">Avbryt</button>
+          <button type="submit" id="confirmBooking" class="button-primary" disabled>Betala</button>
+        </div>
+
+        <!-- 5) Note about external payment -->
+        <p class="payment-note">Du kommer att omdirigeras till en säker betalningssida.</p>
+      </form>
+    </div>
+  </div>
+
+
+
+  <div id="galleryModal" class="gallery-modal">
+    <div class="gallery-content">
+      <!-- Close button in the top-right -->
+      <button class="gallery-close" aria-label="Stäng">&times;</button>
+
+      <!-- Previous image button (left arrow) -->
+      <button class="gallery-prev" aria-label="Föregående bild">&#10094;</button>
+
+      <!-- The image that will be swapped out in JS -->
+      <img src="" alt="Galleri bild" class="gallery-image">
+
+      <!-- Next image button (right arrow) -->
+      <button class="gallery-next" aria-label="Nästa bild">&#10095;</button>
+
+      <!-- Counter like "3 / 8" -->
+      <div class="gallery-caption">
+        <span class="gallery-counter"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. Our JS for interactivity, served by Flask -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+
+

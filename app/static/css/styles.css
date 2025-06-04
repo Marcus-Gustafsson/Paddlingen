@@ -1,0 +1,1168 @@
+/*
+
+File: app/static/css/styles.css
+
+What it does:
+  - Defines all the styles (colors, fonts, layout, modal boxes).
+
+Why it’s here:
+  - Keeps CSS separate from HTML and JavaScript for clarity.
+
+*/
+
+
+
+/* 1. Font + reset */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:…&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Make body at least as tall as the viewport */
+html, body {
+  height: 100%;
+}
+
+/* === 2. Move the “background” onto html instead of body === */
+html {
+  /* 1. Load the same image (so it’s always behind everything, even as you scroll) */
+  background-image: url("/static/images/2025/nitten.png");
+
+  /* 2. Don’t tile it */
+  background-repeat: no-repeat;
+
+  /* 3. Center it in both axes */
+  background-position: center center;
+
+  /* 4. Scale it to fill the entire content area */
+  background-size: cover;
+
+  /* 5. Ensure the background scrolls with the content */
+  background-attachment: fixed;
+}
+
+
+/* 3. Header */
+header {
+  display: flex;                  /* Use Flexbox to lay out child elements in a row */
+  justify-content: right; /* Push logo to the far left and nav to the far right */
+  align-items: right;            /* Vertically center items inside the header */
+  padding: 1rem 8rem;             /* Add 1rem space top/bottom, 2rem left/right */
+  position: absolute;             /* Position header relative to viewport */
+  top: 0;                         /* Stick header to the very top */
+  left: 0;                        /* Align header to the very left */
+  width: 100%;                    /* Make header span the full browser width */
+  z-index: 100;                   /* Ensure header sits above other content */
+}
+
+
+/* 4. Nav buttons (FAQ, Contact) */
+.header-nav button {
+  padding: 0.5rem 1rem;           /* Space inside button: 0.5rem top/bottom, 1rem left/right */
+  margin-left: 1rem;              /* Space between each button */
+  align-items: right;
+  background: transparent;        /* Transparent background to blend with header */
+  border: 2px solid #fff;         /* White border to outline button on dark header */
+  border-radius: 0.5rem;          /* Rounded corners for a modern look */
+  color: #fff;                    /* White text to match border and stand out */
+  font-weight: 500;               /* Medium font weight for readability */
+  cursor: pointer;                /* Show pointer cursor on hover to indicate clickability */
+  transition: background 0.3s,    /* Smooth transition when background changes */
+              color 0.3s;         /* Smooth transition when text color changes */
+}
+
+/* Hover state for nav buttons */
+.header-nav button:hover {
+  background: #fff;               /* Fill button with white on hover */
+  color: #162938;                 /* Change text to dark color for contrast */
+}
+
+/* 5. Center container & text (updated for global offsets) */
+.main-center {
+  position: absolute;                                        /* Position relative to viewport */
+  top:    calc(55%);               /* 50% down + extra Y-offset */
+  left:   calc(50%);               /* 50% in  + extra X-offset */
+  transform: translate(-50%, -50%);                          /* Pull back by half its own size to truly center */
+  text-align: center;                                        /* Center text inside */
+  width: 100%;                                               /* Full width so no clipping */
+  max-width: 600px;                                          /* Optional: limit max width */
+  padding: 0 1rem;                                           /* Horizontal padding on small screens */
+}
+
+
+/* Main heading style */
+.main-title {
+  background: transparent;
+  font-size: 3rem;                /* Very large text for the main event title */
+  margin-bottom: 0.5rem;          /* Space below the title before the subtitle */
+  color: #ffffff;                 /* White text for clear contrast on any background */
+}
+
+/* Subtitle style */
+.main-subtitle {
+  font-size: 1.0rem;              /* Smaller than main title but still prominent */
+  margin-bottom: 1.5rem;            /* Space below subtitle before next elements */
+  color: #ffffff;                 /* White text to match the title */
+}
+
+
+/* ===== DATE & TIME STYLING ===== */
+.date-time {
+  font-size: 1.2rem;             /* Larger text for readability */
+  margin-bottom: 0.5rem;           /* Space below before the bar */
+  color: #ffffff;                /* White text to stand out */
+}
+
+/* Assembly point line */
+.location {
+  font-size: 1.2rem;               /* Match progress-text size */
+  margin-bottom: 0.5rem;           /* Space below before progress bar */
+  color: #ffffff;                /* White text for contrast */
+}
+
+/* Hyperlink style */
+.location a {
+  color: #ffee00;                /* Gold color to match progress bar */
+  text-decoration: underline;    /* Underline to indicate link */
+}
+
+.location a:hover {
+  color: #fff;                   /* Brighten on hover */
+}
+
+
+
+/* ===== PROGRESS BAR TRACK ===== */
+.progress-container {
+  position: relative;             /* 1. Establish a positioning context for children */
+  width: 100%;                    
+  max-width: 500px;               /* Widened so the text fits comfortably */
+  height: 2rem;                   /* Tall enough for legible text */
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 1rem;
+  overflow: hidden;               /* Clip the colored fill at the corners */
+  margin: 0 auto;                 
+}
+
+/* ===== COLORED FILL ===== */
+/* Styles for the inner bar that fills up to show booking progress */
+.progress-bar {
+  height: 100%;                                  /* Make the fill as tall as the container */
+  width: 0%;                                     /* Start with 0% fill; JS will update this */
+  background-color: hsl(120, 100%, 50%);         /* Initial color: green (120° hue in HSL) */
+  transition: 
+    width 3s ease,                             /* Smoothly animate width changes over 0.5 seconds */
+    background-color 3s ease;                  /* Smoothly animate color changes over 0.5 seconds */
+  display: flex;                                 /* Turn this into a flex container */
+  align-items: center;                           /* Vertically center any text inside */
+  justify-content: center;                       /* Horizontally center any text inside */
+  color: #162938;                                /* Dark text color for good contrast on light-blue/red */
+  font-weight: 600;                              /* Semi-bold text for better legibility */
+  font-size: 1rem;                               /* Readable font size inside the bar */
+}
+
+
+/* ===== TEXT OVERLAY ===== */
+.progress-text {
+  position: absolute;             /* Remove from normal flow and position relative to container */
+  top: 50%;                       /* 50% down the container */
+  left: 50%;                      /* 50% across the container */
+  transform: translate(-50%, -50%); /* Pull back by half its own size to truly center */
+  
+  width: 100%;                    /* Span full container (so text-align works) */
+  text-align: center;             /* Center text horizontally */
+  
+  color: #162938;                 /* Dark text for contrast on gold */
+  font-weight: 600;              
+  font-size: 1rem;              
+  pointer-events: none;           /* Let clicks pass through to the bar or underlying elements if needed */
+}
+
+
+/* ===== “Book a Canoe” Button Styling ===== */
+.book-btn {
+  /* 1. Spacing */
+  margin-top: 2rem;            /* Space above the button so it’s not too close to the bar */
+  
+  /* 2. Size & padding */
+  padding: 0.75rem 1.5rem;     /* Top/bottom 0.75rem, left/right 1.5rem for a larger click target */
+  font-size: 1.25rem;          /* Larger text for readability and emphasis */
+  
+  /* 3. Colors & background */
+  background-color: #28a745;   /* Bootstrap green for primary action */
+  color: #ffffff;              /* White text for contrast */
+  
+  /* 4. Border & shape */
+  border: none;                /* Remove default border */
+  border-radius: 0.75rem;      /* Rounded corners for a friendly look */
+  
+  /* 5. Cursor & transition */
+  cursor: pointer;             /* Pointer on hover indicates clickability */
+  transition: background-color 0.3s ease, /* Smooth color fade on hover */
+              transform 0.1s ease;        /* Tiny scale on click-down if added */
+}
+
+/* ===== Hover & Active States ===== */
+.book-btn:hover:not(:disabled) {
+  background-color: #218838;   /* Darker green on hover for feedback */
+}
+
+.book-btn:active:not(:disabled) {
+  transform: scale(0.98);      /* Slightly shrink on click for tactile feel */
+}
+
+/* ===== Disabled State ===== */
+.book-btn:disabled,
+.book-btn[aria-disabled="true"] {
+  background-color: #6c757d;   /* Gray background to indicate disabled */
+  color: #e2e6ea;              /* Light gray text */
+  cursor: not-allowed;         /* Show “not-allowed” cursor */
+  opacity: 0.7;                /* Slight transparency to further signal disabled */
+}
+
+
+/* ===== OVERVIEW PANEL (SCROLLABLE) ===== */
+.overview {
+  position: absolute;           /* Float it to the right of the main content */
+  top: 25%;                     /* Center vertically */
+  right: 3rem;                  /* Push in from the right edge */
+  transform: translateY(-50%);  /* Perfect vertical centering */
+  
+  /* 
+    1. Fix the height so only 8 rows + header show, then scroll.
+       Assuming each row ~2rem tall + header ~2.5rem, we use 18rem.
+  */
+  max-height: 26.5rem;            
+  
+  /* 2. Allow vertical scrolling when content exceeds max-height */
+  overflow-y: auto;             
+  
+  /* 3. Padding & shape */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  
+  /* 4. Semi-opaque background for readability over the photo */
+  background: rgba(69, 69, 69, 0.9);
+  
+  /* 5. Subtle shadow for depth */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  
+  /* 6. Limit width so it doesn’t get too wide */
+  max-width: 330px;
+  width: 100%;
+}
+
+.overview-title {
+  margin-bottom: 0.5rem;           /* Space below the title */
+  font-size: 1.35rem;              /* Slightly larger than body text */
+  text-align: center;
+  color: white;
+}
+
+/* ===== OVERVIEW TABLE STYLES ===== */
+.overview-table {
+  width: 100%;                   /* Fill the panel’s width */
+  border-collapse: collapse;     /* Single lines between rows */
+  text-align: center;              /* Left-align text */
+  font-size: 0.9rem;             /* Slightly small for fitting 8 rows */
+  color: white;
+}
+
+/* Table header cells */
+.overview-table th {
+  padding: 0.5rem;                 /* Space inside headers */
+  border-bottom: 2px solid #162938;/* Dark line under header */
+  font-size: 1.1rem;             /* Slightly small for fitting 8 rows */
+}
+
+/* Table data cells */
+.overview-table td {
+  padding: 0.5rem;                 /* Space inside cells */
+  border-bottom: 1px solid #ccc;   /* Light line under each row */
+}
+
+
+/* ===== WEATHER WIDGET SHARED STYLE ===== */
+.weather-widget {
+  /* 1. Background & contrast */
+  background: rgba(0,0,0,0.6);    /* Dark translucent pill */
+  color: #fff;                    /* White text for readability */
+
+  /* 2. Padding & spacing (adjust to fit longer text) */
+  padding: 0.5rem 1rem;           /* Top/bottom 0.5rem, left/right 1rem */
+
+  /* 3. Shape & shadow */
+  border-radius: 2rem;            /* Round “pill” ends */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Subtle depth */
+
+  /* 4. Layering */
+  z-index: 110;                   /* Sit above most content */
+
+  /* 5. Font sizing (tweak for readability) */
+  font-size: 0.9rem;              /* Base size for widget text */
+}
+
+/* ===== OPTION 2 DEFAULT: FIXED POSITION ===== */
+.weather-widget-fixed {
+  /* Keep it stuck in the viewport corner */
+  position: fixed;
+  bottom: 1.5rem;     /* Distance from the bottom of the screen */
+  left:   1.5rem;     /* Distance from the left edge */
+}
+
+/* ===== INLINE OVERRIDE (Center in flow) ===== */
+.weather-widget-inline {
+  /* 1. Positioning override */
+  position: relative !important;  
+  bottom:   auto     !important;  
+  left:     auto     !important;  
+
+  /* 2. Display & centering */
+  display: block;                
+  margin: 1rem auto;           /* 1.5rem top/bottom, auto left/right */
+
+  /* 3. Width control (adjust for content) */
+  width: 100%;                   
+  max-width: 300px;              /* Maximum width of the pill */
+
+  /* 4. Extra padding for title + status lines */
+  padding: 1rem;                
+
+  /* 5. Title font-size override (optional tweak) */
+}
+
+
+/* ===== YEAR SIDEBAR (OVERLAY) ===== */
+.year-sidebar {
+  position: fixed;             /* Float it on top of everything */
+  top: 0;                      /* Align to the top of viewport */
+  left: 0;                     /* Stick to the left edge */
+  height: 100vh;               /* Full viewport height */
+  width: 120px;                /* Wider than before—adjust as desired */
+  
+  background: rgba(0,0,0,0.3); /* Dark translucent overlay */
+  color: #fff;                 /* White text */
+  
+  display: flex;               
+  flex-direction: column;      /* Stack items vertically */
+  align-items: center;         
+  
+  padding: 1rem 0;             /* Vertical padding, no horizontal padding */
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.2); /* Right‐side shadow */
+  z-index: 120;                /* Ensure it sits above header/main */
+}
+
+
+/* Current year (clickable link) */
+.year-sidebar .current-year {
+  display: block;              /* Full width clickable area */
+  font-size: 1.25rem;          /* Larger than the rest */
+  font-weight: bold;
+  color: #fff;                 /* White link text */
+  text-decoration: none;       /* No underline */
+  margin-bottom: 1rem;         
+  width: 100%;                 
+  text-align: center;          
+  padding: 0.5rem 0;           /* Increase hit‐area vertically */
+  transition: background 0.2s; /* Hover feedback */
+}
+.year-sidebar .current-year:hover {
+  text-decoration: none;
+  font-size: 1.25rem;
+  transition: color 0.5s;
+  color: #ffd900;
+}
+
+.year-sidebar .current-year a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: color 0.5s;
+}
+.year-sidebar .current-year a:hover {
+  color: #ffd9004f;
+}
+
+/* Divider line */
+.year-sidebar .sidebar-divider {
+  width: 70%;                  
+  border: none;
+  border-top: 1px solid #fff;
+  margin-bottom: 1rem;
+}
+
+/* “Tidigare år” subtitle */
+.year-sidebar .sidebar-subtitle {
+  font-size: 1.0rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  font-weight: bold;
+}
+
+/* Previous years links */
+.year-sidebar .previous-years {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.year-sidebar .previous-years a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: color 0.5s;
+  padding: 0.6rem 0;           /* Increase hit‐area vertically */
+}
+.year-sidebar .previous-years a:hover {
+  color: #ffd900;
+}
+
+/* Sidebar link active styling */
+.year-sidebar a.active {
+  color: #ffd900;
+  border-radius: 1rem;      /* pill shape */
+}
+
+
+/* ===== SCROLL-ANIMATION BASE STATE ===== */
+/* Elements with .scroll-animate start hidden & shifted down */
+.scroll-animate {
+  opacity: 0;                            /* Invisible at start */
+  transform: translateY(20px);           /* Shift down 20px off their final spot */
+  transition:
+    opacity 0.8s ease-out,               /* Fade in over 0.6s */
+    transform 0.8s ease-out;             /* Slide up over 0.6s */
+}
+
+/* ===== SCROLL-ANIMATION VISIBLE STATE ===== */
+/* When .in-view is added, element returns to normal position & fully opaque */
+.scroll-animate.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+   /* Smooth in‐page scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---------------------------------------- */
+/*  A) SHARED FOR ALL YEAR-SECTIONS        */
+/* ---------------------------------------- */
+.year-section {
+
+  min-height: 100vh;            /* each “page” fills one viewport */
+  position: relative;           /* for absolute children on prev years */
+  padding: 2rem 1rem;           /* inner breathing room */
+  box-sizing: border-box;
+}
+
+
+/* ---------------------------------------- */
+/*  B) CURRENT YEAR (2025) STYLING         */
+/* ---------------------------------------- */
+/* You can add any special background or overlay for current year here */
+.current-year-section {
+  /* e.g. slightly darker tint to show “live” section */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(0,0,0,0.20);
+  padding: 1rem;
+}
+
+
+/* Target ONLY the “previous‐year” sections that use the photo grid */
+.year-section.previous-year-section.with-bg-grid {
+  /* 1. Use the same background as the <body> so there’s never white 
+        “flash” before the grid animates in. */
+  background-image: url("/static/images/2025/nitten.png");
+  background-repeat: no-repeat;           /* Don’t tile */
+  background-position: center center;     /* Always center */
+  background-size: cover;                 /* Fill entire section */
+  background: rgba(0,0,0,0.20);
+  padding: 1rem;
+
+  /* 2. Ensure the section itself is positioned & full‐height */
+  position: relative;     /* parent for absolutely‐positioned grid inside */
+  min-height: 100vh;      /* fill exactly one viewport height */
+  overflow: hidden;       /* clip any overflow from the grid behind */
+
+  /* 3. Center overlay content (optional, your existing rules) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* ------------------------------------------------------ */
+/* C) THE PHOTO‐GRID (LAYER 0) BEHIND THE OVERLAY CONTENT  */
+/* ------------------------------------------------------ */
+.year-section.previous-year-section.with-bg-grid .photo-grid-bg {
+  position: absolute;      /* Sit behind any overlay (z-index:0) */
+  top: 0; 
+  left: 0;
+  width: 100%;
+  height: 100%;            /* fill the entire section */
+
+  display: grid;           /* Activate CSS Grid */
+  grid-template-columns: repeat(9, 1fr);                 /* exactly 9 columns */
+  grid-auto-rows: minmax(150px, 1fr);                    /* up to 2 rows if 10–18 items */
+  gap: 3px;                  /* small gap between photos */
+
+  z-index: 0;                /* behind overlay content */
+  overflow: hidden;          /* crop any overflow */
+}
+
+/* EACH GRID CELL (THUMBNAIL)                          */
+.year-section.previous-year-section.with-bg-grid .photo-grid-bg .grid-cell {
+  background-size: cover;     /* fill each square (crop as needed) */
+  background-position: center;/* center the image in its cell */
+  border-radius: 0.5rem;      /* slightly rounded corners */
+}
+
+/* ------------------------------------------------------ */
+/* E) OVERLAY CONTENT (LAYER 1), ON TOP OF GRID           */
+/* ------------------------------------------------------ */
+.year-section.previous-year-section.with-bg-grid .overlay-content {
+  position: relative;   /* sits “over” the absolute grid behind */
+  z-index: 1;           /* higher than 0, so it displays on top of the grid */
+
+  display: flex;        /* center text/buttons */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  /* If you want a translucent backdrop behind the text: */
+  background: rgba(0,0,0,0.40);
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+/* ---------------------------------------- */
+/*  E) SCROLL-ANIMATE (unchanged)          */
+/* ---------------------------------------- */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.scroll-animate.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+
+/* ===== PHOTO GRID LAYOUT ===== */
+.photo-grid {
+  display: grid;  
+  /* auto-fit: fill row with 150px cells, wrap as needed */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-auto-rows: 150px;   /* force square cells */
+  gap: 1.5rem;               /* space between pictures */
+  width: 100%;
+  max-width: 800px;        /* optional cap on total width */
+  margin: 2rem auto;       /* center horizontally with vertical gap */
+}
+
+/* ===== GRID ITEMS ===== */
+.grid-item {
+  background-size: cover;     /* fill each square */
+  background-position: center;/* center the image */
+  border-radius: 0.5rem;      /* rounded corners */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
+
+/* ===== GLOBAL MODAL STYLES ===== */
+.modal {
+  display: none;                     /* Hidden by default */
+  position: fixed;                   /* Sit on top of everything */
+  top: 0; left: 0;                   /* Cover entire viewport */
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);     /* Semi-transparent black backdrop */
+  z-index: 500;                      /* Above other content */
+  justify-content: center;           /* Center horizontally */
+  align-items: center;               /* Center vertically */
+  padding: 1rem;                     /* Small padding on mobile */
+}
+
+/* White box inside the modal */
+.modal-content {
+  background: rgba(69, 69, 69, 0.975);      /* White background so text is readable */
+  border-radius: 0.5rem;             /* Rounded corners */
+  max-width: 500px;                  /* Never wider than 500px */
+  width: 100%;                       /* Full width up to max */
+  max-height: 90vh;                  /* At most 90% of viewport height */
+  overflow-y: auto;                  /* Scroll if content is tall */
+  position: relative;                /* For positioning the close button */
+  padding: 1.5rem;                   /* Inner padding */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.34);
+}
+
+/* Hyperlink style */
+.modal a {
+  color: #ffee00;                /* Gold color to match progress bar */
+  text-decoration: underline;    /* Underline to indicate link */
+}
+
+/* Close “×” button */
+.modal-close {
+  position: absolute;                /* Place relative to .modal-content */
+  top: 0.5rem;
+  right: 1.0rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #dbdbdb;
+}
+
+/* Modal headings */
+.modal-content h2 {
+  margin-top: 0;                     /* Remove default margin */
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #dbdbdb;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Body text inside modal */
+.modal-body {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #dbdbdb;
+}
+
+
+/* ===== DARK-MODE MODAL CONTENT ===== */
+.modal-content--dark {
+  background: #2a2a2a;      /* Dark grey box */
+  color: #dbdbdb;              /* Light text */
+}
+
+/* ===== TABS AT THE TOP OF THE MODAL ===== */
+.modal-tabs {
+  display: flex;                    /* Place tabs side by side */
+  margin: 1rem 0;                   /* Vertical spacing */
+  border-bottom: 2px solid #444;    /* Underline all tabs */
+}
+
+.modal-tab {
+  flex: 1;                          /* Each tab equal width */
+  padding: 0.75rem 1rem;            /* Clickable area */
+  background: transparent;          
+  border: none;
+  color: #ccc;                      /* Inactive tab color */
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s, color 0.2s;
+  font-size: 1.0rem
+}
+
+.modal-tab:hover {
+  background: #3a3a3a;
+}
+
+.modal-tab--active {
+  color: #fff;                      /* Active tab text */
+  border-bottom: 3px solid #28a745; /* Accent line (green) */
+}
+
+
+/* ===== TAB PANELS ===== */
+.modal-body {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Utility to hide inactive panels */
+.modal-body--hidden {
+  display: none;
+}
+
+
+/* ===== GALLERY MODAL (LIGHTBOX) STYLES ===== */
+
+/* The full-screen dark backdrop */
+.gallery-modal {
+  display: none;                  /* Hidden by default */
+  position: fixed;                /* Sit on top of everything */
+  top: 0; left: 0;                /* Cover the entire viewport */
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85); /* Almost-black semi-transparent */
+  z-index: 600;                   /* Above other modals */
+  justify-content: center;        /* Center horizontally */
+  align-items: center;            /* Center vertically */
+}
+
+.gallery-content {
+  /* 
+    1) We force the container to never exceed 90% of viewport width/height,
+       but also cap it at a comfortable max so it’s always roughly the same size.
+  */
+  max-width: 90vw;         /* at most 90% of viewport width */
+  max-height: 90vh;        /* at most 90% of viewport height */
+  width: min(600px, 90vw); /* whichever is smaller: 600px or 90vw */
+  height: min(600px, 90vh);/* whichever is smaller: 600px or 90vh */
+
+  /* center contents */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;      /* for absolutely-positioned arrows/buttons */
+}
+
+/* The image itself */
+.gallery-image {
+  max-width: 100%;                /* Never overflow horizontally */
+  max-height: 100%;               /* Never overflow vertically */
+  object-fit: contain;            /* Preserve aspect ratio */
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* Close button (×) */
+.gallery-close {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: #fff;
+  color: #333;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* ===== UPDATED ARROW STYLES (INSIDE FRAME) ===== */
+.gallery-prev,
+.gallery-next {
+  position: absolute;
+  top: 50%;                         /* vertically center */
+  transform: translateY(-50%);      /* pull back half its own height */
+  background: rgba(0,0,0,0.4);      /* semi-transparent black */
+  color: #fff;                      /* white icon */
+  border: none;
+  font-size: 2rem;                  /* arrow size */
+  width: 3rem; height: 3rem;        /* square tap target */
+  border-radius: 50%;               /* circular shape */
+  cursor: pointer;
+  display: flex;                    /* center the arrow inside */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+/* Always 1rem in from the left or right edge of the frame */
+.gallery-prev { left: 0.5rem; }
+.gallery-next { right: 0.5rem; }
+
+/* Caption ("3 / 8") below the image */
+.gallery-caption {
+  position: absolute;
+  bottom: 0.5rem;
+  color: #fff;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}
+
+/* Caption container centers the counter text */
+.gallery-counter {
+  background: rgba(0,0,0,0.6);
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+
+/* ===== BOOKING FORM STYLES ===== */
+
+/* Labels & selects */
+#bookingForm label {
+  display: block;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+  color: #dbdbdb;
+}
+#bookingForm select {
+  width: 50%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: #fff;
+}
+
+/* ===== TWO‐COLUMN NAME FIELDS FOR EACH CANOE ===== */
+.canoe-field {
+  margin-top: 0.75rem;           /* space between each canoe block */
+}
+
+/* Wrap the two inputs in a flex container */
+.canoe-field .inputs {
+  display: flex;
+  gap: 0.5rem;                   /* space between first + last name */
+}
+
+/* Each input takes up half the width */
+.canoe-field input {
+  flex: 1;                       /* grow equally */
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: #fff;
+}
+
+/* The canoe label above the inputs */
+.canoe-field label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #dbdbdb;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Price info text */
+#priceInfo {
+  margin-top: 1rem;
+  font-weight: bold;
+  color: #ffee00;
+}
+
+/* Buttons container */
+.booking-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Primary button */
+.button-primary {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.button-primary:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+.button-primary:not(:disabled):hover {
+  background: #218838;
+}
+
+/* Secondary button */
+.button-secondary {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.button-secondary:hover {
+  background: #fff;
+  color: #162938;
+}
+
+/* Payment‐note style */
+.payment-note {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #ccc;
+  text-align: center;
+}
+
+
+
+/* 1) Hide the hamburger toggle on desktop by default */
+.sidebar-toggle {
+  display: none;
+}
+
+/* 2) Hide the "Översikt" button on desktop by default */
+.mobile-only {
+  display: none;
+}
+
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+/* ===== MOBILE TWEAKS @ max-width 600px ===== */
+/* ===== MOBILE SPECIFIC STYLES (max-width: 600px) ===== */
+@media (max-width: 1050px) {
+
+
+  /* ── B) HIDE FIXED SIDEBAR ───────────────────────────────────────── */
+  .year-sidebar {
+    display: none;             /* Completely hide the year-sidebar on mobile */
+  }
+
+
+  /* ── C) SHOW "ÖVERSIKT" BUTTON ───────────────────────────────────── */
+  .mobile-only {
+    display: block;            /* Show Översikt button under "Boka kanot" */
+    margin-top: 1rem;          /* Give a bit of vertical spacing */
+  }
+
+
+  /* Header: wrap nav buttons and reduce padding */
+  header {
+    flex-wrap: wrap;             /* Let nav buttons wrap to new line */
+    padding: 0.5rem 1rem;        /* Less padding for mobile */
+  }
+  .header-nav {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;          /* Space below hamburger if it exists */
+  }
+  .header-nav button {
+    margin: 0.25rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  /* Slightly shift main-year content up (so it’s easier to see on tall screens) */
+  .main-center {
+    top: 50%;
+  }
+
+  /* Shrink large headings */
+  .main-title {
+    font-size: 2rem;
+  }
+  .main-subtitle {
+    font-size: 0.8rem;
+  }
+
+  /* Date/time smaller on mobile */
+  .date-time {
+    font-size: 1rem;
+  }
+
+  /* Make both “Boka kanot” and “Visa bilder” fill most of the width */
+  .book-btn {
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Shrink weather widget pill if it’s too wide */
+  .weather-widget-inline {
+    max-width: 325px;
+    padding: 0.8rem;      /* A bit more padding for legibility */
+    font-size: 0.85rem;
+  }
+
+  /* 1. Target BOTH possible grid wrappers you’re using
+        a) .photo-grid           – the generic grid in your markup
+        b) .photo-grid-bg        – the background grid that lives
+           inside a “previous-year” section                     */
+  .photo-grid,
+  .year-section.previous-year-section.with-bg-grid .photo-grid-bg {
+
+    /* ---- LAYOUT -------------------------------------------------- */
+    display: grid;                           /* turn the element into a grid */
+    grid-template-columns: repeat(4, 1fr);   /* exactly 4 equal-width columns */
+    grid-template-rows:    repeat(3, 1fr);   /* exactly 2 equal-height rows   */
+    gap: 0.2rem;                             /* space between the cells       */
+
+    /* ---- OPTIONAL SIZING ----------------------------------------- */
+    /* If the parent should occupy the full width/height you can keep
+       these – but remove them if they conflict with your design      */
+    width: 100%;
+    height: 100%;
+
+    /* ---- CLIPPING ------------------------------------------------ */
+    /* Anything that would normally flow into a 3rd row is simply
+       clipped away so only 8 cells are visible.                      */
+    overflow: hidden;
+  }
+
+  /* 2. (Nice-to-have) Don’t render items #9 and onward at all.
+        This avoids unnecessary downloads/paint work.                 */
+  .photo-grid  > :nth-child(n+13),
+  .photo-grid-bg > :nth-child(n+13) {
+    display: none !important;                /* hide everything after #8 */
+  }
+
+
+  /* ── 6) OVERVIEW PANEL AS FULL-SCREEN POP-UP ───────────────────────── */
+  .overview {
+    /* 0. Replace the desktop placement -------------------------------- */
+    position: fixed;
+    transform: none !important;   /* <-- cancel the desktop translateY    */
+    left: 10%;          /* start 10 % in from the left edge   */
+    width: 80%;         /* so the right edge still lines up   */
+    
+
+    /* 1. The dark backdrop -------------------------------------------- */
+    background: rgba(0,0,0,0.8);
+    box-sizing: border-box;
+    z-index: 300;
+    overflow-y: auto;            /* scroll if the table gets very tall    */
+
+    /* 2. Make the whole overlay a flex-box and centre its children ----- */
+    display: none;               /* hidden until JS adds `.scrolled`      */
+    flex-direction: column;      /* keep heading above the table          */
+    justify-content: center;     /* centre vertically                     */
+    align-items:  center;        /* centre horizontally                   */
+  }
+
+  .overview.scrolled {
+    display: block;             /* Use this class (or toggle style) to show it */
+  }
+
+  /* Center the table inside the dark overlay */
+  .overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto;             /* Center horizontally */
+    max-width: 500px;           /* Don’t let it get too wide */
+    background: rgba(69, 69, 69, 0.9);      /* White background so text is readable */
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .overview-title {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+  }
+
+  /* Table header on white bg */
+  .overview-table th {
+    padding: 0.5rem;
+    border-bottom: 2px solid #162938;
+    font-size: 1rem;
+    background: #162938;
+    color: #fff;
+  }
+  .overview-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #ccc;
+    color: #162938;
+    background: #fff;
+  }
+
+  /* 1) Hide the existing ::before “X” so it doesn’t clash */
+  #overviewPanel::before {
+    display: none !important;
+  }
+
+  /* 2) Style our real close button */
+  .overview-close {
+    position: absolute;        /* float above everything in the panel */
+    top: 0.75rem;              /* distance from panel’s top */
+    right: 1rem;              /* distance from panel’s right edge */
+    background: transparent;   /* no background fill */
+    border: none;             /* remove default border */
+    color: #fff;              /* white X to stand out on dark backdrop */
+    font-size: 1.5rem;        /* large enough to tap */
+    line-height: 1;          
+    cursor: pointer;          /* pointer cursor on hover */
+    z-index: 10;              /* above the table content */
+  }
+
+  /* 3) (Optional) Hover feedback */
+  .overview-close:hover {
+    color: #ffd900;           /* match your accent color */
+  }
+
+  /* Main heading style */
+  .previous-year-heading {
+  background: transparent;
+  font-size: 1.3rem;                /* Very large text for the main event title */
+  margin-top: 3rem;          /* Space below the title before the subtitle */
+  color: #ffffff;                 /* White text for clear contrast on any background */
+  }
+
+  /* Subtitle style */
+  .downward-arrow {
+  font-size: 1.4rem;              /* Smaller than main title but still prominent */            /* Space below subtitle before next elements */
+  color: #ffffff;                 /* White text to match the title */
+  }
+
+  .gallery-prev, .gallery-next {
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.5rem;
+  }
+  .gallery-close {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  #bookingForm {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+    /* Force inputs to stack vertically on narrow screens */
+  .canoe-field .inputs {
+    flex-direction: column;
+  }
+  /* Each input now full-width */
+  .canoe-field .inputs input {
+    width: 100%;
+  }
+
+}
+
+
+/* Prevent text from being highlighted/selected */
+.no-select {
+  user-select: none;          /* Standard */
+  -webkit-user-select: none;  /* Chrome/Safari */
+  -moz-user-select: none;     /* Firefox */
+  -ms-user-select: none;      /* IE/Edge */
+}
+
+/* Force text to be selectable even if a parent disallows it */
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+
+
+
