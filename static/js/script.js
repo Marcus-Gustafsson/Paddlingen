@@ -502,26 +502,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 5) HANDLE FORM SUBMISSION (BETALA)
-  form.addEventListener("submit", e => {
-    e.preventDefault();  // prevent page reload
-
-    // a) Gather the data
-    const count = parseInt(select.value, 10);
-    const names = Array.from(
-      namesWrap.querySelectorAll("input")
-    ).map(inp => inp.value.trim());
-    console.log("▶️ Redirecting to payment with:", { count, names });
-
-    // b) Lock the UI to prevent double-clicks
-    submitBtn.disabled = true;
-    cancelBtn.disabled = true;
-    submitBtn.textContent = "Betalar…"; // give user feedback
-
-    // c) SIMULATE an async Stripe payment (replace this with real API/redirect)
-    setTimeout(() => {
-      console.log("✅ Payment successful!");
-      closeModal();                // hide the modal
-      submitBtn.textContent = "Betala"; // restore button text
-    }, 2000);  // 2 second “processing” delay
-  });
+ 
+  
 });

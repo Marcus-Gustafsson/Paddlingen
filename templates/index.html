@@ -261,12 +261,19 @@ Why it’s here:
     <table class="overview-table scroll-animate">
       <thead>
         <tr>
-          <th>Namn</th>       <!-- Column for person’s name -->
-          <th>Kanoter</th>    <!-- Column for how many canoes they booked -->
+          <th>Kanotnummer</th>       <!-- Column for person’s name -->
+          <th>Namn</th>    <!-- Column for how many canoes they booked -->
         </tr>
       </thead>
       <tbody>
+		{% for bokning in bokningar %}
+		<tr>
+			<td>{{ bokning.id }}</td>
+			<td>{{ bokning.name }}</td>
+		</tr>
+		{% endfor %}
         <!-- Dummy rows for testing -->
+<!--
         <tr><td>Mats Dyngrauk</td><td>2</td></tr>
         <tr><td>Eljefe Stabil</td><td>1</td></tr>
         <tr><td>Skägg Larsson</td><td>3</td></tr>
@@ -282,6 +289,7 @@ Why it’s here:
         <tr><td>Skägg Larsson</td><td>3</td></tr>
         <tr><td>Mohammed Mjöd</td><td>7</td></tr>
         <tr><td>Gösta Eriksson</td><td>2</td></tr>
+        -->
       </tbody>
     </table>
   </div>
@@ -312,7 +320,7 @@ Why it’s here:
         <ul>
           <li><strong>VAR SNÄLL MOT KANOTGUBBEN</strong></li>
           <li>Håll avstånd i kanoten – max 2 personer.</li>
-          <li>Flytvästen är obligatorisk att sitta på under hela turen.</li>
+          <li>hehe</li>
           <li>Plocka upp ditt skräp – lämna naturen ren.</li>
           <!-- …fler regler här… -->
         </ul>
@@ -346,7 +354,9 @@ Why it’s here:
       <h2 id="bookingTitle">Boka kanot</h2>
 
       <!-- Our booking form -->
-      <form id="bookingForm">
+    	<form id="bookingForm"
+      	method="POST"
+      	action="{{ url_for('payment') }}">
         <!-- 1) Select number of canoes -->
         <label for="canoeCount">Antal kanoter:</label>
         <select id="canoeCount" name="canoeCount" required>
