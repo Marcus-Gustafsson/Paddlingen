@@ -73,7 +73,7 @@ source .venv/bin/activate
 ## 📦 3. Install Python dependencies
 
 ```bash
-pip install -r requirements.txt   # install Flask, SQLAlchemy, etc.
+pip install -r requirements.txt
 ```
 
 - If you add a new library later, update requirements.txt with:
@@ -96,7 +96,7 @@ FLASK_DEBUG=True
 With the venv active and from the project root, run:
 
 ```bash
-python run.py
+python main.py
 ```
 
 - The app will launch at: http://127.0.0.1:5000
@@ -125,7 +125,7 @@ python run.py
 
 
 
-## Viewing website on phone via Flask on WSL.
+# Viewing website on phone via Flask on WSL.
 • (WSL) → run in the Ubuntu /bash shell  
 • (WIN) → run in Windows PowerShell or Windows CMD  
 (when the line also says “Admin”, open PowerShell **as Administrator**)
