@@ -261,35 +261,17 @@ Why it’s here:
     <table class="overview-table scroll-animate">
       <thead>
         <tr>
-          <th>Kanotnummer</th>       <!-- Column for person’s name -->
-          <th>Namn</th>    <!-- Column for how many canoes they booked -->
+          <th>Namn</th>       <!-- Column for person’s name -->
+          <th>Kanotnr.</th>    <!-- Column for how many canoes they booked -->
         </tr>
       </thead>
       <tbody>
 		{% for bokning in bokningar %}
 		<tr>
-			<td>{{ bokning.id }}</td>
 			<td>{{ bokning.name }}</td>
+      <td>{{ bokning.id }}</td>
 		</tr>
 		{% endfor %}
-        <!-- Dummy rows for testing -->
-<!--
-        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
-        <tr><td>Eljefe Stabil</td><td>1</td></tr>
-        <tr><td>Skägg Larsson</td><td>3</td></tr>
-        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
-        <tr><td>Gösta Eriksson</td><td>2</td></tr>
-        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
-        <tr><td>Eljefe Stabil</td><td>1</td></tr>
-        <tr><td>Skägg Larsson</td><td>3</td></tr>
-        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
-        <tr><td>Gösta Eriksson</td><td>2</td></tr>
-        <tr><td>Mats Dyngrauk</td><td>2</td></tr>
-        <tr><td>Eljefe Stabil</td><td>1</td></tr>
-        <tr><td>Skägg Larsson</td><td>3</td></tr>
-        <tr><td>Mohammed Mjöd</td><td>7</td></tr>
-        <tr><td>Gösta Eriksson</td><td>2</td></tr>
-        -->
       </tbody>
     </table>
   </div>

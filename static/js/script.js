@@ -14,69 +14,158 @@
 
 
 /**
- * Update the progress bar fill, text, and use a smooth green→red gradient.
- *
- * @param {number} booked - How many canoes have been booked.
- * @param {number} total  - Total available canoes.
+ * PROGRESS BAR FUNCTIONALITY
+ * 
+ * This section handles the visual progress bar that shows how many canoes are booked.
+ * Think of it like a gas gauge in a car - it shows how "full" the bookings are.
+ */
+
+/**
+ * Updates the visual progress bar to show booking status.
+ * 
+ * How it works:
+ * - Calculates what percentage of canoes are booked
+ * - Changes color from green (few bookings) to red (almost full)
+ * - Updates the text to show "X / Y kanoter bokade"
+ * 
+ * @param {number} booked - How many canoes have been booked so far
+ * @param {number} total - Maximum number of canoes available
+ * 
+ * Example: updateProgress(25, 50) means 25 out of 50 canoes are booked
  */
 function updateProgress(booked, total) {
-  // 1. Compute percent fill, clamped between 0 and 100.
+  // Step 1: Calculate percentage (0-100)
+  // Math.min() ensures we never go above 100%
+  // Math.max() ensures we never go below 0%
+  // This protects against weird data (like 60 bookings out of 50 total)
   const percent = Math.min(100, Math.max(0, (booked / total) * 100));
 
-  // 2. Define hue endpoints for the gradient (green to red).
-  const startHue = 120;   // green at 120°
-  const endHue   = 0;     // red at 0°
+  // Step 2: Set up colors using the HSL color system
+  // HSL = Hue, Saturation, Lightness
+  // Hue is like a color wheel: 0° = red, 120° = green, 240° = blue
+  const startHue = 120;   // Green (like grass) when few bookings
+  const endHue   = 0;     // Red (like a stop sign) when almost full
 
-  // 3. Interpolate between startHue and endHue based on percent.
+  // Step 3: Calculate the current color based on how full we are
+  // When percent = 0%, hue = 120 (green)
+  // When percent = 100%, hue = 0 (red)
+  // Everything in between is a smooth gradient
   const hue = startHue + (endHue - startHue) * (percent / 100);
 
-  // 4. Build the HSL color string.
+  // Step 4: Create the color string that CSS understands
+  // hsl(60, 100%, 50%) would be yellow
+  // The 100% means "fully saturated" (vivid color)
+  // The 50% means "normal brightness" (not too dark or light)
   const color = `hsl(${hue}, 100%, 50%)`;
 
-  // 5. Find the progress-bar element by its ID.
+  // Step 5: Find the progress bar element in your HTML
+  // This looks for an element with id="progressBar"
   const bar = document.getElementById('progressBar');
 
-  // 6. Set the bar’s width to match the booking percentage.
+  // Step 6: Update the bar's width to match the percentage
+  // If 60% are booked, the bar fills 60% of its container
   bar.style.width = percent + '%';
 
-  // 7. Update the bar’s background color to the computed HSL value.
+  // Step 7: Apply the calculated color
   bar.style.backgroundColor = color;
 
-  // 8. Update the centered text inside the bar.
+  // Step 8: Update the text display
+  // This shows something like "25 / 50 kanoter bokade"
   const text = document.getElementById('progressText');
   text.innerText = `${booked} / ${total} kanoter bokade`;
 }
 
 /**
- * Test function to demonstrate disabling the "Book" button
- * when booked reaches total. Call this with your desired values.
+ * Controls the booking button based on availability.
+ * 
+ * This function does two things:
+ * 1. Updates the progress bar visuals
+ * 2. Enables/disables the booking button
+ * 
+ * When fully booked:
+ * - Button becomes disabled (can't click)
+ * - Button text changes to "Fullbokat"
+ * - Screen readers are notified via aria-disabled
+ * 
+ * @param {number} booked - Current number of bookings
+ * @param {number} total - Maximum capacity
  */
-function testBookingState(booked, total) {
-  // 1. First, update the progress bar and its text.
+function BookingStateProgressBar(booked, total) {
+  // Step 1: Update the visual progress bar
   updateProgress(booked, total);
 
-  // 2. Grab the booking button by its ID.
+  // Step 2: Find the booking button in the HTML
   const bookBtn = document.getElementById('bookBtn');
 
-  // 3. If fully booked (booked >= total), disable and change text.
+  // Step 3: Check if we're at capacity
   if (booked >= total) {
-    bookBtn.disabled = true;                   // Disable clicks
-    bookBtn.innerText = 'Fullbokat';           // Change button label
-    bookBtn.setAttribute('aria-disabled', 'true'); // Accessibility hint
+    // We're full! Disable booking
+    bookBtn.disabled = true;                      // Makes button unclickable
+    bookBtn.innerText = 'Fullbokat';             // Changes button text
+    bookBtn.setAttribute('aria-disabled', 'true'); // Helps screen readers
   } else {
-    // 4. Otherwise, ensure button is enabled with original text.
-    bookBtn.disabled = false;
-    bookBtn.innerText = 'Boka kanot';
-    bookBtn.setAttribute('aria-disabled', 'false');
+    // Still room! Enable booking
+    bookBtn.disabled = false;                      // Makes button clickable
+    bookBtn.innerText = 'Boka kanot';              // Normal button text
+    bookBtn.setAttribute('aria-disabled', 'false'); // Helps screen readers
   }
 }
 
-// ===== Example test run =====
-// When the DOM is loaded, run a test where 50 of 50 canoes are booked.
-document.addEventListener('DOMContentLoaded', () => {
-  testBookingState(49, 50);
-});
+/**
+ * NEW: DATABASE CONNECTION FOR 2025 BOOKINGS
+ * 
+ * This section connects your progress bar to real booking data from the database.
+ * Instead of using fake numbers, we'll count actual bookings.
+ */
 
+// Configuration: How many canoes are available in 2025?
+const TOTAL_CANOES_2025 = 50;  // Change this to match your actual capacity
+
+/**
+ * Fetches the current number of bookings from your Flask server.
+ * 
+ * This function:
+ * 1. Sends a request to your Python backend
+ * 2. Gets the count of bookings in the database
+ * 3. Returns that number
+ * 
+ * @returns {Promise<number>} The number of bookings (or 0 if error)
+ */
+async function fetchBookingCount() {
+  try {
+    // Send HTTP request to your Flask server
+    // The '/api/booking-count' endpoint needs to be created in your Python code
+    const response = await fetch('/api/booking-count');
+    
+    // Convert the response to JSON format
+    const data = await response.json();
+    
+    // Expected response format: {count: 25}
+    return data.count;
+  } catch (error) {
+    // If something goes wrong (network error, server down, etc.)
+    console.error('Failed to fetch booking count:', error);
+    return 0;  // Return 0 as a safe default
+  }
+}
+
+/**
+ * Updates the progress bar with real data from the database.
+ * This is the main function that connects everything together.
+ */
+async function updateProgressFromDatabase() {
+  // Step 1: Get the actual number of bookings from the server
+  const currentBookings = await fetchBookingCount();
+  
+  // Step 2: Update the progress bar and button with real data
+  BookingStateProgressBar(currentBookings, TOTAL_CANOES_2025);
+}
+
+// This runs once when the page loads (including after payment redirect)
+document.addEventListener('DOMContentLoaded', async () => {
+  // Get real booking data and update the progress bar
+  await updateProgressFromDatabase();
+});
 
 
 
@@ -500,8 +589,4 @@ document.addEventListener("DOMContentLoaded", () => {
     allInputs.forEach(i => i.addEventListener("input", validate));
     validate(); // run once in case there’s only one canoe
   });
-
-  // 5) HANDLE FORM SUBMISSION (BETALA)
- 
-  
 });
