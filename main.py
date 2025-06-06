@@ -11,6 +11,8 @@ Flask is a lightweight web framework for Python that helps you build web applica
 from util.helper_functions import get_images_for_year
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import requests
+from collections import Counter
 
 # Create a new Flask web application instance
 # __name__ tells Flask where to look for templates and static files
@@ -196,6 +198,88 @@ def get_booking_count():
     # Return the count as JSON
     # jsonify() converts Python data to JSON format that JavaScript can read
     return jsonify({'count': booking_count})
+
+
+
+# === Coordinates for your specific event location ===
+LAT = 59.866580523479584
+LON = 14.850996977247622
+
+# MET Norway Weather API endpoint
+MET_API_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+
+# === Simple weather code to emoji mapping ===
+# You can expand or improve this later to match actual weather symbols from MET Norway
+WEATHER_EMOJIS = {
+    "clearsky": "☀️",
+    "cloudy": "☁️",
+    "fair": "🌤️",
+    "fog": "🌫️",
+    "heavyrain": "🌧️",
+    "lightrain": "🌦️",
+    "rain": "🌧️",
+    "snow": "❄️",
+    "heavysnow": "🌨️",
+    "partlycloudy": "⛅",
+    "thunderstorm": "⛈️",
+}
+
+@app.route('/api/forecast')
+def get_forecast():
+    """
+    Flask route to fetch weather forecast for a specific date.
+    Tries to get data starting at 10:00 UTC, and uses next 6 hours forecast.
+    If 10:00 is unavailable, uses 12:00 UTC as fallback.
+    Returns temperature, rain amount and weather icon.
+    """
+    headers = {
+        "User-Agent": "PaddlingenEventApp/1.0 (contact@example.com)"  # Required by MET API
+    }
+    params = {
+        "lat": LAT,
+        "lon": LON
+    }
+
+    target_date = request.args.get("date")
+    if not target_date:
+        return jsonify({"error": "Missing required 'date' parameter (YYYY-MM-DD)."}), 400
+
+    try:
+        response = requests.get(MET_API_URL, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        # Define desired forecast times in UTC (10:00 and fallback 12:00)
+        preferred_times = ["10:00:00Z", "12:00:00Z"]
+
+        selected_entry = None
+        for time_option in preferred_times:
+            target_timestamp = f"{target_date}T{time_option}"
+            for entry in data["properties"]["timeseries"]:
+                if entry["time"] == target_timestamp:
+                    selected_entry = entry
+                    break
+            if selected_entry:
+                break
+
+        if not selected_entry:
+            return jsonify({"error": "No forecast available at 10:00 or 12:00 UTC for this date."}), 404
+
+        # Extract details
+        temp = selected_entry["data"]["instant"]["details"].get("air_temperature")
+        rain = selected_entry["data"].get("next_6_hours", {}).get("details", {}).get("precipitation_amount", 0)
+        symbol_code = selected_entry["data"].get("next_6_hours", {}).get("summary", {}).get("symbol_code", "cloudy")
+        base_symbol = symbol_code.split("_")[0]
+
+        forecast = {
+            "temperature": round(temp) if temp is not None else "N/A",
+            "rainChance": str(rain).replace(".",","),  # simple approximation
+            "icon": WEATHER_EMOJIS.get(base_symbol, "☁️")
+        }
+        return jsonify(forecast)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # This block only runs if you execute this file directly (not when imported)
 if __name__ == "__main__":

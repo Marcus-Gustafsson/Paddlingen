@@ -169,64 +169,66 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-// ===== Dummy test parameters =====
-// 1. Set your event’s date & time here:
-const eventDate = new Date('2025-06-13T10:00:00');
+// ===== Event Weather Forecast Widget =====
 
-// 2. Placeholder forecast data (replace with real API response)
-const dummyForecast = {
-  icon: '☀️',        // could be an <img> URL or emoji
-  temperature: 22,   // degrees Celsius
-  rainChance: 10     // percent
-};
+// 1. Set your event’s date & time here:
+const eventDate = new Date('2025-06-12T10:00:00');
+
+// 2. Fetch weather data from backend if within 14 days
+function fetchWeatherIfAvailable(eventDate) {
+  const today = new Date();
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffMs = eventDate - today;
+  const diffDays = Math.ceil(diffMs / msPerDay);
+
+  // Show countdown or fetch forecast
+  if (diffDays > 7) {
+    const daysUntil = diffDays - 7;
+    document.getElementById('weatherStatus').innerHTML = `
+      Prognos kommer vara tillgänglig om
+      <span id="daysUntil">${daysUntil}</span> dagar
+    `;
+    document.getElementById('widgetForecast').style.display = 'none';
+  } else {
+    // Format date to YYYY-MM-DD
+    const formattedDate = eventDate.toISOString().split('T')[0];
+
+    fetch(`/api/forecast?date=${formattedDate}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        updateWeather(eventDate, data);
+      })
+      .catch(err => {
+        document.getElementById('weatherStatus').innerText = "Kunde inte hämta väderdata.";
+        console.error("Forecast error:", err);
+      });
+  }
+}
 
 /**
- * Updates the weather widget UI.
- * - Shows countdown until forecast opens (>14 days).
- * - Shows actual forecast when within 14 days.
+ * Updates the weather widget with real forecast data.
+ * @param {Date} eventDate - The date/time of your event
+ * @param {Object} forecast - Contains temperature, rainChance and icon
  */
 function updateWeather(eventDate, forecast) {
-  const today    = new Date();                       // current date/time
-  const msPerDay = 1000 * 60 * 60 * 24;              // ms in one day
-  const diffMs   = eventDate - today;                // ms until event
-  const diffDays = Math.ceil(diffMs / msPerDay);     // round up to whole days
-
-  // 1. Update the event date in the title (e.g. “15 juni 2025”)
+  // Format and display event date (e.g. “13 juni 2025”)
   document.getElementById('eventDateText').innerText =
     eventDate.toLocaleDateString('sv-SE', {
       day: 'numeric', month: 'long', year: 'numeric'
     });
 
-  const statusEl   = document.getElementById('weatherStatus');
-  const forecastEl = document.getElementById('widgetForecast');
-
-  if (diffDays > 14) {
-    // a) Too early: show “available in X days”
-    const daysUntil = diffDays - 14;  // days left until forecast opens
-    statusEl.innerHTML = `
-      Prognos kommer vara tillgänglig om
-      <span id="daysUntil">${daysUntil}</span> dagar
-    `;
-    forecastEl.style.display = 'none'; // hide forecast details
-  } else {
-    // b) Within 14 days: show forecast
-    statusEl.style.display   = 'none';  // hide the countdown text
-    forecastEl.style.display = 'block'; // reveal forecast
-
-    // 2. Populate real forecast values
-    document.getElementById('weatherIcon').innerText = forecast.icon;
-    document.getElementById('temperature').innerText = forecast.temperature;
-    document.getElementById('rainChance').innerText  = forecast.rainChance;
-  }
+  // Update UI elements with fetched forecast
+  document.getElementById('weatherStatus').style.display = 'none';
+  document.getElementById('widgetForecast').style.display = 'block';
+  document.getElementById('weatherIcon').innerText = forecast.icon;
+  document.getElementById('temperature').innerText = forecast.temperature;
+  document.getElementById('rainChance').innerText = forecast.rainChance;
 }
 
-// Run on page load (or call again after fetching real API)
+// Run on page load
 document.addEventListener('DOMContentLoaded', () => {
-  updateWeather(eventDate, dummyForecast);
-  // Later, you can fetch real data:
-  // fetch('/api/forecast?date=2025-06-15')
-  //   .then(r => r.json())
-  //   .then(data => updateWeather(eventDate, data));
+  fetchWeatherIfAvailable(eventDate);
 });
 
 
