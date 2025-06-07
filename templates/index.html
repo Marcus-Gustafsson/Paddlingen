@@ -246,6 +246,106 @@ Why it’s here:
         </button>
     </div>
     </section>
+  
+
+    <section id="year-2021" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2021 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2021/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2021</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- ── STATIC PROGRESS BAR FOR 2022 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2021">
+          <div
+            class="progress-bar"
+            style="width: 100%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            42 / 50 kanoter bokade
+          </div>
+        </div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2021">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+
+
+
+    <section id="year-2020" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2020 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2020/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2020</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">29 juni – Kl 10:00</div>
+        <!-- ── STATIC PROGRESS BAR FOR 2022 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2020">
+          <div
+            class="progress-bar"
+            style="width: 100%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            47 / 50 kanoter bokade
+          </div>
+        </div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2020">
+        Visa bilder
+        </button>
+    </div>
+    </section>
+
+
+    <section id="year-2019-eariler" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2019_earlier %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2019_&_tidigare/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2019 och tidigare år</h1>
+        </div>
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2019_earlier">
+        Visa bilder
+        </button>
+    </div>
+    </section>
 
   </main>
 
@@ -359,7 +459,7 @@ Why it’s here:
         </div>
 
         <!-- 3) Price info -->
-        <div id="priceInfo">Totalt: 0 kr (900 kr per kanot)</div>
+        <div id="priceInfo">Totalt: 0 kr (x kr per kanot)</div>
 
         <!-- 4) Action buttons -->
         <div class="booking-buttons">

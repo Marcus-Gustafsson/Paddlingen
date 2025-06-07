@@ -84,9 +84,12 @@ def index():
     # render_template() combines an HTML template with data
     # The template can access these variables: pics2024, pics2023, pics2022, bokningar
     return render_template("index.html",
-                           pics2024=get_images_for_year("2024"),
-                           pics2023=get_images_for_year("2023"),
+                           pics2019_earlier=get_images_for_year("2019_&_tidigare"),
+                           pics2020=get_images_for_year("2020"),
+                           pics2021=get_images_for_year("2021"),
                            pics2022=get_images_for_year("2022"),
+                           pics2023=get_images_for_year("2023"),
+                           pics2024=get_images_for_year("2024"),
                            bokningar=alla_bokningar)
 
 # This route only accepts POST requests (form submissions)
