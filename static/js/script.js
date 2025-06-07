@@ -11,6 +11,18 @@
 
 // script.js
 
+//////// CONSTANTS ////////
+
+// How many canoes are available
+const TOTAL_CANOES_CURRENT_YEAR = 50; 
+
+// Set event’s date & time here:
+const currentYearEventDate = new Date('2025-06-12T10:00:00');
+
+const PRICE_PER_CANOE = 1200;   // in SEK
+
+////////////////////
+
 
 
 /**
@@ -31,9 +43,9 @@
  * @param {number} booked - How many canoes have been booked so far
  * @param {number} total - Maximum number of canoes available
  * 
- * Example: updateProgress(25, 50) means 25 out of 50 canoes are booked
+ * Example: updateBookingProgress(25, 50) means 25 out of 50 canoes are booked
  */
-function updateProgress(booked, total) {
+function updateBookingProgress(booked, total) {
   // Step 1: Calculate percentage (0-100)
   // Math.min() ensures we never go above 100%
   // Math.max() ensures we never go below 0%
@@ -73,26 +85,7 @@ function updateProgress(booked, total) {
   // This shows something like "25 / 50 kanoter bokade"
   const text = document.getElementById('progressText');
   text.innerText = `${booked} / ${total} kanoter bokade`;
-}
 
-/**
- * Controls the booking button based on availability.
- * 
- * This function does two things:
- * 1. Updates the progress bar visuals
- * 2. Enables/disables the booking button
- * 
- * When fully booked:
- * - Button becomes disabled (can't click)
- * - Button text changes to "Fullbokat"
- * - Screen readers are notified via aria-disabled
- * 
- * @param {number} booked - Current number of bookings
- * @param {number} total - Maximum capacity
- */
-function BookingStateProgressBar(booked, total) {
-  // Step 1: Update the visual progress bar
-  updateProgress(booked, total);
 
   // Step 2: Find the booking button in the HTML
   const bookBtn = document.getElementById('bookBtn');
@@ -111,15 +104,7 @@ function BookingStateProgressBar(booked, total) {
   }
 }
 
-/**
- * NEW: DATABASE CONNECTION FOR 2025 BOOKINGS
- * 
- * This section connects your progress bar to real booking data from the database.
- * Instead of using fake numbers, we'll count actual bookings.
- */
 
-// Configuration: How many canoes are available in 2025?
-const TOTAL_CANOES_2025 = 50;  // Change this to match your actual capacity
 
 /**
  * Fetches the current number of bookings from your Flask server.
@@ -158,7 +143,7 @@ async function updateProgressFromDatabase() {
   const currentBookings = await fetchBookingCount();
   
   // Step 2: Update the progress bar and button with real data
-  BookingStateProgressBar(currentBookings, TOTAL_CANOES_2025);
+  updateBookingProgress(currentBookings, TOTAL_CANOES_CURRENT_YEAR);
 }
 
 // This runs once when the page loads (including after payment redirect)
@@ -171,14 +156,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ===== Event Weather Forecast Widget =====
 
-// 1. Set your event’s date & time here:
-const eventDate = new Date('2025-06-12T10:00:00');
-
 // 2. Fetch weather data from backend if within 14 days
-function fetchWeatherIfAvailable(eventDate) {
+function fetchWeatherIfAvailable(currentYearEventDate) {
   const today = new Date();
   const msPerDay = 1000 * 60 * 60 * 24;
-  const diffMs = eventDate - today;
+  const diffMs = currentYearEventDate - today;
   const diffDays = Math.ceil(diffMs / msPerDay);
 
   // Show countdown or fetch forecast
@@ -191,13 +173,13 @@ function fetchWeatherIfAvailable(eventDate) {
     document.getElementById('widgetForecast').style.display = 'none';
   } else {
     // Format date to YYYY-MM-DD
-    const formattedDate = eventDate.toISOString().split('T')[0];
+    const formattedDate = currentYearEventDate.toISOString().split('T')[0];
 
     fetch(`/api/forecast?date=${formattedDate}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error);
-        updateWeather(eventDate, data);
+        updateWeather(currentYearEventDate, data);
       })
       .catch(err => {
         document.getElementById('weatherStatus').innerText = "Kunde inte hämta väderdata.";
@@ -208,13 +190,13 @@ function fetchWeatherIfAvailable(eventDate) {
 
 /**
  * Updates the weather widget with real forecast data.
- * @param {Date} eventDate - The date/time of your event
+ * @param {Date} currentYearEventDate - The date/time of your event
  * @param {Object} forecast - Contains temperature, rainChance and icon
  */
-function updateWeather(eventDate, forecast) {
+function updateWeather(currentYearEventDate, forecast) {
   // Format and display event date (e.g. “13 juni 2025”)
   document.getElementById('eventDateText').innerText =
-    eventDate.toLocaleDateString('sv-SE', {
+    currentYearEventDate.toLocaleDateString('sv-SE', {
       day: 'numeric', month: 'long', year: 'numeric'
     });
 
@@ -228,7 +210,7 @@ function updateWeather(eventDate, forecast) {
 
 // Run on page load
 document.addEventListener('DOMContentLoaded', () => {
-  fetchWeatherIfAvailable(eventDate);
+  fetchWeatherIfAvailable(currentYearEventDate);
 });
 
 
@@ -260,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, {
     root: null,                        // viewport
-    threshold: 0.5                     // 50% of section must be visible
+    threshold: 0.25                     // 50% of section must be visible
   });
 
   // 4. Observe each section
@@ -287,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, {
     root: null,        // Use the browser viewport
-    threshold: 0.25     // Fire when 20% of the element is visible
+    threshold: 0.25     // Fire when X-% of the element is visible
   });
 
   // 3. Observe each target element
@@ -320,13 +302,6 @@ document.addEventListener("DOMContentLoaded", () => {
         overviewDiv.classList.remove("scrolled");
       });
     }
-
-    // Hide on Escape key
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && overviewDiv.classList.contains("scrolled")) {
-        overviewDiv.classList.remove("scrolled");
-      }
-    });
   }
 });
 
@@ -487,8 +462,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ===== BOOKING MODAL & FORM LOGIC =====
 document.addEventListener("DOMContentLoaded", () => {
-  // 0) CONSTANTS
-  const PRICE_PER_CANOE = 900;   // cost per canoe in SEK
 
   // 1) GRAB ALL THE ELEMENTS WE’LL NEED
   const openBtn    = document.getElementById("bookBtn");           // “Boka kanot” button
