@@ -1,0 +1,324 @@
+/* =============================================================================
+   File: static/css/admin.css
+
+   Modern tweaks & mobile‐friendly styles for your admin page.
+   Detailed comments explain how to adjust each part.
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1) PAGE CONTAINER
+   ----------------------------------------------------------------------------– */
+.admin-container {
+  max-width: 800px;       /* Limit width on large screens */
+  margin: 2rem auto;      /* Center-page with vertical spacing */
+  padding: 0 1rem;        /* Horizontal padding on both sides */
+}
+
+/* -----------------------------------------------------------------------------
+   2) HEADER: CENTERED TITLE + BACK LINK
+   ----------------------------------------------------------------------------– */
+.admin-header {
+  background: #333;       /* Dark background */
+  color: #fff;            /* White text */
+  padding: 2rem;          /* Inner space */
+  position: relative;     /* For centering the title absolutely */
+}
+
+.admin-header h1 {
+  /* center horizontally */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+
+  /* center vertically (50% of header height) */
+  top: 50%;
+
+  /* translateY to truly center */
+  transform: translate(-50%, -50%);
+
+  /* bump up the font size */
+  font-size: 2rem;
+  margin: 0;
+}
+
+/* ============================================================================
+   1) MOVE “← Till hemsidan” TO TOP‐RIGHT
+   ——————————————————————————————————————————————————————————————— */
+.admin-header nav {
+  /* remove left positioning */
+  left: auto;
+
+  /* pin to the right edge */
+  right: 1rem;
+
+  /* keep it vertically centered in the header */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+
+.admin-header nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* -----------------------------------------------------------------------------
+   3) “ADD NEW BOOKING” SECTION
+   ----------------------------------------------------------------------------– */
+.admin-add {
+  padding-top: 2rem;      /* Push the form down from the header */
+  margin-bottom: 2rem;
+}
+.admin-add form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;            /* Space between input & button */
+}
+
+/* Text input styling */
+.admin-add input[type="text"] {
+  flex: 1;                        /* Fill remaining space */
+  padding: 0.5rem 0.75rem;        /* Comfortable click/tap area */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* “Lägg till” button styling */
+.admin-add button {
+  padding: 0.6rem 1.2rem;
+  background: #28a745;            /* Bootstrap-like green */
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.admin-add button:hover {
+  background: #218838;            /* Darker on hover */
+}
+
+/* -----------------------------------------------------------------------------
+   4) “ALL BOOKINGS” TABLE SECTION
+   Dark, semi-transparent background & rounded corners
+   ----------------------------------------------------------------------------– */
+.admin-list {
+  margin-bottom: 2rem;
+  background: rgba(0, 0, 0, 0.3); /* Light gray overlay */
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.admin-list h2 {
+  /* center horizontally */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* bump up the font size */
+  font-size: 2rem;
+  margin: 0;
+  color: white
+}
+
+/* Table fills the area and scrolls on mobile */
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+/* Header row: slightly darker */
+.overview-table thead {
+  background: rgba(0, 0, 0, 0.1);
+}
+.overview-table th,
+.overview-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+/* 1) Target the 2nd column’s <th> (the “Namn” header) */
+.overview-table th:nth-child(2) {
+  /* Left-align the header text (default is center) */
+  text-align: left;
+
+  /* Add a bit of left padding so it sits above the input field */
+  /* Adjust the 1rem value up or down until it visually lines up */
+  padding-left: 5rem;
+}
+
+/* make the entire 3rd column right‐aligned */
+.overview-table th:nth-child(3),
+.overview-table td:nth-child(3) {
+  text-align: right;
+  /* Add a bit of right padding so it sits above the Spara/Ta bort buttons */
+  /* Tweak the 1rem value until it visually aligns under the buttons */
+  padding-right: 1rem;
+}
+
+/* 2) Target the 3rd column’s <th> (the “Åtgärd” header) */
+.overview-table th:nth-child(3) {
+  /* Right-align the header text to match buttons below */
+  text-align: right;
+
+  /* Add a bit of right padding so it sits above the Spara/Ta bort buttons */
+  /* Tweak the 1rem value until it visually aligns under the buttons */
+  padding-right: 3rem;
+}
+
+/* ensure the inline‐forms in that 3rd column push their buttons right */
+.overview-table td:nth-child(3) .inline-form {
+  display: inline-flex;       /* keep inputs/buttons in one row */
+  justify-content: flex-end;  /* push them to the right edge */
+  gap: 0.5rem;                /* space between Spara & Ta bort */
+}
+
+/* Alternate row shading */
+.overview-table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* -----------------------------------------------------------------------------
+   5) INLINE FORMS (Edit + Delete buttons)
+   Center the buttons on the right side
+   ----------------------------------------------------------------------------– */
+/* Make each form a flex container */
+.inline-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;         /* Space between input and buttons */
+}
+
+/* Input in the table row (edit) */
+.inline-form input[type="text"] {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 250px;           /* tweak this to your longest names */
+  max-width: 100%;        /* never overflow its cell on narrow screens */
+}
+
+/* All inline buttons share this base */
+.inline-form button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* “Spara” (edit) button */
+.inline-form button[type="submit"] {
+  background: #007bff;         /* Bootstrap-like blue */
+  color: #fff;
+}
+.inline-form button[type="submit"]:hover {
+  background: #0069d9;
+}
+
+/* “Ta bort” (delete) button inside onsubmit form */
+.inline-form[onsubmit] button {
+  background: #dc3545;         /* Bootstrap-like red */
+  color: #fff;
+}
+.inline-form[onsubmit] button:hover {
+  background: #c82333;
+}
+
+/* Align the action-cell’s flex items to the right */
+.overview-table td:nth-child(3) .inline-form {
+  justify-content: flex-end;   /* Push buttons to the right */
+}
+
+
+
+
+/* -----------------------------------------------------------------------------
+   6) MOBILE RESPONSIVENESS
+   Adjust form layouts & table scrolling for small screens
+   ----------------------------------------------------------------------------– */
+@media (max-width: 600px) {
+  /* Stack add‐form vertically */
+  .admin-add form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-add input,
+  .admin-add button {
+    width: 100%;
+    margin: 0 0 0.75rem 0;
+  }
+
+  /* Stack inline forms vertically */
+  .inline-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .inline-form input,
+  .inline-form button {
+    width: 100%;
+    margin: 0 0 0.5rem 0;
+  }
+
+  /* Make table horizontally scrollable */
+  .overview-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .overview-table th,
+  .overview-table td {
+    white-space: nowrap;  /* Prevent text wrap */
+  }
+
+    /* --------------------------------------------------------------
+     A) Shrink & reflow the main header title on mobile
+     -------------------------------------------------------------- */
+  .admin-header {
+    /* less vertical padding to fit smaller screens */
+    padding: 1rem;
+  }
+  .admin-header h1 {
+    position: static;          /* remove absolute so it sits in the flow */
+    transform: none;           /* clear previous translate */
+    font-size: 1.25rem;        /* smaller font for mobile */
+    text-align: center;        /* keep it centered */
+    margin: 0 0 0.5rem;        /* small bottom margin */
+  }
+  .admin-header nav {
+    /* push the back-link down to sit under the title */
+    position: static;
+    transform: none;
+    margin-bottom: 0.5rem;
+    text-align: right;         /* keep link on the right */
+  }
+
+  /* --------------------------------------------------------------
+     B) Shrink & reflow the “Alla bokningar” sub-heading
+     -------------------------------------------------------------- */
+  .admin-list h2 {
+    position: static;          /* remove absolute */
+    transform: none;           /* clear centering transform */
+    font-size: 1.25rem;        /* mobile-friendly size */
+    text-align: center;        /* center text */
+    margin: 0 0 1rem;          /* put space below the heading */
+    color: #fff;               /* keep white if you like */
+  }
+
+  /* --------------------------------------------------------------
+     C) Tweak the table header paddings on mobile
+     (if you find your “Namn”/“Åtgärd” headers still misaligned)
+     -------------------------------------------------------------- */
+  .overview-table th:nth-child(2) { /* “Namn” */
+    padding-left: 0.5rem;      /* less padding to fit narrow screens */
+  }
+  .overview-table th:nth-child(3) { /* “Åtgärd” */
+    padding-right: 0.5rem;
+  }
+
+
+}

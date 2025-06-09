@@ -9,10 +9,11 @@ Flask is a lightweight web framework for Python that helps you build web applica
 
 
 from util.helper_functions import get_images_for_year
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 import requests
 from collections import Counter
+from functools import wraps
 
 # Create a new Flask web application instance
 # __name__ tells Flask where to look for templates and static files
@@ -280,9 +281,104 @@ def get_forecast():
             "icon": WEATHER_EMOJIS.get(base_symbol, "☁️")
         }
         return jsonify(forecast)
+        
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# --- after app.config.from_pyfile('config.py') ---
+ADMIN_USERNAME = app.config['ADMIN_USERNAME']
+ADMIN_PASSWORD = app.config['ADMIN_PASSWORD']
+
+def admin_required(f):
+    """
+    Decorator to protect admin routes with HTTP Basic Auth.
+
+    Checks the Authorization header for a username/password
+    that match ADMIN_USERNAME and ADMIN_PASSWORD. If not present
+    or incorrect, returns a 401 asking the browser to prompt for credentials.
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # request.authorization holds HTTP Basic credentials
+        auth = request.authorization
+        # If missing or wrong, challenge the client
+        if not auth or auth.username != ADMIN_USERNAME or auth.password != ADMIN_PASSWORD:
+            return Response(
+                'Authentication required',    # message body
+                401,                          # HTTP 401 Unauthorized
+                {'WWW-Authenticate': 'Basic realm="Admin Area"'}  # prompt header
+            )
+        # Credentials OK—proceed to handler
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    """
+    Shows the admin dashboard page.
+
+    • Queries all RentForm bookings, ordered by ID.
+    • Renders templates/admin.html, passing the booking list.
+    """
+    bookings = RentForm.query.order_by(RentForm.id).all()
+    return render_template('admin.html', bookings=bookings)
+
+
+@app.route('/admin/add', methods=['POST'])
+@admin_required
+def admin_add():
+    """
+    Handles the "Add new booking" form submission.
+
+    • Reads `name` from form data, strips whitespace.
+    • If non-empty, creates & commits a new RentForm record.
+    • Redirects back to the dashboard.
+    """
+    # Get the 'name' field, defaulting to empty string
+    name = request.form.get('name', '').strip()
+    if name:
+        db.session.add(RentForm(name=name))
+        db.session.commit()
+    # Always redirect (PRG pattern—Prevents resubmission on refresh)
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/update/<int:id>', methods=['POST'])
+@admin_required
+def admin_update(id):
+    """
+    Handles editing an existing booking’s name.
+
+    • Fetches the RentForm record by `id` or 404s.
+    • Reads the new `name`, strips whitespace.
+    • If non-empty, updates record & commits.
+    • Redirects back to dashboard.
+    """
+    booking = RentForm.query.get_or_404(id)
+    new_name = request.form.get('name', '').strip()
+    if new_name:
+        booking.name = new_name
+        db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/delete/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete(id):
+    """
+    Handles deletion of a booking.
+
+    • Fetches the RentForm record by `id` or 404s.
+    • Deletes it, commits the transaction.
+    • Redirects back to dashboard.
+    """
+    booking = RentForm.query.get_or_404(id)
+    db.session.delete(booking)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
 
 # This block only runs if you execute this file directly (not when imported)
 if __name__ == "__main__":

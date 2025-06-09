@@ -1,0 +1,120 @@
+<!--
+  File: templates/admin.html
+
+  What it does:
+    - Provides a simple, password‐protected admin interface.
+    - Lets you Add, Edit (Save) or Delete bookings (rows in RentForm table).
+
+  Why it’s here:
+    - So site administrators can manage bookings without touching the database manually
+    - No server downtime required
+-->
+<!DOCTYPE html>
+<html lang="sv"> <!-- "sv" tells browsers & assistive tech this page is Swedish -->
+<head>
+  <!-- 1. Character encoding so special characters (ÅÄÖ) display correctly -->
+  <meta charset="UTF-8">
+
+  <!-- 2. Responsive viewport: ensures the page scales on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 3. Page title shown in browser tab -->
+  <title>Admin – Paddlingen</title>
+
+  <!-- 4. Main site CSS (for shared styling) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+  <!-- 5. Admin‐specific CSS (overrides / extra layout rules) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="admin-header">
+    <!-- Main heading for the admin dashboard -->
+    <h1>Admin Dashboard</h1>
+    <!-- Navigation link back to the public homepage -->
+    <nav>
+      <a href="{{ url_for('index') }}">← Till hemsidan</a>
+    </nav>
+  </header>
+
+  <!-- ===== MAIN CONTENT AREA ===== -->
+  <main class="admin-container">
+    
+    <!-- ===== SECTION: Add New Booking ===== -->
+    <section class="admin-add">
+      <!-- Section title -->
+      <h2>Lägg till ny bokning (för- och efternamn)</h2>
+      <!-- 
+        Form to create a new booking.
+        - action="{{ url_for('admin_add') }}" points to the /admin/add route
+        - method="post" because we’re sending data to the server
+      -->
+      <form action="{{ url_for('admin_add') }}" method="post">
+        <!-- Text input for the new person's name -->
+        <input
+          type="text"
+          name="name"
+          placeholder="Namn"
+          required
+        >
+        <!-- Submit button to send the form -->
+        <button type="submit">Lägg till</button>
+      </form>
+    </section>
+
+    <!-- ===== SECTION: List & Manage Existing Bookings ===== -->
+    <section class="admin-list">
+      <!-- Section title -->
+      <h2>Alla bokningar</h2>
+      <!-- Table of bookings, with inline forms for Edit and Delete -->
+      <table class="overview-table">
+        <thead>
+          <tr>
+            <th>ID</th>    <!-- Booking ID (primary key) -->
+            <th>Namn</th>  <!-- Person’s name -->
+            <th>Åtgärd</th> <!-- Actions column (Edit / Delete) -->
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loop over all booking records passed in from main.py -->
+          {% for b in bookings %}
+          <tr>
+            <td>{{ b.id }}</td>
+
+            <!-- 1) Name field in its own cell -->
+            <td class="name-cell">
+              <form action="{{ url_for('admin_update', id=b.id) }}"
+                    method="post"
+                    class="inline-form edit-form">
+                <input type="text" name="name" value="{{ b.name }}" required>
+              </form>
+            </td>
+
+            <!-- 2) Single “actions” cell: both button (Spara and Ta bort) live together -->
+            <td class="actions-cell">
+              <!-- Save button -->
+              <form action="{{ url_for('admin_update', id=b.id) }}"
+                    method="post"
+                    class="inline-form save-form">
+                <!-- note: no input here, just the button -->
+                <button type="submit">Spara</button>
+              </form>
+              <!-- Delete button -->
+              <form action="{{ url_for('admin_delete', id=b.id) }}"
+                    method="post"
+                    onsubmit="return confirm('Ta bort bokning #{{ b.id }}?');"
+                    class="inline-form delete-form">
+                <button type="submit">Ta bort</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+</body>
+</html>

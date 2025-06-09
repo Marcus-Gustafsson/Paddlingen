@@ -13,12 +13,17 @@ Why it’s here:
 import os
 from dotenv import load_dotenv
 
+
 # Load local .env (only in development)
-load_dotenv()
+#os.environ.pop("ADMIN_PASSWORD", None)
+load_dotenv(override=True)
 
 # Now we can safely read our secrets
 SECRET_KEY = os.getenv("SECRET_KEY")
 PAYMENT_API_KEY = os.getenv("PAYMENT_API_KEY")
+
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 # Database in instance/paddlingen.sqlite (we’ll set this up later)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
