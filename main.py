@@ -14,6 +14,7 @@ from flask_sqlalchemy import SQLAlchemy
 import requests
 from collections import Counter
 from functools import wraps
+from flask_wtf import CSRFProtect
 
 # Create a new Flask web application instance
 # __name__ tells Flask where to look for templates and static files
@@ -26,6 +27,9 @@ app.config.from_pyfile('config.py')
 # Initialize SQLAlchemy - this is an ORM (Object Relational Mapper)
 # It lets us work with databases using Python objects instead of SQL queries
 db = SQLAlchemy(app)
+
+# Protect all “POST” routes with CSRF token checks
+csrf = CSRFProtect(app)
 
 class RentForm(db.Model):
     """
@@ -286,7 +290,6 @@ def get_forecast():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-# --- after app.config.from_pyfile('config.py') ---
 ADMIN_USERNAME = app.config['ADMIN_USERNAME']
 ADMIN_PASSWORD = app.config['ADMIN_PASSWORD']
 

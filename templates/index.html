@@ -442,6 +442,11 @@ Why it’s here:
     	<form id="bookingForm"
       	method="POST"
       	action="{{ url_for('payment') }}">
+          <input 
+          type="hidden" 
+          name="csrf_token" 
+          value="{{ csrf_token() }}"
+        >
         <!-- 1) Select number of canoes -->
         <label for="canoeCount">Antal kanoter:</label>
         <select id="canoeCount" name="canoeCount" required>

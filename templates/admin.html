@@ -53,6 +53,11 @@
       -->
       <form action="{{ url_for('admin_add') }}" method="post">
         <!-- Text input for the new person's name -->
+        <input 
+          type="hidden" 
+          name="csrf_token" 
+          value="{{ csrf_token() }}"
+        >
         <input
           type="text"
           name="name"
@@ -88,6 +93,11 @@
               <form action="{{ url_for('admin_update', id=b.id) }}"
                     method="post"
                     class="inline-form edit-form">
+                      <input 
+                        type="hidden" 
+                        name="csrf_token" 
+                        value="{{ csrf_token() }}"
+                      >
                 <input type="text" name="name" value="{{ b.name }}" required>
               </form>
             </td>
@@ -98,6 +108,11 @@
               <form action="{{ url_for('admin_update', id=b.id) }}"
                     method="post"
                     class="inline-form save-form">
+                      <input 
+                        type="hidden" 
+                        name="csrf_token" 
+                        value="{{ csrf_token() }}"
+                      >
                 <!-- note: no input here, just the button -->
                 <button type="submit">Spara</button>
               </form>
@@ -106,6 +121,11 @@
                     method="post"
                     onsubmit="return confirm('Ta bort bokning #{{ b.id }}?');"
                     class="inline-form delete-form">
+                      <input 
+                        type="hidden" 
+                        name="csrf_token" 
+                        value="{{ csrf_token() }}"
+                      >
                 <button type="submit">Ta bort</button>
               </form>
             </td>

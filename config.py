@@ -13,9 +13,7 @@ Why it’s here:
 import os
 from dotenv import load_dotenv
 
-
 # Load local .env (only in development)
-#os.environ.pop("ADMIN_PASSWORD", None)
 load_dotenv(override=True)
 
 # Now we can safely read our secrets
@@ -28,8 +26,13 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 # Database in instance/paddlingen.sqlite (we’ll set this up later)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = 'sqlite:///paddlingen.db'
-print(os.path.join(BASE_DIR, 'instance/paddlingen.db'))
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+
+# Enable CSRF globally for all “POST” endpoints
+WTF_CSRF_ENABLED      = True
+# Secret key used to sign CSRF tokens
+WTF_CSRF_SECRET_KEY   = SECRET_KEY
 
 # Debug mode on for local testing
 DEBUG = True
