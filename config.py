@@ -34,6 +34,13 @@ WTF_CSRF_ENABLED      = True
 # Secret key used to sign CSRF tokens
 WTF_CSRF_SECRET_KEY   = SECRET_KEY
 
+# Only send the session cookie over HTTPS
+SESSION_COOKIE_SECURE   = True
+# Prevent JavaScript from reading the cookie
+SESSION_COOKIE_HTTPONLY = True
+# Mitigate CSRF: only send cookie on same-site or top-level navigations
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 # Debug mode on for local testing
 DEBUG = True
 
