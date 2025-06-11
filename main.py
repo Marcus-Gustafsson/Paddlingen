@@ -9,7 +9,7 @@ Flask is a lightweight web framework for Python that helps you build web applica
 
 
 from util.helper_functions import get_images_for_year
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify, Response
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, Response, flash
 from flask_sqlalchemy import SQLAlchemy
 import requests
 from collections import Counter
@@ -56,7 +56,7 @@ class RentForm(db.Model):
     name = db.Column(db.String(120), unique=False, nullable=False)
     
     # Transactions ID that is connected to stripe-payment
-    transactions_id = db.Column(db.String(120), nullable=False)
+    transaction_id = db.Column(db.String(120), nullable=False)
 
     def __repr__(self):
         """
@@ -207,7 +207,7 @@ def paymentSuccess():
     # Create a database entry for each person
     for person_name in data['names']:
         # Create a new RentForm object (this represents a row in the database)
-        booking = RentForm(name=person_name)
+        booking = RentForm(name=person_name, transaction_id="12345abcdefg")
         
         # Add this booking to the database session (not saved yet)
         db.session.add(booking)
@@ -241,6 +241,44 @@ def get_booking_count():
     # Return the count as JSON
     # jsonify() converts Python data to JSON format that JavaScript can read
     return jsonify({'count': booking_count})
+
+
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+    """
+    Displays and handles the login form.
+    On GET: render the form.
+    On POST: validate credentials, call login_user(), then redirect.
+    """
+    if current_user.is_authenticated:
+        # Already logged in? Go to admin dashboard.
+        return redirect(url_for('admin_dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username','').strip()
+        password = request.form.get('password','')
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            # Log in this user (stores user.id in session)
+            login_user(user)
+            flash('Inloggning lyckades!', 'success')
+            # next = redirect target from ?next=...
+            next_page = request.args.get('next') or url_for('admin_dashboard')
+            return redirect(next_page)
+        else:
+            flash('Felaktigt användarnamn eller lösenord', 'error')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Logs out the current user and redirects to login."""
+    logout_user()
+    flash('Du har loggats ut.', 'info')
+    return redirect(url_for('login'))
 
 
 
@@ -325,35 +363,10 @@ def get_forecast():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-ADMIN_USERNAME = app.config['ADMIN_USERNAME']
-ADMIN_PASSWORD = app.config['ADMIN_PASSWORD']
-
-def admin_required(f):
-    """
-    Decorator to protect admin routes with HTTP Basic Auth.
-
-    Checks the Authorization header for a username/password
-    that match ADMIN_USERNAME and ADMIN_PASSWORD. If not present
-    or incorrect, returns a 401 asking the browser to prompt for credentials.
-    """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        # request.authorization holds HTTP Basic credentials
-        auth = request.authorization
-        # If missing or wrong, challenge the client
-        if not auth or auth.username != ADMIN_USERNAME or auth.password != ADMIN_PASSWORD:
-            return Response(
-                'Authentication required',    # message body
-                401,                          # HTTP 401 Unauthorized
-                {'WWW-Authenticate': 'Basic realm="Admin Area"'}  # prompt header
-            )
-        # Credentials OK—proceed to handler
-        return f(*args, **kwargs)
-    return decorated
 
 
 @app.route('/admin')
-@admin_required
+@login_required
 def admin_dashboard():
     """
     Shows the admin dashboard page.
@@ -366,7 +379,7 @@ def admin_dashboard():
 
 
 @app.route('/admin/add', methods=['POST'])
-@admin_required
+@login_required
 def admin_add():
     """
     Handles the "Add new booking" form submission.
@@ -378,14 +391,14 @@ def admin_add():
     # Get the 'name' field, defaulting to empty string
     name = request.form.get('name', '').strip()
     if name:
-        db.session.add(RentForm(name=name))
+        db.session.add(RentForm(name=name, transaction_id="12345678910"))
         db.session.commit()
     # Always redirect (PRG pattern—Prevents resubmission on refresh)
     return redirect(url_for('admin_dashboard'))
 
 
 @app.route('/admin/update/<int:id>', methods=['POST'])
-@admin_required
+@login_required
 def admin_update(id):
     """
     Handles editing an existing booking’s name.
@@ -404,7 +417,7 @@ def admin_update(id):
 
 
 @app.route('/admin/delete/<int:id>', methods=['POST'])
-@admin_required
+@login_required
 def admin_delete(id):
     """
     Handles deletion of a booking.
