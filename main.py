@@ -15,6 +15,8 @@ import requests
 from collections import Counter
 from functools import wraps
 from flask_wtf import CSRFProtect
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 
 # Create a new Flask web application instance
 # __name__ tells Flask where to look for templates and static files
@@ -30,6 +32,10 @@ db = SQLAlchemy(app)
 
 # Protect all “POST” routes with CSRF token checks
 csrf = CSRFProtect(app)
+
+# Initialize LoginManager
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'      # redirect here if not logged in
 
 class RentForm(db.Model):
     """
@@ -49,8 +55,8 @@ class RentForm(db.Model):
     # nullable=False means this field is required (can't be empty)
     name = db.Column(db.String(120), unique=False, nullable=False)
     
-    # This commented line could track how many canoes were booked
-    #bookedCount = db.Column(db.Integer, nullable=False)
+    # Transactions ID that is connected to stripe-payment
+    transactions_id = db.Column(db.String(120), nullable=False)
 
     def __repr__(self):
         """
@@ -62,12 +68,41 @@ class RentForm(db.Model):
         """
         return f"Bokning('{self.id}', '{self.name}')"
 
+
+# === USER MODEL ===
+class User(db.Model, UserMixin):
+    """
+    Simple user table for admin accounts.
+    """
+    id       = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    pw_hash  = db.Column(db.String(128), nullable=False)
+
+    def set_password(self, password):
+        """Hashes & stores the password."""
+        self.pw_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        """Verifies a plaintext password against stored hash."""
+        return check_password_hash(self.pw_hash, password)
+
 # This ensures database operations happen within the app's context
 # app.app_context() is needed when working with the database outside of a request
 with app.app_context():
     # Create all database tables based on the models we've defined
     # This only creates tables that don't already exist
     db.create_all()
+
+
+
+# === USER LOADER CALLBACK ===
+@login_manager.user_loader
+def load_user(user_id):
+    """
+    Given *user_id*, return the associated User object.
+    Flask-Login uses this to reload the user from the session.
+    """
+    return User.query.get(int(user_id))
 
 
 # Route decorator - tells Flask what URL should trigger this function

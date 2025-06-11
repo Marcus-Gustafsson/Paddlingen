@@ -1,0 +1,37 @@
+<!-- File: templates/login.html -->
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Login – Paddlingen</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <main style="max-width:400px;margin:5% auto;">
+    <h1>Admin Login</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, msg in messages %}
+            <li class="{{ category }}">{{ msg }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      {{ csrf_token() }}   <!-- CSRF token for this form too -->
+      <label>
+        Användarnamn:
+        <input type="text" name="username" required autofocus>
+      </label><br><br>
+      <label>
+        Lösenord:
+        <input type="password" name="password" required>
+      </label><br><br>
+      <button type="submit">Logga in</button>
+    </form>
+  </main>
+</body>
+</html>
