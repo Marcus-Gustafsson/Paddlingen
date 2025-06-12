@@ -17,7 +17,7 @@
 const TOTAL_CANOES_CURRENT_YEAR = 50; 
 
 // Set event’s date & time here:
-const currentYearEventDate = new Date('2025-06-12T10:00:00');
+const currentYearEventDate = new Date('2025-06-14T10:00:00');
 
 const PRICE_PER_CANOE = 1200;   // in SEK
 
