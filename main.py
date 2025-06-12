@@ -9,101 +9,46 @@ Flask is a lightweight web framework for Python that helps you build web applica
 
 
 from util.helper_functions import get_images_for_year
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify, Response, flash
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash
 import requests
-from collections import Counter
-from functools import wraps
 from flask_wtf import CSRFProtect
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from util.db_models import db, RentForm, User
 
-# Create a new Flask web application instance
-# __name__ tells Flask where to look for templates and static files
-app = Flask(__name__)    
+# -------------  
+# 1) Create Flask app & load config  
+# -------------
+app = Flask(__name__)
+app.config.from_pyfile('config.py')
 
-# Load configuration settings from a separate config.py file
-# This keeps sensitive data (like database credentials) separate from your code
-app.config.from_pyfile('config.py')  
-
-# Initialize SQLAlchemy - this is an ORM (Object Relational Mapper)
-# It lets us work with databases using Python objects instead of SQL queries
-db = SQLAlchemy(app)
-
-# Protect all “POST” routes with CSRF token checks
+# -------------  
+# 2) Initialize extensions with our app  
+#    - db (from util/db_models.py)  
+#    - CSRF  
+#    - LoginManager  
+# -------------
+db.init_app(app)
 csrf = CSRFProtect(app)
 
-# Initialize LoginManager
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'      # redirect here if not logged in
+login_manager.login_view = 'login'
 
-class RentForm(db.Model):
-    """
-    Database model for rental bookings.
-    
-    This class represents a table in our database where each row is a booking.
-    SQLAlchemy will automatically create a table based on this class definition.
-    
-    Attributes:
-        id: Unique identifier for each booking (automatically increments)
-        name: The name of the person making the booking
-    """
-    # Primary key = unique identifier for each record
-    id = db.Column(db.Integer, primary_key=True)
-    
-    # String column that can hold up to 120 characters
-    # nullable=False means this field is required (can't be empty)
-    name = db.Column(db.String(120), unique=False, nullable=False)
-    
-    # Transactions ID that is connected to stripe-payment
-    transaction_id = db.Column(db.String(120), nullable=False)
-
-    def __repr__(self):
-        """
-        Special method that defines how a booking object is displayed.
-        This is useful for debugging - when you print a booking, you'll see this format.
-        
-        Returns:
-            String representation of the booking
-        """
-        return f"Bokning('{self.id}', '{self.name}')"
-
-
-# === USER MODEL ===
-class User(db.Model, UserMixin):
-    """
-    Simple user table for admin accounts.
-    """
-    id       = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    pw_hash  = db.Column(db.String(128), nullable=False)
-
-    def set_password(self, password):
-        """Hashes & stores the password."""
-        self.pw_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        """Verifies a plaintext password against stored hash."""
-        return check_password_hash(self.pw_hash, password)
-
-# This ensures database operations happen within the app's context
-# app.app_context() is needed when working with the database outside of a request
+# -------------  
+# 3) Create tables if missing  
+#    We must push an app_context because db is not bound until now  
+# -------------
 with app.app_context():
-    # Create all database tables based on the models we've defined
-    # This only creates tables that don't already exist
     db.create_all()
 
 
-
-# === USER LOADER CALLBACK ===
 @login_manager.user_loader
 def load_user(user_id):
     """
-    Given *user_id*, return the associated User object.
-    Flask-Login uses this to reload the user from the session.
+    Flask-Login callback: load the User object for this user_id
+    using the new Session.get() style (SQLAlchemy 2.0+).
     """
-    return User.query.get(int(user_id))
-
+    # db.session.get(ModelClass, primary_key) is the new recommended API
+    return db.session.get(User, int(user_id))
 
 # Route decorator - tells Flask what URL should trigger this function
 @app.route("/")  # The homepage (root URL)
