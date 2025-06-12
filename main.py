@@ -9,34 +9,58 @@ Flask is a lightweight web framework for Python that helps you build web applica
 
 
 from util.helper_functions import get_images_for_year
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash, make_response
 import requests
 from flask_wtf import CSRFProtect
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from util.db_models import db, RentForm, User
 
-# -------------  
-# 1) Create Flask app & load config  
-# -------------
+###############################################################################
+#  APP OBJECT
+#  ----------------------------------------------------------------------------
+#  We build a single “app” instance that represents our entire web application.
+#  • Flask(__name__) tells Flask where to look for templates/static files
+#    (it uses the current file’s location).
+#  • app.config.from_pyfile('config.py') pulls in ALL settings (DB path,
+#    SECRET_KEY, etc.) before the first request is ever handled.
+###############################################################################
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 
-# -------------  
-# 2) Initialize extensions with our app  
-#    - db (from util/db_models.py)  
-#    - CSRF  
-#    - LoginManager  
-# -------------
+###############################################################################
+#  FLASK EXTENSIONS
+#  ----------------------------------------------------------------------------
+#  Flask by itself is tiny.  We “bolt on” extra power via extensions:
+#    • SQLAlchemy (db)        – ORM → turns Python classes <-> DB tables
+#    • CSRFProtect            – adds hidden tokens to every POST form
+#    • LoginManager           – handles user sessions / @login_required
+#  Each extension gets passed the app so it can read our config and register
+#  itself with Flask’s request/response cycle.
+###############################################################################
 db.init_app(app)
 csrf = CSRFProtect(app)
-
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# -------------  
-# 3) Create tables if missing  
-#    We must push an app_context because db is not bound until now  
-# -------------
+
+# ----------------------------------------------------------------------------
+# RATE LIMITER
+# ----------------------------------------------------------------------------
+# We use Flask-Limiter to prevent brute-force and abuse of our endpoints.
+# • key_func=get_remote_address will track limits per IP address.
+# • default_limits apply to all routes unless overridden.
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
+limiter.init_app(app)   # Wire the limiter into our Flask app
+
+
+# Flask needs an “application context” to know which app’s settings to use.
+# Wrapping create_all() in `with app.app_context():` makes sure the ORM can
+# see app.config['SQLALCHEMY_DATABASE_URI'] before it tries to touch the DB.
 with app.app_context():
     db.create_all()
 
@@ -79,6 +103,7 @@ def index():
 
 # This route only accepts POST requests (form submissions)
 @app.route('/create-checkout-session', methods=['POST'])
+@limiter.limit("10 per minute")  # limit form submissions to avoid spam
 def payment():
     """
     Handles the booking form submission.
@@ -190,6 +215,7 @@ def get_booking_count():
 
 
 @app.route('/login', methods=['GET','POST'])
+@limiter.limit("5 per minute")   # max 5 login attempts per minute per IP
 def login():
     """
     Displays and handles the login form.
@@ -375,6 +401,22 @@ def admin_delete(id):
     db.session.delete(booking)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """
+    Custom handler for rate limit errors (HTTP 429).
+    We return a friendly JSON or HTML message.
+    """
+    # If the client expects JSON:
+    if request.path.startswith('/api/'):
+        return jsonify(error="Too many requests, please try again later."), 429
+    # Otherwise render a template or plain text:
+    return make_response(
+        "Too many requests. Please slow down and try again in a few minutes.",
+        429
+    )
 
 # This block only runs if you execute this file directly (not when imported)
 if __name__ == "__main__":

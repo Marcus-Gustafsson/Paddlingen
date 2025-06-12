@@ -9,7 +9,16 @@
 </head>
 <body>
   <main style="max-width:400px;margin:5% auto;">
+    <!-- Page heading -->
     <h1>Admin Login</h1>
+
+    <!--
+      Flash messages area:
+      Flask's flash() function stores one-time messages in the session.
+      get_flashed_messages(with_categories=True) returns a list of
+      (category, message) tuples. We use the category as a CSS class
+      so you can style errors in red, successes in green, etc.
+    -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <ul class="flashes">
@@ -20,20 +29,52 @@
       {% endif %}
     {% endwith %}
 
+    <!--
+      The login form:
+      - method="post" means form data is sent in the request body (not the URL).
+      - action is omitted so it submits back to this same /login URL.
+    -->
     <form method="post">
-        <input 
-          type="hidden" 
-          name="csrf_token" 
-          value="{{ csrf_token() }}"
-        >
+      <!--
+        CSRF protection token:
+        Flask-WTF generates a unique token for each form.
+        On submit, Flask checks this token to prevent CSRF attacks.
+      -->
+      <input 
+        type="hidden" 
+        name="csrf_token" 
+        value="{{ csrf_token() }}"
+      >
+
+      <!--
+        Username field:
+        - <label> makes the form more accessible: clicking the text focuses the input.
+        - name="username" is how Flask's request.form will find this value.
+        - required prevents the form from submitting if this field is empty.
+        - autofocus moves the cursor here when the page loads.
+      -->
       <label>
         Användarnamn:
         <input type="text" name="username" required autofocus>
-      </label><br><br>
+      </label>
+      <br><br>
+
+      <!--
+        Password field:
+        - type="password" masks the characters so others can't see your input.
+        - name="password" matches what the server-side code expects.
+        - required ensures the field is not left blank.
+      -->
       <label>
         Lösenord:
         <input type="password" name="password" required>
-      </label><br><br>
+      </label>
+      <br><br>
+
+      <!--
+        Submit button:
+        - type="submit" tells the browser to send the form data to the server.
+      -->
       <button type="submit">Logga in</button>
     </form>
   </main>
