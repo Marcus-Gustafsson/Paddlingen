@@ -30,6 +30,22 @@ Why it’s here:
 
 <body>
 
+    <!-- ─── FLASH MESSAGES ─────────────────────────────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, msg in messages %}
+          <div class="flash flash-{{ category }}">
+            {{ msg }}
+            <button class="flash-close" onclick="this.parentElement.style.display='none'">
+              ×
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  <!-- ───────────────────────────────────────────────────────────────── -->
 
      <!-- ===== YEAR SIDEBAR (OVERLAY) ===== -->
   <aside class="year-sidebar">

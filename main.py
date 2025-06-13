@@ -58,6 +58,14 @@ limiter = Limiter(
 limiter.init_app(app)   # Wire the limiter into our Flask app
 
 
+# ----------------------------------------------------------------------------
+# BUSINESS RULES
+# ----------------------------------------------------------------------------
+# We never want to rent more than MAX_CANOEES at once.
+# We load it from config so it’s easy to change in one spot.
+MAX_CANOEES = app.config.get('MAX_CANOEES', 50)
+
+
 # Flask needs an “application context” to know which app’s settings to use.
 # Wrapping create_all() in `with app.app_context():` makes sure the ORM can
 # see app.config['SQLALCHEMY_DATABASE_URI'] before it tries to touch the DB.
@@ -101,94 +109,79 @@ def index():
                            pics2024=get_images_for_year("2024"),
                            bokningar=alla_bokningar)
 
-# This route only accepts POST requests (form submissions)
 @app.route('/create-checkout-session', methods=['POST'])
-@limiter.limit("10 per minute")  # limit form submissions to avoid spam
+@limiter.limit("10 per minute")
 def payment():
     """
-    Handles the booking form submission.
-    
-    This function processes the canoe rental form when submitted.
-    It collects all the names entered and stores them temporarily in the session
-    before redirecting to the payment success page.
-    
-    The session is like a temporary storage that remembers data between page loads
-    for each user.
-    
-    Returns:
-        Redirect to the payment success page
+    1) Parse requested canoe count
+    2) Check how many are already booked
+    3) If they ask for more than available → reject immediately
+    4) Otherwise stash in session and proceed to paymentSuccess
     """
-    # Get the number of canoes from the form data
-    # request.form contains all data submitted from an HTML form
-    count = int(request.form['canoeCount'])
-    
-    # List to store all the names
+    # 1) get requested quantity
+    try:
+        requested = int(request.form['canoeCount'])
+    except (ValueError, KeyError):
+        flash("Ogiltigt antal kanoter.", 'error')
+        return redirect(url_for('index'))
+
+    # 2) count existing bookings
+    current = RentForm.query.count()
+    available = MAX_CANOEES - current
+
+    # 3) if they want too many, stop here
+    print("DBG: requested = ", requested)
+    print("DBG: available = ", available)
+    if requested > available:
+        flash(
+          f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",
+          'error'
+        )
+        return redirect(url_for('index'))
+
+    # 4) build names list as before
     names = []
-    
-    # Loop through each canoe to get the person's name
-    # range(1, count+1) gives us numbers from 1 to count (inclusive)
-    for i in range(1, count+1):
-        # Get first name from form field, remove extra spaces with strip()
-        # .get() is safer than [] because it won't crash if the field is missing
+    for i in range(1, requested + 1):
         first = request.form.get(f'canoe{i}_fname', '').strip()
         last  = request.form.get(f'canoe{i}_lname', '').strip()
-        
-        # Combine first and last name
-        full  = f"{first} {last}".strip()
-        
-        # If no name was provided, create a default name
-        # The 'or' operator returns the first truthy value
-        names.append(full or f"Unnamed person #{i}")
+        names.append((f"{first} {last}").strip() or f"Unnamed person #{i}")
 
-    # Store booking data in session (temporary storage)
-    # This data will be available on the next page
     session['pending_booking'] = {
-        'names': names,
-        'canoe_count': count
+        'canoe_count': requested,
+        'names': names
     }
-
-    # Redirect to the payment success page
-    # url_for() generates the URL for a given function name
     return redirect(url_for('paymentSuccess'))
 
 @app.route('/payment-success')
 def paymentSuccess():
     """
-    Handles successful payment completion.
-    
-    This function runs after payment is complete. It retrieves the booking data
-    from the session, saves it to the database, and redirects back to the homepage.
-    
-    If no booking data is found (e.g., someone navigates directly to this URL),
-    it redirects to the homepage.
-    
-    Returns:
-        Redirect to the homepage
+    1) Pop our pending data
+    2) If missing → redirect
+    3) Recalculate availability
+    4) If OK → commit all bookings in one go
     """
-    # Get and remove booking data from session
-    # .pop() gets the value and removes it (so it can't be used twice)
-    # If 'pending_booking' doesn't exist, it returns None
     data = session.pop('pending_booking', None)
-    
-    # If no booking data found, redirect to homepage
     if not data:
+        # No session data → user reloaded or navigated here directly
         return redirect(url_for('index'))
 
-    # Create a database entry for each person
-    for person_name in data['names']:
-        # Create a new RentForm object (this represents a row in the database)
-        booking = RentForm(name=person_name, transaction_id="12345abcdefg")
-        
-        # Add this booking to the database session (not saved yet)
+    requested = data['canoe_count']
+    current   = RentForm.query.count()
+    if current + requested > MAX_CANOEES:
+        flash(
+          "Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.",
+          'error'
+        )
+        return redirect(url_for('index'))
+
+    # 5) Safe to commit: all or nothing
+    #    You can wrap this in a transaction if you want absolute atomicity
+    for name in data['names']:
+        booking = RentForm(name=name, transaction_id="12345abcdefg")
         db.session.add(booking)
-
-    # Save all the bookings to the database
-    # commit() actually writes the changes to the database
     db.session.commit()
-    
-    # Redirect back to the homepage where they can see their booking
-    return redirect(url_for('index'))
 
+    return redirect(url_for('index'))
 
 @app.route('/api/booking-count')
 def get_booking_count():

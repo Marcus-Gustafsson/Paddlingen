@@ -60,6 +60,9 @@ SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BASE_DIR, "instance/paddling
 # Disabling it is a common practice and helps avoid a deprecation warning.
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+# config.py
+MAX_CANOEES = 50
+
 
 # --- Form & CSRF Protection Configuration (Flask-WTF) ---
 
@@ -93,6 +96,7 @@ SESSION_COOKIE_HTTPONLY = True
 # images or forms). 'Strict' is more secure but can be less user-friendly.
 # 'Lax' is a great, secure default.
 SESSION_COOKIE_SAMESITE = 'Lax'
+
 
 
 # --- Development Settings ---
