@@ -406,17 +406,23 @@ header {
 /* Previous years links */
 .year-sidebar .previous-years {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: column;  /* stack links vertically */
+  align-items: center;     /* center them horizontally */
+  gap: 1rem;               /* 1rem of space between each link */
+  width: 100%;             /* full width of side-bar */
 }
 
 .year-sidebar .previous-years a {
+  display: block;         /* full-width clickable area */
+  width: 100%;
+  text-align: center;     /* center the text inside each link */
+  padding: 0.5rem 0;      /* vertical padding inside each link */
   color: #fff;
   text-decoration: none;
   font-size: 1.1rem;
   transition: color 0.5s;
-  padding: 0.6rem 0;           /* Increase hit‐area vertically */
 }
+
 .year-sidebar .previous-years a:hover {
   color: #ffd900;
 }
