@@ -82,32 +82,32 @@ def load_user(user_id):
     # db.session.get(ModelClass, primary_key) is the new recommended API
     return db.session.get(User, int(user_id))
 
-# Route decorator - tells Flask what URL should trigger this function
-@app.route("/")  # The homepage (root URL)
+
+@app.route("/")
 def index():
     """
     Homepage route handler.
-    
-    This function runs when someone visits the main page of your website.
-    It fetches all bookings from the database and displays them along with photos.
-    
-    Returns:
-        Rendered HTML template with booking data and images
+    We also calculate how many canoes are still free (MAX_CANOEES – current bookings)
+    and send that to the template for client‐side dropdown limiting.
     """
-    # Query the database for all bookings, ordered by ID
-    # .query accesses the table, .order_by() sorts results, .all() gets all records
+    # fetch all bookings for your overview panel
     alla_bokningar = RentForm.query.order_by(RentForm.id).all()
-    
-    # render_template() combines an HTML template with data
-    # The template can access these variables: pics2024, pics2023, pics2022, bokningar
-    return render_template("index.html",
-                           pics2019_earlier=get_images_for_year("2019_&_tidigare"),
-                           pics2020=get_images_for_year("2020"),
-                           pics2021=get_images_for_year("2021"),
-                           pics2022=get_images_for_year("2022"),
-                           pics2023=get_images_for_year("2023"),
-                           pics2024=get_images_for_year("2024"),
-                           bokningar=alla_bokningar)
+
+    # server‐side business rule from config
+    current = RentForm.query.count()
+    available_canoes = max(0, MAX_CANOEES - current)
+
+    return render_template(
+      "index.html",
+      pics2019_earlier=get_images_for_year("2019_&_tidigare"),
+      pics2020=get_images_for_year("2020"),
+      pics2021=get_images_for_year("2021"),
+      pics2022=get_images_for_year("2022"),
+      pics2023=get_images_for_year("2023"),
+      pics2024=get_images_for_year("2024"),
+      bokningar=alla_bokningar,
+      available_canoes=available_canoes
+    )
 
 @app.route('/create-checkout-session', methods=['POST'])
 @limiter.limit("10 per minute")
