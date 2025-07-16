@@ -22,7 +22,7 @@ Why it’s here:
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- 3. Page title shown in browser tab -->
-  <title>Paddlingen 2025</title>
+  <title>Paddlingen</title>
 
   <!-- 4. Link to our custom CSS served by Flask -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -50,7 +50,7 @@ Why it’s here:
      <!-- ===== YEAR SIDEBAR (OVERLAY) ===== -->
   <aside class="year-sidebar">
     <!-- 1. Current year as a link -->
-    <a href="#year-2025" class="current-year">2025</a>
+    <a href="#year-2026" class="current-year">2026</a>
 
     <!-- 2. Divider -->
     <hr class="sidebar-divider">
@@ -60,6 +60,7 @@ Why it’s here:
 
     <!-- 4. Previous years links -->
     <nav class="previous-years">
+      <a href="#year-2024">2025<br></a>
       <a href="#year-2024">2024<br></a>
       <a href="#year-2023">2023<br></a>
       <a href="#year-2022">2022<br></a>
@@ -98,10 +99,10 @@ Why it’s here:
     <!-- MAIN: one section per year, in normal document flow -->
   <main>
 
-    <!-- ===== SECTION: 2025 ===== -->
+    <!-- ===== Current Year Section ===== -->
     <!-- “year-section” will now handle centering for us -->
-    <section id="year-2025" class="year-section current-year-section scroll-animate">
-      <h1 class="main-title no-select scroll-animate">Paddlingen 2025</h1>
+    <section id="year-2026" class="year-section current-year-section scroll-animate">
+      <h1 class="main-title no-select scroll-animate">Paddlingen 2026</h1>
       <h2 class="main-subtitle no-select scroll-animate">"Bästa dagen på hela året!" – Mathias Axelsson</h2>
       <div class="date-time no-select scroll-animate" id="dateTime">28 juni – Kl 10:00</div>
       <div class="location scroll-animate">
@@ -115,7 +116,7 @@ Why it’s here:
       <!-- Weather widget -->
       <div class="weather-widget weather-widget-inline scroll-animate" id="weatherWidget">
         <h4 class="widget-title">
-          Väder för <span id="eventDateText">28 juni 2025</span>
+          Väder för <span id="eventDateText">28 juni 2026</span>
         </h4>
         <p class="widget-status" id="weatherStatus">
           Prognos kommer vara tillgänglig om <span id="daysUntil">14</span> dagar
@@ -150,6 +151,48 @@ Why it’s here:
       <h1 class="previous-year-heading no-select mobile-only scroll-animate">Tidigare år</h1>
       <h2 class="downward-arrow no-select mobile-only scroll-animate">↓</h2>
 
+    </section>
+
+    <section id="year-2025" class="year-section previous-year-section with-bg-grid scroll-animate">
+    <!-- ===== BACKGROUND GRID (layer 0) ===== -->
+    <div class="photo-grid-bg">
+        {% for img in pics2025 %}
+        <div
+            class="grid-cell"
+            style="background-image: url({{ url_for('static',filename='images/2025/' ~ img) }});"
+        ></div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CENTER OVERLAY CONTENT (layer 1) ===== -->
+    <div class="overlay-content scroll-animate">
+        <!-- Section heading -->
+        <h1 class="main-title no-select">Paddlingen 2025</h1>
+        <!-- Subtitle or summary -->
+        <h2 class="main-subtitle no-select">”Tillbakablick och höjdpunkter”</h2>
+        <!-- Date line (optional) -->
+        <div class="date-time no-select">28 juni – Kl 10:00</div>
+
+                <!-- ── STATIC PROGRESS BAR FOR 2025 ──────────────────────────────────── -->
+        <div class="progress-container" aria-label="Bokningsstatus 2025">
+          <!-- 
+            • Give each “.progress-bar” a hard‐coded width (e.g. 80% → 40/50 bokade). 
+            • Remove any “id” attributes here; use only class="progress-bar". 
+          -->
+          <div
+            class="progress-bar"
+            style="width: 80%; background-color: hsl(120, 100%, 50%);"
+          ></div>
+          <div class="progress-text">
+            48 / 50 kanoter bokade
+          </div>
+        </div>
+     
+        <!-- Button to open your gallery viewer -->
+        <button class="book-btn scroll-animate" id="showPhotos2024">
+        Visa bilder
+        </button>
+    </div>
     </section>
 
     <section id="year-2024" class="year-section previous-year-section with-bg-grid scroll-animate">
@@ -441,7 +484,7 @@ Why it’s here:
       <div class="modal-body">
         <p>Har du frågor eller behöver hjälp? Kontakta oss gärna:</p>
         <ul>
-          <li>E-post: <a href="mailto:info@paddlingen2025.se">info@paddlingen2025.se</a></li>
+          <li>E-post: <a href="mailto:info@paddlingen.se">info@paddlingen.se</a></li>
           <li>Telefon: <a href="tel:+46123456789">012-345 6789</a></li>
           <li>Adress: PaddlingsKlubben, Storgatan 1, 123 45 Kopparberg</li>
         </ul>

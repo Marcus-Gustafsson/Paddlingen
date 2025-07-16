@@ -30,7 +30,7 @@ html, body {
 /* === 2. Move the “background” onto html instead of body === */
 html {
   /* 1. Load the same image (so it’s always behind everything, even as you scroll) */
-  background-image: url("/static/images/2025/nitten.png");
+  background-image: url("/static/images/2026/nitten.png");
 
   /* 2. Don’t tile it */
   background-repeat: no-repeat;
@@ -489,7 +489,7 @@ html {
 .year-section.previous-year-section.with-bg-grid {
   /* 1. Use the same background as the <body> so there’s never white 
         “flash” before the grid animates in. */
-  background-image: url("/static/images/2025/nitten.png");
+  background-image: url("/static/images/2026/nitten.png");
   background-repeat: no-repeat;           /* Don’t tile */
   background-position: center center;     /* Always center */
   background-size: cover;                 /* Fill entire section */

@@ -105,6 +105,7 @@ def index():
       pics2022=get_images_for_year("2022"),
       pics2023=get_images_for_year("2023"),
       pics2024=get_images_for_year("2024"),
+      pics2025=get_images_for_year("2025"),
       bokningar=alla_bokningar,
       available_canoes=available_canoes
     )
