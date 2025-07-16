@@ -182,7 +182,7 @@ function fetchWeatherIfAvailable(currentYearEventDate) {
         updateWeather(currentYearEventDate, data);
       })
       .catch(err => {
-        document.getElementById('weatherStatus').innerText = "Kunde inte hämta väderdata.";
+        document.getElementById('weatherStatus').innerText = "Tillgänglig 7 dagar innan";
         console.error("Forecast error:", err);
       });
   }
