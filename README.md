@@ -56,8 +56,20 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```
 
 Log in to `/login` with the credentials from your `.env` file to access the admin dashboard.
+## Deployment
 
+For production deployments run the app with **Gunicorn**:
 
+```bash
+ gunicorn main:app
+```
+
+Ensure the environment variables from the **Setup** section are available. When deploying publicly,
+enable HTTPS and set `SESSION_COOKIE_SECURE=True` so session cookies are only sent over secure
+connections.
+
+Any provider capable of running Python web apps works—services like Heroku or Render are common
+choices, or you can build a container image and run it with Docker.
 
 # Development Notes
 
