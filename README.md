@@ -50,9 +50,11 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```
    The application will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-7. **Run tests (optional)**
+7. **Run tests**
+   The project includes a small test suite based on `pytest`. After installing
+   the requirements you can run all tests with:
    ```bash
-   pytest -q
+   pytest
    ```
 
 Log in to `/login` with the credentials from your `.env` file to access the admin dashboard.
