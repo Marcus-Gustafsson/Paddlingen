@@ -34,7 +34,10 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    PAYMENT_API_KEY=replace-me
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=changeme
+   # Enable the Flask debugger locally (defaults to False if unset)
    FLASK_DEBUG=True
+   # Only set to False when developing without HTTPS (defaults to True)
+   SESSION_COOKIE_SECURE=False
    ```
    The `.env` file is ignored by Git.
 

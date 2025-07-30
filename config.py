@@ -20,7 +20,16 @@ from dotenv import load_dotenv
 # The next two lines are for loading "secrets" from a special file named `.env`.
 # This `.env` file should NOT be shared publicly (e.g., on GitHub).
 # It's where you'll store sensitive information like secret keys and passwords.
+
 load_dotenv(override=True)
+
+# Helper -------------------------------------------------------------
+def _bool_from_env(name: str, default: bool = False) -> bool:
+    """Return a boolean from environment variable."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "t", "yes", "y", "on"}
 
 
 # --- Secret Keys & Credentials ---
@@ -83,7 +92,7 @@ WTF_CSRF_SECRET_KEY = SECRET_KEY
 # HTTPS connection. This prevents the cookie from being stolen by eavesdroppers
 # on an insecure network (like public Wi-Fi). Must be False for local HTTP testing.
 # TODO: Set this to `True` for production deployment.
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = _bool_from_env("SESSION_COOKIE_SECURE", default=True)
 
 # If set to True, it tells the browser not to allow JavaScript to access the
 # session cookie. This is a crucial defense against Cross-Site Scripting (XSS)
@@ -107,4 +116,4 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 #   - It will show a detailed, interactive debugger in the browser if an error occurs.
 # WARNING: This MUST be set to `False` in a production environment, as the
 # interactive debugger can expose sensitive information.
-DEBUG = True
+DEBUG = _bool_from_env("FLASK_DEBUG", default=False)
