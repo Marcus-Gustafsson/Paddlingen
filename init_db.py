@@ -10,16 +10,24 @@ init_db.py
 import os
 from main import app, db, User
 
-DB_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'paddlingen.db')
+DB_PATH = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)),
+    'instance',
+    'paddlingen.db'
+)
 
 def init_db():
     """Delete the old DB file (if any) and create fresh tables."""
+    # Ensure the instance directory exists before touching the database file
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
-        print("Removed old database file.")
+        print(f"Removed old database file at {DB_PATH}.")
+
     with app.app_context():
         db.create_all()
-        print("Created new database schema.")
+        print(f"Created new database schema at {DB_PATH}.")
 
 def seed_admin():
     """Insert the initial admin user (if none exists)."""
