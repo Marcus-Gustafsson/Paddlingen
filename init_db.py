@@ -35,8 +35,9 @@ def seed_admin():
         # Read credentials from environment (.env)
         admin_user = os.getenv("ADMIN_USERNAME")
         admin_pass = os.getenv("ADMIN_PASSWORD")
-        print("DBG: admin_user = ", admin_user)
-        print("DBG: admin_pass = ", admin_pass)
+        if app.debug:
+            print("DBG: admin_user = ", admin_user)
+            print("DBG: admin_pass = ", admin_pass)
         
         # Don't duplicate if already there
         if User.query.filter_by(username=admin_user).first():

@@ -131,8 +131,9 @@ def payment():
     available = MAX_CANOEES - current
 
     # 3) if they want too many, stop here
-    print("DBG: requested = ", requested)
-    print("DBG: available = ", available)
+    if app.debug:
+        print("DBG: requested = ", requested)
+        print("DBG: available = ", available)
     if requested > available:
         flash(
           f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",

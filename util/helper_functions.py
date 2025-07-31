@@ -4,6 +4,8 @@ import os
 import random
 from flask import current_app
 
+app = current_app
+
 def get_images_for_year(year: str) -> list[str]:
     """
     Return a random subset of image filenames from the given year's folder.
@@ -32,8 +34,9 @@ def get_images_for_year(year: str) -> list[str]:
         'images',
         year
     )
-    # Debug print (can remove in production)
-    print("DEBUG: Looking for images in:", img_folder)
+    # Debug print (only in debug mode)
+    if app.debug:
+        print("DEBUG: Looking for images in:", img_folder)
 
     # Try to list all files in that directory. If it doesn't exist, use an empty list.
     try:
