@@ -76,6 +76,39 @@ connections.
 Any provider capable of running Python web apps works—services like Heroku or Render are common
 choices, or you can build a container image and run it with Docker.
 
+### Deploying to PythonAnywhere
+
+PythonAnywhere offers a beginner‑friendly free tier that is perfect for hosting
+this project. The basic steps are:
+
+1. **Upload your code** using the PythonAnywhere dashboard or by cloning the
+   repository with `git`.
+2. **Create a virtual environment** in the _Consoles_ tab and install the
+   dependencies:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+3. **Initialize the database** by running `init_db.py` once:
+   ```bash
+   python init_db.py
+   ```
+4. **Configure the WSGI file.** Edit the WSGI configuration PythonAnywhere
+   generates and import `application` from `wsgi.py`:
+   ```python
+   import sys
+   sys.path.insert(0, '/home/yourusername/path-to-project')
+
+   from wsgi import application
+   ```
+5. **Set environment variables** such as `SECRET_KEY` in the _Web_ tab under the
+   "Environment Variables" section.
+
+Once everything is configured, reload the web app from the dashboard. PythonAnyw
+here serves your site over HTTPS, so remember to set
+`SESSION_COOKIE_SECURE=True` in your environment to keep sessions secure.
+
 # Development Notes
 
 # Viewing website on phone via Flask on WSL.
