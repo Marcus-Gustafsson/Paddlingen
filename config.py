@@ -25,7 +25,12 @@ load_dotenv(override=True)
 
 # Helper -------------------------------------------------------------
 def _bool_from_env(name: str, default: bool = False) -> bool:
-    """Return a boolean from environment variable."""
+    """Return a boolean value from an environment variable.
+
+    This lets us control configuration with environment variables (like in a
+    `.env` file) without editing the code. If the variable is missing we fall
+    back to the provided default.
+    """
     value = os.getenv(name)
     if value is None:
         return default
@@ -90,8 +95,11 @@ WTF_CSRF_SECRET_KEY = SECRET_KEY
 
 # If set to True, the browser will only send the session cookie over a secure
 # HTTPS connection. This prevents the cookie from being stolen by eavesdroppers
-# on an insecure network (like public Wi-Fi). Must be False for local HTTP testing.
-# TODO: Set this to `True` for production deployment.
+# on an insecure network (like public Wi-Fi).
+#
+# We default this to True so production deployments are safe by default.
+# When developing locally without HTTPS, set `SESSION_COOKIE_SECURE=False`
+# in your environment (e.g. in `.env`) to allow testing over plain HTTP.
 SESSION_COOKIE_SECURE = _bool_from_env("SESSION_COOKIE_SECURE", default=True)
 
 # If set to True, it tells the browser not to allow JavaScript to access the
@@ -116,4 +124,7 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 #   - It will show a detailed, interactive debugger in the browser if an error occurs.
 # WARNING: This MUST be set to `False` in a production environment, as the
 # interactive debugger can expose sensitive information.
+#
+# The setting defaults to False for safety. To enable the debugger during
+# development, export `FLASK_DEBUG=True` or add it to your `.env` file.
 DEBUG = _bool_from_env("FLASK_DEBUG", default=False)
