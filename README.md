@@ -30,16 +30,24 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 4. **Configure environment variables**
    Create a `.env` file in the project root and add your secrets:
    ```bash
-   SECRET_KEY=replace-me
-   PAYMENT_API_KEY=replace-me
-   ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=changeme
-   # Enable the Flask debugger locally (defaults to False if unset)
-   FLASK_DEBUG=True
-   # Only set to False when developing without HTTPS (defaults to True)
-   SESSION_COOKIE_SECURE=False
-   ```
-   The `.env` file is ignored by Git.
+    SECRET_KEY=replace-me
+    PAYMENT_API_KEY=replace-me
+    ADMIN_USERNAME=admin
+    ADMIN_PASSWORD=changeme
+    # Enable the Flask debugger locally (defaults to False if unset)
+    FLASK_DEBUG=True
+    # Only set to False when developing without HTTPS (defaults to True)
+    SESSION_COOKIE_SECURE=False
+    ```
+    The `.env` file is ignored by Git.
+
+    By default the application assumes a production environment:
+
+    - `SESSION_COOKIE_SECURE` is **True** so cookies are only sent over HTTPS.
+      When developing locally without HTTPS, override this in your `.env` as
+      shown above to allow testing over plain HTTP.
+    - `FLASK_DEBUG` is **False** to avoid leaking internal information. Set
+      `FLASK_DEBUG=True` in development to enable the debugger and auto reload.
 
 5. **Initialize the database**
    Run the helper script once to create `instance/paddlingen.db` and seed the administrator account specified above:
@@ -71,7 +79,8 @@ For production deployments run the app with **Gunicorn**:
 
 Ensure the environment variables from the **Setup** section are available. When deploying publicly,
 enable HTTPS and set `SESSION_COOKIE_SECURE=True` so session cookies are only sent over secure
-connections.
+connections. Leave `FLASK_DEBUG` unset (or set to `False`) so the interactive debugger is disabled in
+production.
 
 Any provider capable of running Python web apps works—services like Heroku or Render are common
 choices, or you can build a container image and run it with Docker.
