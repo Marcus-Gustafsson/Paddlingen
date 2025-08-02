@@ -7,7 +7,7 @@ Users can view available canoes, make bookings, and see existing bookings.
 Flask is a lightweight web framework for Python that helps you build web applications.
 """
 
-
+import logging
 from util.helper_functions import get_images_for_year
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash, make_response
 import requests
@@ -16,6 +16,18 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from util.db_models import db, RentForm, User
+
+# -----------------------------------------------------------------------------
+# LOGGING SETUP
+# -----------------------------------------------------------------------------
+# logging.basicConfig configures Python's built-in logging system so that
+# log messages show up in the console. We set level=INFO to display info logs
+# and above by default; debug logs require level DEBUG.
+logging.basicConfig(level=logging.INFO)
+
+# Each module should have its own logger. __name__ resolves to this file's
+# import path ("main"), which helps identify where log messages originate.
+logger = logging.getLogger(__name__)
 
 ###############################################################################
 #  APP OBJECT
@@ -131,9 +143,10 @@ def payment():
     available = MAX_CANOEES - current
 
     # 3) if they want too many, stop here
-    if app.debug:
-        print("DBG: requested = ", requested)
-        print("DBG: available = ", available)
+    # Log the requested and available canoe counts for debugging purposes.
+    # These debug messages only appear when the logging level is set to DEBUG.
+    logger.debug("User requested %d canoe(s)", requested)
+    logger.debug("Canoes available before booking: %d", available)
     if requested > available:
         flash(
           f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",
