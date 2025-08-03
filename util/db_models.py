@@ -3,8 +3,9 @@ File: util/db_models.py
 
 What it does:
   - Defines the `db` object (SQLAlchemy) independently of any Flask app.
-  - Declares two ORM models:
-      • RentForm: stores canoe rental bookings
+  - Declares three ORM models:
+      • RentForm: stores confirmed canoe rental bookings
+      • PendingBooking: temporarily stores booking info waiting for payment
       • User: stores admin user accounts for Flask-Login
 
 Why it’s here:
@@ -54,7 +55,37 @@ class RentForm(db.Model):
 
 
 # -------------------------------------------------------------------
-# 3) Admin user model for Flask-Login
+# 3) Pending booking model: holds data before payment is confirmed
+# -------------------------------------------------------------------
+class PendingBooking(db.Model):
+    """Temporary storage for a booking awaiting payment.
+
+    In the previous implementation booking details were stored in the
+    client's session cookie. Cookies live in the user's browser and can be
+    tampered with, so a malicious visitor could change the number of canoes
+    or participant names after the checkout step.  By saving the data on the
+    server we keep full control over it until the payment is completed.
+
+    Attributes:
+        id (int): Primary key.
+        canoe_count (int): Number of canoes requested.
+        participant_names (str): JSON-encoded list of names.
+        status (str): "pending", "paid", etc. (for future extensions).
+    """
+
+    __tablename__ = 'pending_booking'
+
+    id = db.Column(db.Integer, primary_key=True)
+    canoe_count = db.Column(db.Integer, nullable=False)
+    participant_names = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='pending')
+
+    def __repr__(self):
+        return f"<PendingBooking {self.id} – {self.canoe_count} canoe(s)>"
+
+
+# -------------------------------------------------------------------
+# 4) Admin user model for Flask-Login
 # -------------------------------------------------------------------
 class User(db.Model, UserMixin):
     """
@@ -96,3 +127,4 @@ class User(db.Model, UserMixin):
             bool: True if the password matches the hash, False otherwise.
         """
         return check_password_hash(self.pw_hash, password)
+
