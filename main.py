@@ -15,7 +15,8 @@ from flask_wtf import CSRFProtect
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from util.db_models import db, RentForm, User
+from util.db_models import db, RentForm, User, PendingBooking
+import json
 
 # -----------------------------------------------------------------------------
 # LOGGING SETUP
@@ -129,7 +130,10 @@ def payment():
     1) Parse requested canoe count
     2) Check how many are already booked
     3) If they ask for more than available → reject immediately
-    4) Otherwise stash in session and proceed to paymentSuccess
+    4) Otherwise create a PendingBooking record and proceed to paymentSuccess
+
+    Storing the booking server-side means the customer cannot modify the
+    canoe count or the participant names by editing their browser cookie.
     """
     # 1) get requested quantity
     try:
@@ -161,39 +165,64 @@ def payment():
         last  = request.form.get(f'canoe{i}_lname', '').strip()
         names.append((f"{first} {last}").strip() or f"Unnamed person #{i}")
 
-    session['pending_booking'] = {
-        'canoe_count': requested,
-        'names': names
-    }
+    # Create a PendingBooking row in the database. Only the resulting id is
+    # stored in the user session so the visitor cannot tamper with the
+    # actual booking details.
+    pending = PendingBooking(
+        canoe_count=requested,
+        participant_names=json.dumps(names),
+        status='pending'
+    )
+    db.session.add(pending)
+    db.session.commit()  # commit to assign an id
+
+    session['pending_booking_id'] = pending.id
     return redirect(url_for('paymentSuccess'))
 
 @app.route('/payment-success')
 def paymentSuccess():
     """
-    1) Pop our pending data
-    2) If missing → redirect
-    3) Recalculate availability
-    4) If OK → commit all bookings in one go
+    Finalize the booking after (simulated) payment.
+
+    Steps:
+        1. Look up the PendingBooking referenced in the user's session.
+        2. Re-check availability to avoid overbooking.
+        3. Convert the pending record into permanent RentForm entries.
+        4. Remove the PendingBooking row.
+
+    By storing only the database ID in the session and the actual booking
+    details on the server we prevent clients from tampering with their
+    reservations.
     """
-    data = session.pop('pending_booking', None)
-    if not data:
-        # No session data → user reloaded or navigated here directly
+    pending_id = session.pop('pending_booking_id', None)
+    if not pending_id:
+        # No reference → user reloaded or came here directly
         return redirect(url_for('index'))
 
-    requested = data['canoe_count']
-    current   = RentForm.query.count()
+    pending = db.session.get(PendingBooking, pending_id)
+    if not pending:
+        return redirect(url_for('index'))
+
+    requested = pending.canoe_count
+    names = json.loads(pending.participant_names)
+    current = RentForm.query.count()
     if current + requested > MAX_CANOEES:
         flash(
           "Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.",
           'error'
         )
+        db.session.delete(pending)
+        db.session.commit()
         return redirect(url_for('index'))
 
-    # 5) Safe to commit: all or nothing
-    #    You can wrap this in a transaction if you want absolute atomicity
-    for name in data['names']:
+    # Mark as paid for auditing, then create one RentForm per participant.
+    pending.status = 'paid'
+    for name in names:
         booking = RentForm(name=name, transaction_id="12345abcdefg")
         db.session.add(booking)
+
+    # Remove the temporary pending booking now that it is confirmed.
+    db.session.delete(pending)
     db.session.commit()
 
     return redirect(url_for('index'))
