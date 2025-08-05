@@ -1,5 +1,10 @@
 import os
 import pytest
+
+# Ensure the instance directory exists so the app's SQLite database can be created
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
+
 from main import app, db, User
 
 @pytest.fixture
@@ -8,7 +13,8 @@ def client():
         TESTING=True,
         SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
         WTF_CSRF_ENABLED=False,
-        SECRET_KEY='test'
+        SECRET_KEY='test',
+        WTF_CSRF_SECRET_KEY='test'
     )
     with app.app_context():
         db.drop_all()
