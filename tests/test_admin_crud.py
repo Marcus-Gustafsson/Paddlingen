@@ -6,7 +6,7 @@ def login(client):
 
 
 def test_admin_crud_flow(client):
-    """Add, update, and delete a booking to validate full CRUD so admins manage data reliably."""
+    """Admin adds a booking, edits it, then deletes it to prove the CRUD cycle works."""
     login(client)
 
     # Add a booking
