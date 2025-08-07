@@ -1,11 +1,11 @@
 
 def test_home_page(client):
-    """Request the landing page and ensure it is publicly reachable."""
+    """Send GET '/' and verify the public landing page responds with 200."""
     res = client.get('/')
     assert res.status_code == 200
 
 
 def test_login_page(client):
-    """Confirm the login page renders so users can authenticate."""
+    """Ensure the login route renders so users can start authentication."""
     res = client.get('/login')
     assert res.status_code == 200
