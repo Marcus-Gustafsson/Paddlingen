@@ -1,18 +1,16 @@
-
-import main
-from main import app, RentForm, PendingBooking
+from app.util.db_models import RentForm, PendingBooking
 
 
 def test_home_page(client):
     """Send GET '/' and verify the public landing page responds with 200."""
-    res = client.get('/')
-    assert res.status_code == 200
+    response = client.get('/')
+    assert response.status_code == 200
 
 
 def test_login_page(client):
     """Ensure the login route renders so users can start authentication."""
-    res = client.get('/login')
-    assert res.status_code == 200
+    response = client.get('/login')
+    assert response.status_code == 200
 
 
 def test_booking_over_limit_shows_error(client):
@@ -23,18 +21,17 @@ def test_booking_over_limit_shows_error(client):
     than are available. Flask should respond with a flash error on the home
     page and refuse to create any :class:`PendingBooking` records.
     """
-    app.config['MAX_CANOEES'] = 1
-    main.MAX_CANOEES = 1
+    client.application.config['MAX_CANOEES'] = 1
 
-    res = client.post(
+    response = client.post(
         '/create-checkout-session',
         data={'canoeCount': '2'},
         follow_redirects=True,
     )
-    page = res.get_data(as_text=True)
+    page = response.get_data(as_text=True)
     assert 'Tyvärr, bara 1 kanot(er) kvar' in page
 
-    with app.app_context():
+    with client.application.app_context():
         assert PendingBooking.query.count() == 0
 
 
@@ -46,8 +43,7 @@ def test_successful_booking_creates_records(client):
     :class:`RentForm` rows should be created and the temporary
     :class:`PendingBooking` table left empty.
     """
-    app.config['MAX_CANOEES'] = 3
-    main.MAX_CANOEES = 3
+    client.application.config['MAX_CANOEES'] = 3
 
     booking_data = {
         'canoeCount': '2',
@@ -60,7 +56,7 @@ def test_successful_booking_creates_records(client):
 
     client.get('/payment-success')
 
-    with app.app_context():
+    with client.application.app_context():
         names = [r.name for r in RentForm.query.order_by(RentForm.id)]
         assert 'Alice Andersson' in names
         assert 'Bob Berg' in names
