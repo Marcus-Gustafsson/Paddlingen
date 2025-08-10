@@ -1,22 +1,22 @@
 """
 Canoe Rental Booking System
 
-This is a Flask web application for managing canoe rental bookings.
-Users can view available canoes, make bookings, and see existing bookings.
-
-Flask is a lightweight web framework for Python that helps you build web applications.
+This module contains all route and view functions for the application.
+Routes are attached to a :class:`~flask.Blueprint` so they can be
+registered by the application factory.
 """
 
 import logging
-from util.helper_functions import get_images_for_year
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash, make_response
-import requests
-from flask_wtf import CSRFProtect
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from util.db_models import db, RentForm, User, PendingBooking
 import json
+import requests
+from flask import (Blueprint, current_app, flash, jsonify, make_response,
+                     redirect, render_template, request, session, url_for)
+from flask_login import (current_user, login_required, login_user,
+                         logout_user)
+
+from .util.helper_functions import get_images_for_year
+from .util.db_models import db, RentForm, User, PendingBooking
+from . import rate_limiter
 
 # -----------------------------------------------------------------------------
 # LOGGING SETUP
@@ -30,77 +30,13 @@ logging.basicConfig(level=logging.INFO)
 # import path ("main"), which helps identify where log messages originate.
 logger = logging.getLogger(__name__)
 
-###############################################################################
-#  APP OBJECT
-#  ----------------------------------------------------------------------------
-#  We build a single “app” instance that represents our entire web application.
-#  • Flask(__name__) tells Flask where to look for templates/static files
-#    (it uses the current file’s location).
-#  • app.config.from_pyfile('config.py') pulls in ALL settings (DB path,
-#    SECRET_KEY, etc.) before the first request is ever handled.
-###############################################################################
-app = Flask(__name__)
-app.config.from_pyfile('config.py')
+main_blueprint = Blueprint('main', __name__)
 
-###############################################################################
-#  FLASK EXTENSIONS
-#  ----------------------------------------------------------------------------
-#  Flask by itself is tiny.  We “bolt on” extra power via extensions:
-#    • SQLAlchemy (db)        – ORM → turns Python classes <-> DB tables
-#    • CSRFProtect            – adds hidden tokens to every POST form
-#    • LoginManager           – handles user sessions / @login_required
-#  Each extension gets passed the app so it can read our config and register
-#  itself with Flask’s request/response cycle.
-###############################################################################
-db.init_app(app)
-csrf = CSRFProtect(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-
-# ----------------------------------------------------------------------------
-# RATE LIMITER
-# ----------------------------------------------------------------------------
-# We use Flask-Limiter to prevent brute-force and abuse of our endpoints.
-# • key_func=get_remote_address will track limits per IP address.
-# • default_limits apply to all routes unless overridden.
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
-)
-limiter.init_app(app)   # Wire the limiter into our Flask app
-
-
-# ----------------------------------------------------------------------------
-# BUSINESS RULES
-# ----------------------------------------------------------------------------
-# We never want to rent more than MAX_CANOEES at once.
-# We load it from config so it’s easy to change in one spot.
-MAX_CANOEES = app.config.get('MAX_CANOEES', 50)
-
-
-# Flask needs an “application context” to know which app’s settings to use.
-# Wrapping create_all() in `with app.app_context():` makes sure the ORM can
-# see app.config['SQLALCHEMY_DATABASE_URI'] before it tries to touch the DB.
-with app.app_context():
-    db.create_all()
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    """
-    Flask-Login callback: load the User object for this user_id
-    using the new Session.get() style (SQLAlchemy 2.0+).
-    """
-    # db.session.get(ModelClass, primary_key) is the new recommended API
-    return db.session.get(User, int(user_id))
-
-
-@app.route("/")
+@main_blueprint.route("/")
 def index():
     """
     Homepage route handler.
-    We also calculate how many canoes are still free (MAX_CANOEES – current bookings)
+    We also calculate how many canoes are still free (current_app.config.get('MAX_CANOEES', 50) – current bookings)
     and send that to the template for client‐side dropdown limiting.
     """
     # fetch all bookings for your overview panel
@@ -108,7 +44,7 @@ def index():
 
     # server‐side business rule from config
     current = RentForm.query.count()
-    available_canoes = max(0, MAX_CANOEES - current)
+    available_canoes = max(0, current_app.config.get('MAX_CANOEES', 50) - current)
 
     return render_template(
       "index.html",
@@ -123,14 +59,14 @@ def index():
       available_canoes=available_canoes
     )
 
-@app.route('/create-checkout-session', methods=['POST'])
-@limiter.limit("10 per minute")
+@main_blueprint.route('/create-checkout-session', methods=['POST'])
+@rate_limiter.limit("10 per minute")
 def payment():
     """
     1) Parse requested canoe count
     2) Check how many are already booked
     3) If they ask for more than available → reject immediately
-    4) Otherwise create a PendingBooking record and proceed to paymentSuccess
+    4) Otherwise create a PendingBooking record and proceed to payment_success
 
     Storing the booking server-side means the customer cannot modify the
     canoe count or the participant names by editing their browser cookie.
@@ -140,11 +76,11 @@ def payment():
         requested = int(request.form['canoeCount'])
     except (ValueError, KeyError):
         flash("Ogiltigt antal kanoter.", 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     # 2) count existing bookings
     current = RentForm.query.count()
-    available = MAX_CANOEES - current
+    available = current_app.config.get('MAX_CANOEES', 50) - current
 
     # 3) if they want too many, stop here
     # Log the requested and available canoe counts for debugging purposes.
@@ -156,7 +92,7 @@ def payment():
           f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",
           'error'
         )
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     # 4) build names list as before
     names = []
@@ -177,10 +113,10 @@ def payment():
     db.session.commit()  # commit to assign an id
 
     session['pending_booking_id'] = pending.id
-    return redirect(url_for('paymentSuccess'))
+    return redirect(url_for('main.payment_success'))
 
-@app.route('/payment-success')
-def paymentSuccess():
+@main_blueprint.route('/payment-success')
+def payment_success():
     """
     Finalize the booking after (simulated) payment.
 
@@ -197,23 +133,23 @@ def paymentSuccess():
     pending_id = session.pop('pending_booking_id', None)
     if not pending_id:
         # No reference → user reloaded or came here directly
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     pending = db.session.get(PendingBooking, pending_id)
     if not pending:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     requested = pending.canoe_count
     names = json.loads(pending.participant_names)
     current = RentForm.query.count()
-    if current + requested > MAX_CANOEES:
+    if current + requested > current_app.config.get('MAX_CANOEES', 50):
         flash(
           "Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.",
           'error'
         )
         db.session.delete(pending)
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     # Mark as paid for auditing, then create one RentForm per participant.
     pending.status = 'paid'
@@ -225,9 +161,9 @@ def paymentSuccess():
     db.session.delete(pending)
     db.session.commit()
 
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
 
-@app.route('/api/booking-count')
+@main_blueprint.route('/api/booking-count')
 def get_booking_count():
     """
     API endpoint that returns the current number of bookings.
@@ -251,8 +187,8 @@ def get_booking_count():
 
 
 
-@app.route('/login', methods=['GET','POST'])
-@limiter.limit("5 per minute")   # max 5 login attempts per minute per IP
+@main_blueprint.route('/login', methods=['GET','POST'])
+@rate_limiter.limit("5 per minute")   # max 5 login attempts per minute per IP
 def login():
     """
     Displays and handles the login form.
@@ -261,7 +197,7 @@ def login():
     """
     if current_user.is_authenticated:
         # Already logged in? Go to admin dashboard.
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('main.admin_dashboard'))
 
     if request.method == 'POST':
         username = request.form.get('username','').strip()
@@ -273,20 +209,20 @@ def login():
             login_user(user)
             flash('Inloggning lyckades!', 'success')
             # next = redirect target from ?next=...
-            next_page = request.args.get('next') or url_for('admin_dashboard')
+            next_page = request.args.get('next') or url_for('main.admin_dashboard')
             return redirect(next_page)
         else:
             flash('Felaktigt användarnamn eller lösenord', 'error')
 
     return render_template('login.html')
 
-@app.route('/logout')
+@main_blueprint.route('/logout')
 @login_required
 def logout():
     """Logs out the current user and redirects to login."""
     logout_user()
     flash('Du har loggats ut.', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('main.login'))
 
 
 
@@ -313,7 +249,7 @@ WEATHER_EMOJIS = {
     "thunderstorm": "⛈️",
 }
 
-@app.route('/api/forecast')
+@main_blueprint.route('/api/forecast')
 def get_forecast():
     """
     Flask route to fetch weather forecast for a specific date.
@@ -373,7 +309,7 @@ def get_forecast():
     
 
 
-@app.route('/admin')
+@main_blueprint.route('/admin')
 @login_required
 def admin_dashboard():
     """
@@ -386,7 +322,7 @@ def admin_dashboard():
     return render_template('admin.html', bookings=bookings)
 
 
-@app.route('/admin/add', methods=['POST'])
+@main_blueprint.route('/admin/add', methods=['POST'])
 @login_required
 def admin_add():
     """
@@ -402,10 +338,10 @@ def admin_add():
         db.session.add(RentForm(name=name, transaction_id="12345678910"))
         db.session.commit()
     # Always redirect (PRG pattern—Prevents resubmission on refresh)
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('main.admin_dashboard'))
 
 
-@app.route('/admin/update/<int:id>', methods=['POST'])
+@main_blueprint.route('/admin/update/<int:id>', methods=['POST'])
 @login_required
 def admin_update(id):
     """
@@ -421,10 +357,10 @@ def admin_update(id):
     if new_name:
         booking.name = new_name
         db.session.commit()
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('main.admin_dashboard'))
 
 
-@app.route('/admin/delete/<int:id>', methods=['POST'])
+@main_blueprint.route('/admin/delete/<int:id>', methods=['POST'])
 @login_required
 def admin_delete(id):
     """
@@ -437,10 +373,10 @@ def admin_delete(id):
     booking = RentForm.query.get_or_404(id)
     db.session.delete(booking)
     db.session.commit()
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('main.admin_dashboard'))
 
 
-@app.errorhandler(429)
+@main_blueprint.app_errorhandler(429)
 def ratelimit_handler(e):
     """
     Custom handler for rate limit errors (HTTP 429).
@@ -454,10 +390,3 @@ def ratelimit_handler(e):
         "Too many requests. Please slow down and try again in a few minutes.",
         429
     )
-
-# This block only runs if you execute this file directly (not when imported)
-if __name__ == "__main__":
-    # Start the Flask development server
-    # By default, it runs on http://127.0.0.1:5000
-    # In production, you'd use a proper web server instead of app.run()
-    app.run()

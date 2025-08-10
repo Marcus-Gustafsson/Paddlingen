@@ -35,7 +35,7 @@
     <h1>Admin Dashboard</h1>
     <!-- Navigation link back to the public homepage -->
     <nav>
-      <a href="{{ url_for('index') }}">← Till hemsidan</a>
+      <a href="{{ url_for('main.index') }}">← Till hemsidan</a>
     </nav>
   </header>
 
@@ -48,10 +48,10 @@
       <h2>Lägg till ny bokning (för- och efternamn)</h2>
       <!-- 
         Form to create a new booking.
-        - action="{{ url_for('admin_add') }}" points to the /admin/add route
+        - action="{{ url_for('main.admin_add') }}" points to the /admin/add route
         - method="post" because we’re sending data to the server
       -->
-      <form action="{{ url_for('admin_add') }}" method="post">
+      <form action="{{ url_for('main.admin_add') }}" method="post">
         <!-- Text input for the new person's name -->
         <input 
           type="hidden" 
@@ -90,7 +90,7 @@
 
             <!-- 1) Name field in its own cell -->
             <td class="name-cell">
-              <form action="{{ url_for('admin_update', id=b.id) }}"
+              <form action="{{ url_for('main.admin_update', id=b.id) }}"
                     method="post"
                     class="inline-form edit-form">
                       <input 
@@ -105,7 +105,7 @@
             <!-- 2) Single “actions” cell: both button (Spara and Ta bort) live together -->
             <td class="actions-cell">
               <!-- Save button -->
-              <form action="{{ url_for('admin_update', id=b.id) }}"
+              <form action="{{ url_for('main.admin_update', id=b.id) }}"
                     method="post"
                     class="inline-form save-form">
                       <input 
@@ -117,7 +117,7 @@
                 <button type="submit">Spara</button>
               </form>
               <!-- Delete button -->
-              <form action="{{ url_for('admin_delete', id=b.id) }}"
+              <form action="{{ url_for('main.admin_delete', id=b.id) }}"
                     method="post"
                     onsubmit="return confirm('Ta bort bokning #{{ b.id }}?');"
                     class="inline-form delete-form">

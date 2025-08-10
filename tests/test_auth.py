@@ -6,9 +6,9 @@ def test_admin_requires_login(client):
     HTTP 302 redirect. The Location header in that redirect should include
     '/login', which proves unauthenticated visitors are sent to the login page.
     """
-    res = client.get('/admin')
-    assert res.status_code == 302
-    assert '/login' in res.headers['Location']
+    response = client.get('/admin')
+    assert response.status_code == 302
+    assert '/login' in response.headers['Location']
 
 
 def test_login_fails_with_wrong_password(client):
@@ -20,8 +20,8 @@ def test_login_fails_with_wrong_password(client):
     that the error text appears in the response body, and that we remain on the
     '/login' URL.
     """
-    res = client.post('/login', data={'username': 'admin', 'password': 'wrong'}, follow_redirects=True)
-    assert res.status_code == 200
-    page_text = res.get_data(as_text=True)
+    response = client.post('/login', data={'username': 'admin', 'password': 'wrong'}, follow_redirects=True)
+    assert response.status_code == 200
+    page_text = response.get_data(as_text=True)
     assert 'Felaktigt användarnamn eller lösenord' in page_text
-    assert res.request.path == '/login'
+    assert response.request.path == '/login'
