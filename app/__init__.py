@@ -13,6 +13,8 @@ from flask_wtf import CSRFProtect
 from flask_login import LoginManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import click
+import os
 
 # Database models and session object
 from .util.db_models import db, RentForm, PendingBooking, User
@@ -58,7 +60,63 @@ our extensions and routes.
     from .routes import main_blueprint
 
     flask_application.register_blueprint(main_blueprint)
+
+    # ------------------------------------------------------------------
+    # Register custom ``flask`` command line interface (CLI) commands.
+    # These commands allow developers to easily re-initialize the
+    # database and seed an administrator account without writing
+    # additional scripts.  See the docstrings of the command functions
+    # below for detailed usage instructions.
+    # ------------------------------------------------------------------
+    flask_application.cli.add_command(init_db_command)
+    flask_application.cli.add_command(seed_admin_command)
+
     return flask_application
+
+
+@click.command("init-db")
+def init_db_command() -> None:
+    """Drop all database tables and create fresh ones.
+
+    Running ``flask init-db`` from the command line clears out any
+    existing tables and recreates them.  This is intended for
+    development or testing environments where it's safe to lose data.
+    """
+
+    # ``drop_all`` removes tables if they exist; ``create_all`` then
+    # builds the schema from the SQLAlchemy models.
+    db.drop_all()
+    db.create_all()
+    click.echo("Initialized the database.")
+
+
+@click.command("seed-admin")
+def seed_admin_command() -> None:
+    """Create the initial administrator user.
+
+    The account credentials are read from the ``ADMIN_USERNAME`` and
+    ``ADMIN_PASSWORD`` environment variables.  If either variable is
+    missing the command aborts with a helpful error message.  Running
+    ``flask seed-admin`` multiple times is safe; it will not create
+    duplicate admin accounts.
+    """
+
+    username = os.getenv("ADMIN_USERNAME")
+    password = os.getenv("ADMIN_PASSWORD")
+    if not username or not password:
+        raise click.ClickException(
+            "ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required"
+        )
+
+    if User.query.filter_by(username=username).first():
+        click.echo(f"Admin '{username}' already exists.")
+        return
+
+    admin_user = User(username=username)
+    admin_user.set_password(password)
+    db.session.add(admin_user)
+    db.session.commit()
+    click.echo(f"Created admin '{username}'.")
 
 
 @login_manager.user_loader
@@ -82,4 +140,6 @@ __all__ = [
     "csrf_protect",
     "login_manager",
     "rate_limiter",
+    "init_db_command",
+    "seed_admin_command",
 ]
