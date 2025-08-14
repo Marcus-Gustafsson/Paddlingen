@@ -65,9 +65,21 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # This tells our database library (Flask-SQLAlchemy) where to find the database.
-# 'sqlite:///' means we are using a SQLite database, which is a simple file.
-# The path points to a file named 'paddlingen.db' in the root of our project.
-SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BASE_DIR, "instance/paddlingen.db")}'
+#
+# The URI can come from the ``DATABASE_URL`` environment variable.  This allows
+# production deployments to point at a managed database service such as
+# PostgreSQL.  A typical PostgreSQL URI looks like::
+#
+#     postgresql+psycopg://user:password@hostname:5432/databasename
+#
+# If ``DATABASE_URL`` is not defined we fall back to a SQLite file stored in the
+# repository's ``instance`` directory.  SQLite requires no separate server and is
+# perfect for local development.
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+else:
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'instance/paddlingen.db')}"
 
 # This turns off a feature of Flask-SQLAlchemy that we don't need.
 # It tracks modifications to objects and emits signals, which can use extra memory.
