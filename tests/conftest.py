@@ -10,11 +10,17 @@ os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
 
 @pytest.fixture
 def client():
-    """Provide a Flask test client with an in-memory database."""
+    """Provide a Flask test client backed by an in-memory SQLite database.
+
+    Tests should run in isolation and must not talk to any production
+    database.  By setting ``DATABASE_URL`` to the special SQLite memory URI we
+    ensure the application's configuration picks up this transient database
+    instead of whatever the developer might have configured locally.
+    """
+    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     flask_application = create_app()
     flask_application.config.update(
         TESTING=True,
-        SQLALCHEMY_DATABASE_URI='sqlite:///:memory:',
         WTF_CSRF_ENABLED=False,
         SECRET_KEY='test',
         WTF_CSRF_SECRET_KEY='test'

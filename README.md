@@ -38,6 +38,8 @@ A small Flask application for managing canoe rentals. The app lets visitors book
     FLASK_DEBUG=True
     # Only set to False when developing without HTTPS (defaults to True)
     SESSION_COOKIE_SECURE=False
+    # Optional: point to a different database (e.g. PostgreSQL)
+    # DATABASE_URL=postgresql+psycopg://user:password@host:5432/paddlingen
     ```
     The `.env` file is ignored by Git.
 
@@ -50,7 +52,9 @@ A small Flask application for managing canoe rentals. The app lets visitors book
       `FLASK_DEBUG=True` in development to enable the debugger and auto reload.
 
 5. **Initialize the database**
-   Run the helper script once to create `instance/paddlingen.db` and seed the administrator account specified above:
+   Run the helper script once to create the database tables and seed the
+   administrator account specified above.  If ``DATABASE_URL`` is set the
+   script connects to that database; otherwise it creates `instance/paddlingen.db`:
    ```bash
    python init_db.py
    ```
@@ -68,6 +72,35 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    pytest
    ```
 
+## Using PostgreSQL
+
+By default Paddlingen stores data in a local SQLite file.  SQLite is great for
+development because it requires no setup, but most production deployments use a
+server based database such as PostgreSQL.
+
+1. **Install PostgreSQL** if it is not already available.  On Ubuntu this can be
+   done with `sudo apt install postgresql`.
+2. **Create a database and user**.  From a terminal run:
+   ```bash
+   sudo -u postgres createuser --pwprompt paddlingen
+   sudo -u postgres createdb --owner paddlingen paddlingen
+   ```
+   The first command prompts you for a password which is used in the next step.
+3. **Set ``DATABASE_URL``** in your `.env` file or hosting provider's
+   configuration.  The connection string includes the username, password,
+   hostname and database name:
+   ```bash
+   DATABASE_URL=postgresql+psycopg://paddlingen:yourpassword@localhost:5432/paddlingen
+   ```
+4. **Install the driver**.  The `psycopg[binary]` package listed in
+   `requirements.txt` provides the PostgreSQL database adapter.
+5. **Run `init_db.py`** to create the tables inside PostgreSQL:
+   ```bash
+   python init_db.py
+   ```
+
+Once configured the rest of the application works the same as with SQLite.
+
 Log in to `/login` with the credentials from your `.env` file to access the admin dashboard.
 ## Deployment
 
@@ -79,8 +112,9 @@ For production deployments run the app with **Gunicorn**:
 
 Ensure the environment variables from the **Setup** section are available. When deploying publicly,
 enable HTTPS and set `SESSION_COOKIE_SECURE=True` so session cookies are only sent over secure
-connections. Leave `FLASK_DEBUG` unset (or set to `False`) so the interactive debugger is disabled in
-production.
+connections. Leave `FLASK_DEBUG` unset (or set to `False`) so the interactive
+debugger is disabled in production.  Set `DATABASE_URL` to point at your
+production database.
 
 Any provider capable of running Python web apps works—services like Heroku or Render are common
 choices, or you can build a container image and run it with Docker.
@@ -112,7 +146,9 @@ this project. The basic steps are:
    from wsgi import application
    ```
 5. **Set environment variables** such as `SECRET_KEY` in the _Web_ tab under the
-   "Environment Variables" section.
+   "Environment Variables" section.  Include `DATABASE_URL` if you are using a
+   hosted database; PythonAnywhere provides the value when you create a
+   PostgreSQL database through their interface.
 
 Once everything is configured, reload the web app from the dashboard. PythonAnyw
 here serves your site over HTTPS, so remember to set
