@@ -61,3 +61,26 @@ def test_successful_booking_creates_records(client):
         assert 'Alice Andersson' in names
         assert 'Bob Berg' in names
         assert PendingBooking.query.count() == 0
+
+def test_invalid_form_data_returns_flash_error(client):
+    """Submit empty form data and expect an error without database changes.
+
+    The payment route needs a ``canoeCount`` field. This test posts an empty
+    form to ``/create-checkout-session`` to simulate a broken or tampered
+    submission. Flask should flash an "Ogiltigt antal kanoter." message and
+    redirect back to the home page. No ``PendingBooking`` rows are added.
+
+    Args:
+        client (FlaskClient): Test client used to simulate browser requests.
+
+    Returns:
+        None: This test relies on assertions instead of returning a value.
+
+    """
+    response = client.post('/create-checkout-session', data={}, follow_redirects=True)
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Ogiltigt antal kanoter." in page
+
+    with client.application.app_context():
+        assert PendingBooking.query.count() == 0
