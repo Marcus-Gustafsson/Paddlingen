@@ -72,6 +72,34 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    pytest
    ```
 
+## Database migrations
+
+Paddlingen uses [Alembic](https://alembic.sqlalchemy.org/) to keep the
+database schema in sync with your models.
+
+1. **Create a migration** – whenever you change a model, ask Alembic to
+   generate a migration script:
+   ```bash
+   alembic revision --autogenerate -m "describe your change"
+   ```
+   The command inspects the `db` models and stores a new migration file in
+   `migrations/versions`.
+
+2. **Apply migrations** – run pending migrations to update the database to the
+   latest schema:
+   ```bash
+   alembic upgrade head
+   ```
+
+3. **Roll back** – undo the last migration if something went wrong:
+   ```bash
+   alembic downgrade -1
+   ```
+   You can replace `-1` with a specific revision identifier to roll back to an
+   exact point in history.
+
+For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
+
 ## Using PostgreSQL
 
 By default Paddlingen stores data in a local SQLite file.  SQLite is great for
