@@ -25,12 +25,22 @@ load_dotenv(override=True)
 
 # Helper -------------------------------------------------------------
 def _bool_from_env(name: str, default: bool = False) -> bool:
-    """Return a boolean value from an environment variable.
+    """Return a boolean value read from an environment variable.
 
-    This lets us control configuration with environment variables (like in a
-    `.env` file) without editing the code. If the variable is missing we fall
-    back to the provided default.
+    This helper normalizes common truthy strings ("1", "true", "yes", etc.)
+    and falls back to ``default`` when the variable is missing.  It keeps
+    configuration parsing tidy and easy to understand for newcomers.
+
+    Args:
+        name (str): The environment variable to read.
+        default (bool, optional): Value to return if the variable is unset.
+            Defaults to ``False``.
+
+    Returns:
+        bool: ``True`` when the variable contains a truthy string,
+        otherwise ``False`` or the provided default.
     """
+
     value = os.getenv(name)
     if value is None:
         return default
