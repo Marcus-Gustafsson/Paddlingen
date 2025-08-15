@@ -28,28 +28,39 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```
 
 4. **Configure environment variables**
-   Create a `.env` file in the project root and add your secrets:
+
+   For local development create a `.env` file in the project root and add your
+   secrets:
+
    ```bash
-    SECRET_KEY=replace-me
-    PAYMENT_API_KEY=replace-me
-    ADMIN_USERNAME=admin
-    ADMIN_PASSWORD=changeme
-    # Enable the Flask debugger locally (defaults to False if unset)
-    FLASK_DEBUG=True
-    # Only set to False when developing without HTTPS (defaults to True)
-    SESSION_COOKIE_SECURE=False
-    # Optional: point to a different database (e.g. PostgreSQL)
-    # DATABASE_URL=postgresql+psycopg://user:password@host:5432/paddlingen
-    ```
-    The `.env` file is ignored by Git.
+   SECRET_KEY=replace-me
+   PAYMENT_API_KEY=replace-me
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=changeme
+   FLASK_DEBUG=True
+   SESSION_COOKIE_SECURE=False
+   # Optional: point to a local PostgreSQL database
+   # DATABASE_URL=postgresql+psycopg://paddlingen:password@localhost:5432/paddlingen
+   ```
 
-    By default the application assumes a production environment:
+   The `.env` file is ignored by Git and is intended only for development.  In
+   production configure the variables directly with your hosting provider, for
+   example:
 
-    - `SESSION_COOKIE_SECURE` is **True** so cookies are only sent over HTTPS.
-      When developing locally without HTTPS, override this in your `.env` as
-      shown above to allow testing over plain HTTP.
-    - `FLASK_DEBUG` is **False** to avoid leaking internal information. Set
-      `FLASK_DEBUG=True` in development to enable the debugger and auto reload.
+   ```bash
+   SECRET_KEY=generate-a-long-random-value
+   FLASK_DEBUG=False
+   SESSION_COOKIE_SECURE=True
+   DATABASE_URL=postgresql+psycopg://user:password@dbhost:5432/paddlingen
+   ```
+
+   **DATABASE_URL examples**
+
+   - Local PostgreSQL: `postgresql+psycopg://paddlingen:password@localhost:5432/paddlingen`
+   - PythonAnywhere: `postgresql+psycopg://yourusername:password@yourusername-123.postgres.pythonanywhere-services.com/yourusername$paddlingen`
+
+   If `DATABASE_URL` is not set the application falls back to an SQLite file at
+   `instance/paddlingen.db`.
 
 5. **Initialize the database**
    Run the helper script once to create the database tables and seed the
@@ -61,7 +72,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 
 6. **Start the development server**
    ```bash
-   python main.py
+   flask --app wsgi --debug run
    ```
    The application will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
@@ -100,6 +111,18 @@ database schema in sync with your models.
 
 For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
 
+### Running migrations during deployment
+
+When deploying new code, make sure the production database schema is up to date.
+On your server (for example, a PythonAnywhere Bash console) run:
+
+```bash
+alembic upgrade head
+```
+
+Run this command each time after pulling new changes that modify the database
+models.
+
 ## Using PostgreSQL
 
 By default Paddlingen stores data in a local SQLite file.  SQLite is great for
@@ -135,14 +158,14 @@ Log in to `/login` with the credentials from your `.env` file to access the admi
 For production deployments run the app with **Gunicorn**:
 
 ```bash
- gunicorn main:app
+gunicorn wsgi:application
 ```
 
-Ensure the environment variables from the **Setup** section are available. When deploying publicly,
-enable HTTPS and set `SESSION_COOKIE_SECURE=True` so session cookies are only sent over secure
-connections. Leave `FLASK_DEBUG` unset (or set to `False`) so the interactive
-debugger is disabled in production.  Set `DATABASE_URL` to point at your
-production database.
+Ensure the environment variables from the **Setup** section are available. When
+deploying publicly, enable HTTPS and set `SESSION_COOKIE_SECURE=True` so session
+cookies are only sent over secure connections. Leave `FLASK_DEBUG` unset (or set
+to `False`) so the interactive debugger is disabled in production. Set
+`DATABASE_URL` to point at your production database.
 
 Any provider capable of running Python web apps works—services like Heroku or Render are common
 choices, or you can build a container image and run it with Docker.
@@ -161,25 +184,27 @@ this project. The basic steps are:
    source venv/bin/activate
    pip install -r requirements.txt
    ```
-3. **Initialize the database** by running `init_db.py` once:
+3. **Create and migrate the database.** In the _Databases_ tab create a new
+   PostgreSQL database. Copy the connection string that PythonAnywhere displays
+   and save it as `DATABASE_URL` (step 5). Then open a Bash console and run:
    ```bash
    python init_db.py
+   alembic upgrade head
    ```
-4. **Configure the WSGI file.** Edit the WSGI configuration PythonAnywhere
-   generates and import `application` from `wsgi.py`:
+4. **Configure the WSGI file.** On the _Web_ tab click the link to the WSGI
+   configuration file. Ensure it adds your project to the path and imports the
+   Flask application from `wsgi.py`:
    ```python
    import sys
    sys.path.insert(0, '/home/yourusername/path-to-project')
 
    from wsgi import application
    ```
-5. **Set environment variables** such as `SECRET_KEY` in the _Web_ tab under the
-   "Environment Variables" section.  Include `DATABASE_URL` if you are using a
-   hosted database; PythonAnywhere provides the value when you create a
-   PostgreSQL database through their interface.
+5. **Set environment variables** such as `SECRET_KEY` and the copied
+   `DATABASE_URL` in the _Web_ tab under "Environment Variables".
 
-Once everything is configured, reload the web app from the dashboard. PythonAnyw
-here serves your site over HTTPS, so remember to set
+Once everything is configured, reload the web app from the dashboard.
+PythonAnywhere serves your site over HTTPS, so remember to set
 `SESSION_COOKIE_SECURE=True` in your environment to keep sessions secure.
 
 # Development Notes
