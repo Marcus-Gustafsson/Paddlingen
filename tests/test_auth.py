@@ -25,3 +25,26 @@ def test_login_fails_with_wrong_password(client):
     page_text = response.get_data(as_text=True)
     assert 'Felaktigt användarnamn eller lösenord' in page_text
     assert response.request.path == '/login'
+
+def test_login_rate_limit_exceeded(client):
+    """Make six requests to '/login' and expect the last one to be blocked.
+
+    The login view is protected by a rate limiter that allows only five
+    requests per minute from the same IP address. This test performs six GET
+    requests using a fixed ``REMOTE_ADDR`` value. The first five should return
+    HTTP 200, but the sixth should trigger the limiter and respond with
+    status code 429 (Too Many Requests).
+
+    Args:
+        client (FlaskClient): Test client used to mimic browser interactions.
+
+    Returns:
+        None: Assertions verify that rate limiting works as intended.
+
+    """
+    test_ip = '203.0.113.1'
+    for _ in range(5):
+        ok_response = client.get('/login', environ_overrides={'REMOTE_ADDR': test_ip})
+        assert ok_response.status_code == 200
+    limited_response = client.get('/login', environ_overrides={'REMOTE_ADDR': test_ip})
+    assert limited_response.status_code == 429
