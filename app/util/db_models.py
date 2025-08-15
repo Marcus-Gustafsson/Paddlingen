@@ -81,6 +81,13 @@ class PendingBooking(db.Model):
     status = db.Column(db.String(20), nullable=False, default='pending')
 
     def __repr__(self):
+        """Return a readable representation for debugging.
+
+        Returns:
+            str: String containing the row ID and the number of canoes
+                requested, e.g. ``"<PendingBooking 5 – 2 canoe(s)>"``.
+        """
+
         return f"<PendingBooking {self.id} – {self.canoe_count} canoe(s)>"
 
 

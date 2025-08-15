@@ -2,11 +2,46 @@ from app import db, RentForm
 
 
 def login(client):
-    return client.post('/login', data={'username': 'admin', 'password': 'password'}, follow_redirects=True)
+    """Helper that logs the test client in as the administrator.
+
+    This function simulates submitting the login form so that subsequent
+    requests are authenticated.  It is intentionally tiny but having a
+    docstring here helps new contributors understand what happens.
+
+    Args:
+        client (flask.testing.FlaskClient): The Flask test client used to send
+            the POST request.
+
+    Returns:
+        werkzeug.wrappers.Response: The response object returned by the login
+            request.  Tests generally ignore it but it can be inspected if
+            needed.
+    """
+
+    return client.post(
+        '/login',
+        data={'username': 'admin', 'password': 'password'},
+        follow_redirects=True,
+    )
 
 
 def test_admin_crud_flow(client):
-    """Admin adds a booking, edits it, then deletes it to prove the CRUD cycle works."""
+    """Verify that the admin interface supports the full CRUD cycle.
+
+    The test logs in, creates a booking, edits that booking, and finally
+    deletes it.  Each step asserts that the database and HTTP responses
+    reflect the expected state, proving that Create, Read, Update and Delete
+    all behave correctly.
+
+    Args:
+        client (flask.testing.FlaskClient): Authorized Flask test client
+            provided by the ``client`` fixture.
+
+    Returns:
+        None: Pytest verifies behaviour using assertions rather than a return
+            value.
+    """
+
     login(client)
 
     # Add a booking

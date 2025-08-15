@@ -16,7 +16,12 @@ def client():
     database.  By setting ``DATABASE_URL`` to the special SQLite memory URI we
     ensure the application's configuration picks up this transient database
     instead of whatever the developer might have configured locally.
+
+    Yields:
+        flask.testing.FlaskClient: A client instance with a fresh application
+            and database for each test case.
     """
+
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     flask_application = create_app()
     flask_application.config.update(
