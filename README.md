@@ -7,7 +7,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 - Python 3.10 or newer
 - `git` for cloning the repository
 
-## Setup
+## Development
 
 1. **Clone the repository**
    ```bash
@@ -20,7 +20,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    python3 -m venv .venv
    source .venv/bin/activate
    ```
-   On Windows use `.venv\Scripts\activate` instead of the last command above.
+   On Windows use `.venv\Scripts\activate` instead.
 
 3. **Install dependencies**
    ```bash
@@ -29,43 +29,22 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 
 4. **Configure environment variables**
 
-   For local development create a `.env` file in the project root and add your
-   secrets:
+   Create a `.env` file in the project root and add your secrets:
 
-   ```bash
+   ```
    SECRET_KEY=replace-me
    PAYMENT_API_KEY=replace-me
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=changeme
    FLASK_DEBUG=True
    SESSION_COOKIE_SECURE=False
-   # Optional: point to a local PostgreSQL database
+   # Optional: use PostgreSQL instead of the default SQLite database
    # DATABASE_URL=postgresql+psycopg://paddlingen:password@localhost:5432/paddlingen
    ```
 
-   The `.env` file is ignored by Git and is intended only for development.  In
-   production configure the variables directly with your hosting provider, for
-   example:
-
-   ```bash
-   SECRET_KEY=generate-a-long-random-value
-   FLASK_DEBUG=False
-   SESSION_COOKIE_SECURE=True
-   DATABASE_URL=postgresql+psycopg://user:password@dbhost:5432/paddlingen
-   ```
-
-   **DATABASE_URL examples**
-
-   - Local PostgreSQL: `postgresql+psycopg://paddlingen:password@localhost:5432/paddlingen`
-   - PythonAnywhere: `postgresql+psycopg://yourusername:password@yourusername-123.postgres.pythonanywhere-services.com/yourusername$paddlingen`
-
-   If `DATABASE_URL` is not set the application falls back to an SQLite file at
-   `instance/paddlingen.db`.
+   `DATABASE_URL` controls which database is used. Leave it unset to store data in `instance/paddlingen.db` (SQLite). To develop against a local PostgreSQL server, set it to a connection string like the example above.
 
 5. **Initialize the database**
-   Run the helper script once to create the database tables and seed the
-   administrator account specified above.  If ``DATABASE_URL`` is set the
-   script connects to that database; otherwise it creates `instance/paddlingen.db`:
    ```bash
    python init_db.py
    ```
@@ -77,27 +56,21 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    The application will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 7. **Run tests**
-   The project includes a small test suite based on `pytest`. After installing
-   the requirements you can run all tests with:
    ```bash
    pytest
    ```
 
 ## Database migrations
 
-Paddlingen uses [Alembic](https://alembic.sqlalchemy.org/) to keep the
-database schema in sync with your models.
+Paddlingen uses [Alembic](https://alembic.sqlalchemy.org/) to keep the database schema in sync with your models.
 
-1. **Create a migration** – whenever you change a model, ask Alembic to
-   generate a migration script:
+1. **Create a migration** – whenever you change a model, ask Alembic to generate a migration script:
    ```bash
    alembic revision --autogenerate -m "describe your change"
    ```
-   The command inspects the `db` models and stores a new migration file in
-   `migrations/versions`.
+   The command inspects the `db` models and stores a new migration file in `migrations/versions`.
 
-2. **Apply migrations** – run pending migrations to update the database to the
-   latest schema:
+2. **Apply migrations** – run pending migrations to update the database to the latest schema:
    ```bash
    alembic upgrade head
    ```
@@ -106,106 +79,72 @@ database schema in sync with your models.
    ```bash
    alembic downgrade -1
    ```
-   You can replace `-1` with a specific revision identifier to roll back to an
-   exact point in history.
+   Replace `-1` with a specific revision identifier to roll back to an exact point in history.
 
 For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
 
+## Deployment (Production)
+
+In production set configuration values directly with your hosting provider instead of using a `.env` file. Typical values are:
+
+```
+SECRET_KEY=generate-a-long-random-value
+FLASK_DEBUG=False
+SESSION_COOKIE_SECURE=True
+DATABASE_URL=postgresql+psycopg://user:password@dbhost:5432/paddlingen
+```
+
+For PythonAnywhere the `DATABASE_URL` looks like:
+
+```
+postgresql+psycopg://yourusername:password@yourusername-123.postgres.pythonanywhere-services.com/yourusername$paddlingen
+```
+
 ### Running migrations during deployment
 
-When deploying new code, make sure the production database schema is up to date.
-On your server (for example, a PythonAnywhere Bash console) run:
+After deploying new code, make sure the production database schema is up to date:
 
 ```bash
 alembic upgrade head
 ```
 
-Run this command each time after pulling new changes that modify the database
-models.
-
-## Using PostgreSQL
-
-By default Paddlingen stores data in a local SQLite file.  SQLite is great for
-development because it requires no setup, but most production deployments use a
-server based database such as PostgreSQL.
-
-1. **Install PostgreSQL** if it is not already available.  On Ubuntu this can be
-   done with `sudo apt install postgresql`.
-2. **Create a database and user**.  From a terminal run:
-   ```bash
-   sudo -u postgres createuser --pwprompt paddlingen
-   sudo -u postgres createdb --owner paddlingen paddlingen
-   ```
-   The first command prompts you for a password which is used in the next step.
-3. **Set ``DATABASE_URL``** in your `.env` file or hosting provider's
-   configuration.  The connection string includes the username, password,
-   hostname and database name:
-   ```bash
-   DATABASE_URL=postgresql+psycopg://paddlingen:yourpassword@localhost:5432/paddlingen
-   ```
-4. **Install the driver**.  The `psycopg[binary]` package listed in
-   `requirements.txt` provides the PostgreSQL database adapter.
-5. **Run `init_db.py`** to create the tables inside PostgreSQL:
-   ```bash
-   python init_db.py
-   ```
-
-Once configured the rest of the application works the same as with SQLite.
-
-Log in to `/login` with the credentials from your `.env` file to access the admin dashboard.
-## Deployment
-
-For production deployments run the app with **Gunicorn**:
-
-```bash
-gunicorn wsgi:application
-```
-
-Ensure the environment variables from the **Setup** section are available. When
-deploying publicly, enable HTTPS and set `SESSION_COOKIE_SECURE=True` so session
-cookies are only sent over secure connections. Leave `FLASK_DEBUG` unset (or set
-to `False`) so the interactive debugger is disabled in production. Set
-`DATABASE_URL` to point at your production database.
-
-Any provider capable of running Python web apps works—services like Heroku or Render are common
-choices, or you can build a container image and run it with Docker.
+Run this command on the server each time you deploy changes that modify the database models.
 
 ### Deploying to PythonAnywhere
 
-PythonAnywhere offers a beginner‑friendly free tier that is perfect for hosting
-this project. The basic steps are:
+PythonAnywhere offers a beginner‑friendly free tier that is perfect for hosting this project. The basic steps are:
 
-1. **Upload your code** using the PythonAnywhere dashboard or by cloning the
-   repository with `git`.
-2. **Create a virtual environment** in the _Consoles_ tab and install the
-   dependencies:
+1. **Upload your code** using the PythonAnywhere dashboard or by cloning the repository with `git`.
+
+2. **Create a virtual environment** in the *Consoles* tab and install the dependencies:
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    pip install -r requirements.txt
    ```
-3. **Create and migrate the database.** In the _Databases_ tab create a new
-   PostgreSQL database. Copy the connection string that PythonAnywhere displays
-   and save it as `DATABASE_URL` (step 5). Then open a Bash console and run:
+
+3. **Create the database.** In the *Databases* tab create a new PostgreSQL database. Copy the connection string that PythonAnywhere displays and save it for the `DATABASE_URL` environment variable.  
+   ![Creating the database on PythonAnywhere](docs/pythonanywhere-create-db.svg)
+
+4. **Initialize the database and run migrations** in a Bash console:
    ```bash
    python init_db.py
    alembic upgrade head
    ```
-4. **Configure the WSGI file.** On the _Web_ tab click the link to the WSGI
-   configuration file. Ensure it adds your project to the path and imports the
-   Flask application from `wsgi.py`:
+
+5. **Configure the WSGI file.** On the *Web* tab click the link to the WSGI configuration file. Ensure it adds your project to the path and imports the Flask application from `wsgi.py`:  
    ```python
    import sys
    sys.path.insert(0, '/home/yourusername/path-to-project')
 
    from wsgi import application
    ```
-5. **Set environment variables** such as `SECRET_KEY` and the copied
-   `DATABASE_URL` in the _Web_ tab under "Environment Variables".
+   ![WSGI configuration on PythonAnywhere](docs/pythonanywhere-wsgi.svg)
 
-Once everything is configured, reload the web app from the dashboard.
-PythonAnywhere serves your site over HTTPS, so remember to set
-`SESSION_COOKIE_SECURE=True` in your environment to keep sessions secure.
+6. **Set environment variables** such as `SECRET_KEY`, `DATABASE_URL`, `FLASK_DEBUG`, and `SESSION_COOKIE_SECURE` in the *Web* tab under "Environment Variables":  
+   ![Setting environment variables on PythonAnywhere](docs/pythonanywhere-env-vars.svg)
+
+7. **Reload the web app** from the dashboard. PythonAnywhere serves your site over HTTPS, so keep `SESSION_COOKIE_SECURE=True` in your environment to protect sessions.
 
 # Development Notes
 
