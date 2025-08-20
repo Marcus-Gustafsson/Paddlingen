@@ -1,3 +1,5 @@
+"""Tests for public-facing routes and booking flow."""
+
 from app.util.db_models import RentForm, PendingBooking
 
 
