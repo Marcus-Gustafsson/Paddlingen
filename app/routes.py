@@ -1,5 +1,4 @@
-"""
-Canoe Rental Booking System
+"""Canoe Rental Booking System.
 
 This module contains all route and view functions for the application.
 Routes are attached to a :class:`~flask.Blueprint` so they can be
@@ -34,10 +33,11 @@ main_blueprint = Blueprint('main', __name__)
 
 @main_blueprint.route("/")
 def index():
-    """
-    Homepage route handler.
-    We also calculate how many canoes are still free (current_app.config.get('MAX_CANOEES', 50) – current bookings)
-    and send that to the template for client‐side dropdown limiting.
+    """Homepage route handler.
+
+    We also calculate how many canoes are still free
+    (current_app.config.get('MAX_CANOEES', 50) – current bookings) and
+    send that to the template for client-side dropdown limiting.
     """
     # fetch all bookings for your overview panel
     alla_bokningar = RentForm.query.order_by(RentForm.id).all()
@@ -62,11 +62,13 @@ def index():
 @main_blueprint.route('/create-checkout-session', methods=['POST'])
 @rate_limiter.limit("10 per minute")
 def payment():
-    """
-    1) Parse requested canoe count
-    2) Check how many are already booked
-    3) If they ask for more than available → reject immediately
-    4) Otherwise create a PendingBooking record and proceed to payment_success
+    """Handle the checkout session for canoe rentals.
+
+    1) Parse the requested canoe count.
+    2) Check how many are already booked.
+    3) If they ask for more than available → reject immediately.
+    4) Otherwise create a PendingBooking record and proceed to
+       ``payment_success``.
 
     Storing the booking server-side means the customer cannot modify the
     canoe count or the participant names by editing their browser cookie.
@@ -117,8 +119,7 @@ def payment():
 
 @main_blueprint.route('/payment-success')
 def payment_success():
-    """
-    Finalize the booking after (simulated) payment.
+    """Finalize the booking after (simulated) payment.
 
     Steps:
         1. Look up the PendingBooking referenced in the user's session.
@@ -165,15 +166,14 @@ def payment_success():
 
 @main_blueprint.route('/api/booking-count')
 def get_booking_count():
-    """
-    API endpoint that returns the current number of bookings.
-    
+    """Return the current number of bookings as JSON.
+
     This route:
-    1. Counts all bookings in the database
-    2. Returns the count as JSON data
-    
-    The JavaScript fetch() function will call this endpoint.
-    
+        1. Counts all bookings in the database.
+        2. Returns the count as JSON data.
+
+    The JavaScript ``fetch()`` function will call this endpoint.
+
     Returns:
         JSON object with the count: {"count": 25}
     """
@@ -190,10 +190,10 @@ def get_booking_count():
 @main_blueprint.route('/login', methods=['GET','POST'])
 @rate_limiter.limit("5 per minute")   # max 5 login attempts per minute per IP
 def login():
-    """
-    Displays and handles the login form.
+    """Display and handle the login form.
+
     On GET: render the form.
-    On POST: validate credentials, call login_user(), then redirect.
+    On POST: validate credentials, call ``login_user()``, then redirect.
     """
     if current_user.is_authenticated:
         # Already logged in? Go to admin dashboard.
@@ -251,10 +251,10 @@ WEATHER_EMOJIS = {
 
 @main_blueprint.route('/api/forecast')
 def get_forecast():
-    """
-    Flask route to fetch weather forecast for a specific date.
-    Tries to get data starting at 10:00 UTC, and uses next 6 hours forecast.
-    If 10:00 is unavailable, uses 12:00 UTC as fallback.
+    """Fetch weather forecast for a specific date.
+
+    Tries to get data starting at 10:00 UTC, using the next 6 hours
+    forecast. If 10:00 is unavailable, uses 12:00 UTC as a fallback.
     Returns temperature, rain amount and weather icon.
     """
     headers = {
@@ -312,11 +312,10 @@ def get_forecast():
 @main_blueprint.route('/admin')
 @login_required
 def admin_dashboard():
-    """
-    Shows the admin dashboard page.
+    """Show the admin dashboard page.
 
-    • Queries all RentForm bookings, ordered by ID.
-    • Renders templates/admin.html, passing the booking list.
+    • Queries all ``RentForm`` bookings, ordered by ID.
+    • Renders ``templates/admin.html``, passing the booking list.
     """
     bookings = RentForm.query.order_by(RentForm.id).all()
     return render_template('admin.html', bookings=bookings)
@@ -325,11 +324,10 @@ def admin_dashboard():
 @main_blueprint.route('/admin/add', methods=['POST'])
 @login_required
 def admin_add():
-    """
-    Handles the "Add new booking" form submission.
+    """Handle the "Add new booking" form submission.
 
-    • Reads `name` from form data, strips whitespace.
-    • If non-empty, creates & commits a new RentForm record.
+    • Reads ``name`` from form data, strips whitespace.
+    • If non-empty, creates & commits a new ``RentForm`` record.
     • Redirects back to the dashboard.
     """
     # Get the 'name' field, defaulting to empty string
@@ -344,13 +342,12 @@ def admin_add():
 @main_blueprint.route('/admin/update/<int:id>', methods=['POST'])
 @login_required
 def admin_update(id):
-    """
-    Handles editing an existing booking’s name.
+    """Handle editing an existing booking's name.
 
-    • Fetches the RentForm record by `id` or 404s.
-    • Reads the new `name`, strips whitespace.
-    • If non-empty, updates record & commits.
-    • Redirects back to dashboard.
+    • Fetches the ``RentForm`` record by ``id`` or 404s.
+    • Reads the new ``name``, strips whitespace.
+    • If non-empty, updates the record and commits.
+    • Redirects back to the dashboard.
     """
     booking = RentForm.query.get_or_404(id)
     new_name = request.form.get('name', '').strip()
@@ -363,12 +360,11 @@ def admin_update(id):
 @main_blueprint.route('/admin/delete/<int:id>', methods=['POST'])
 @login_required
 def admin_delete(id):
-    """
-    Handles deletion of a booking.
+    """Handle deletion of a booking.
 
-    • Fetches the RentForm record by `id` or 404s.
+    • Fetches the ``RentForm`` record by ``id`` or 404s.
     • Deletes it, commits the transaction.
-    • Redirects back to dashboard.
+    • Redirects back to the dashboard.
     """
     booking = RentForm.query.get_or_404(id)
     db.session.delete(booking)
@@ -378,8 +374,8 @@ def admin_delete(id):
 
 @main_blueprint.app_errorhandler(429)
 def ratelimit_handler(e):
-    """
-    Custom handler for rate limit errors (HTTP 429).
+    """Custom handler for rate limit errors (HTTP 429).
+
     We return a friendly JSON or HTML message.
     """
     # If the client expects JSON:

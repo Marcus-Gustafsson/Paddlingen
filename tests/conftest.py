@@ -1,3 +1,5 @@
+"""Common pytest fixtures for the Paddlingen test suite."""
+
 import os
 import pytest
 

@@ -1,3 +1,5 @@
+"""Tests for CRUD operations in the admin interface."""
+
 from app import db, RentForm
 
 

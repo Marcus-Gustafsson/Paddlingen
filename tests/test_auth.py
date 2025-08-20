@@ -1,3 +1,5 @@
+"""Authentication-related tests for the application."""
+
 def test_admin_requires_login(client):
     """Try to open the admin dashboard without logging in.
 
