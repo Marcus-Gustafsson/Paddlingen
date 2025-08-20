@@ -44,6 +44,24 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 
    `DATABASE_URL` controls which database is used. Leave it unset to store data in `instance/paddlingen.db` (SQLite). To develop against a local PostgreSQL server, set it to a connection string like the example above.
 
+   ### PostgreSQL example
+
+   1. **Create the database**
+
+      ```bash
+      createdb -U <your_postgres_user> paddlingen
+      ```
+
+   2. **Set the connection string** – add a `DATABASE_URL` to your `.env` file (replace the placeholders):
+
+      ```
+      DATABASE_URL=postgresql+psycopg://<username>:<password>@<host>:5432/paddlingen
+      ```
+
+      The `psycopg[binary]` driver is already present in `requirements.txt`; ensure it is installed on the host (e.g. `pip install -r requirements.txt`).
+
+   Tests continue to use an in-memory SQLite database via [`tests/conftest.py`](tests/conftest.py), so `pytest` runs without requiring PostgreSQL.
+
 5. **Initialize the database**
    ```bash
    python init_db.py
