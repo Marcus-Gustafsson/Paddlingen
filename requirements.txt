@@ -31,4 +31,4 @@ wrapt==1.17.2
 WTForms==3.2.1
 pydocstyle==6.3.0
 pytest==8.2.0
-psycopg[binary]==3.1.18
+psycopg[binary]==3.2.9
