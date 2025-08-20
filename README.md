@@ -83,68 +83,9 @@ Paddlingen uses [Alembic](https://alembic.sqlalchemy.org/) to keep the database 
 
 For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
 
-## Deployment (Production)
+## Deployment
 
-In production set configuration values directly with your hosting provider instead of using a `.env` file. Typical values are:
-
-```
-SECRET_KEY=generate-a-long-random-value
-FLASK_DEBUG=False
-SESSION_COOKIE_SECURE=True
-DATABASE_URL=postgresql+psycopg://user:password@dbhost:5432/paddlingen
-```
-
-For PythonAnywhere the `DATABASE_URL` looks like:
-
-```
-postgresql+psycopg://yourusername:password@yourusername-123.postgres.pythonanywhere-services.com/yourusername$paddlingen
-```
-
-### Running migrations during deployment
-
-After deploying new code, make sure the production database schema is up to date:
-
-```bash
-alembic upgrade head
-```
-
-Run this command on the server each time you deploy changes that modify the database models.
-
-### Deploying to PythonAnywhere
-
-PythonAnywhere offers a beginner‑friendly free tier that is perfect for hosting this project. The basic steps are:
-
-1. **Upload your code** using the PythonAnywhere dashboard or by cloning the repository with `git`.
-
-2. **Create a virtual environment** in the *Consoles* tab and install the dependencies:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-3. **Create the database.** In the *Databases* tab create a new PostgreSQL database. Copy the connection string that PythonAnywhere displays and save it for the `DATABASE_URL` environment variable.  
-   ![Creating the database on PythonAnywhere](docs/pythonanywhere-create-db.svg)
-
-4. **Initialize the database and run migrations** in a Bash console:
-   ```bash
-   python init_db.py
-   alembic upgrade head
-   ```
-
-5. **Configure the WSGI file.** On the *Web* tab click the link to the WSGI configuration file. Ensure it adds your project to the path and imports the Flask application from `wsgi.py`:  
-   ```python
-   import sys
-   sys.path.insert(0, '/home/yourusername/path-to-project')
-
-   from wsgi import application
-   ```
-   ![WSGI configuration on PythonAnywhere](docs/pythonanywhere-wsgi.svg)
-
-6. **Set environment variables** such as `SECRET_KEY`, `DATABASE_URL`, `FLASK_DEBUG`, and `SESSION_COOKIE_SECURE` in the *Web* tab under "Environment Variables":  
-   ![Setting environment variables on PythonAnywhere](docs/pythonanywhere-env-vars.svg)
-
-7. **Reload the web app** from the dashboard. PythonAnywhere serves your site over HTTPS, so keep `SESSION_COOKIE_SECURE=True` in your environment to protect sessions.
+See [docs/deployment.md](docs/deployment.md) for deployment instructions.
 
 # Development Notes
 
