@@ -1,0 +1,10 @@
+# Start with these
+pytest
+coverage
+ruff
+black
+mypy
+
+# Optional to add in later, recommended later/bigger projects:
+bandit
+pip-audit
