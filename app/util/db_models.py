@@ -37,7 +37,8 @@ class RentForm(db.Model):
         name            Text field (up to 120 chars) for the renter’s name
         transaction_id  Text field for the payment transaction identifier
     """
-    __tablename__ = 'rent_form'  # Optional: explicitly set table name
+
+    __tablename__ = "rent_form"  # Optional: explicitly set table name
 
     # Primary key column: unique identifier for each booking
     id = db.Column(db.Integer, primary_key=True)
@@ -73,12 +74,12 @@ class PendingBooking(db.Model):
         status (str): "pending", "paid", etc. (for future extensions).
     """
 
-    __tablename__ = 'pending_booking'
+    __tablename__ = "pending_booking"
 
     id = db.Column(db.Integer, primary_key=True)
     canoe_count = db.Column(db.Integer, nullable=False)
     participant_names = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='pending')
+    status = db.Column(db.String(20), nullable=False, default="pending")
 
     def __repr__(self):
         """Return a readable representation for debugging.
@@ -105,7 +106,8 @@ class User(db.Model, UserMixin):
         username  Unique login name for the admin
         pw_hash   Password hash (never store plaintext!)
     """
-    __tablename__ = 'users'  # Optional: explicitly set table name
+
+    __tablename__ = "users"  # Optional: explicitly set table name
 
     # Primary key column
     id = db.Column(db.Integer, primary_key=True)
@@ -134,4 +136,3 @@ class User(db.Model, UserMixin):
             bool: True if the password matches the hash, False otherwise.
         """
         return check_password_hash(self.pw_hash, password)
-

@@ -3,6 +3,7 @@
 This config uses the Flask application's SQLAlchemy metadata so that
 `alembic revision --autogenerate` works out of the box.
 """
+
 from __future__ import annotations
 
 import os
@@ -12,7 +13,7 @@ from logging.config import fileConfig
 from alembic import context
 
 # Add the application to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app import create_app, db  # noqa: E402
 
@@ -35,6 +36,7 @@ config.set_main_option("sqlalchemy.url", str(app.config["SQLALCHEMY_DATABASE_URI
 # Set target metadata for 'autogenerate'.
 target_metadata = db.metadata
 
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -49,6 +51,7 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     connectable = db.engine
@@ -62,6 +65,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

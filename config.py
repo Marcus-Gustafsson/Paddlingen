@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+
 # Helper -------------------------------------------------------------
 def _bool_from_env(name: str, default: bool = False) -> bool:
     """Return a boolean value read from an environment variable.
@@ -89,7 +90,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
 else:
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'instance/paddlingen.db')}"
+    SQLALCHEMY_DATABASE_URI = (
+        f"sqlite:///{os.path.join(BASE_DIR, 'instance/paddlingen.db')}"
+    )
 
 # This turns off a feature of Flask-SQLAlchemy that we don't need.
 # It tracks modifications to objects and emits signals, which can use extra memory.
@@ -134,8 +137,7 @@ SESSION_COOKIE_HTTPONLY = True
 # an external link, but not on requests initiated by third-party sites (like
 # images or forms). 'Strict' is more secure but can be less user-friendly.
 # 'Lax' is a great, secure default.
-SESSION_COOKIE_SAMESITE = 'Lax'
-
+SESSION_COOKIE_SAMESITE = "Lax"
 
 
 # --- Development Settings ---

@@ -6,8 +6,8 @@ import pytest
 from app import create_app, db, User
 
 # Ensure the instance directory exists so the app's SQLite database can be created
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
 
 
 @pytest.fixture
@@ -29,14 +29,14 @@ def client():
     flask_application.config.update(
         TESTING=True,
         WTF_CSRF_ENABLED=False,
-        SECRET_KEY='test',
-        WTF_CSRF_SECRET_KEY='test'
+        SECRET_KEY="test",
+        WTF_CSRF_SECRET_KEY="test",
     )
     with flask_application.app_context():
         db.drop_all()
         db.create_all()
-        admin_user = User(username='admin')
-        admin_user.set_password('password')
+        admin_user = User(username="admin")
+        admin_user.set_password("password")
         db.session.add(admin_user)
         db.session.commit()
     with flask_application.test_client() as test_client:

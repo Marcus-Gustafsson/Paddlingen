@@ -1,5 +1,6 @@
 """Authentication-related tests for the application."""
 
+
 def test_admin_requires_login(client):
     """Try to open the admin dashboard without logging in.
 
@@ -8,9 +9,9 @@ def test_admin_requires_login(client):
     HTTP 302 redirect. The Location header in that redirect should include
     '/login', which proves unauthenticated visitors are sent to the login page.
     """
-    response = client.get('/admin')
+    response = client.get("/admin")
     assert response.status_code == 302
-    assert '/login' in response.headers['Location']
+    assert "/login" in response.headers["Location"]
 
 
 def test_login_fails_with_wrong_password(client):
@@ -22,11 +23,14 @@ def test_login_fails_with_wrong_password(client):
     that the error text appears in the response body, and that we remain on the
     '/login' URL.
     """
-    response = client.post('/login', data={'username': 'admin', 'password': 'wrong'}, follow_redirects=True)
+    response = client.post(
+        "/login", data={"username": "admin", "password": "wrong"}, follow_redirects=True
+    )
     assert response.status_code == 200
     page_text = response.get_data(as_text=True)
-    assert 'Felaktigt användarnamn eller lösenord' in page_text
-    assert response.request.path == '/login'
+    assert "Felaktigt användarnamn eller lösenord" in page_text
+    assert response.request.path == "/login"
+
 
 def test_login_rate_limit_exceeded(client):
     """Make six requests to '/login' and expect the last one to be blocked.
@@ -44,9 +48,9 @@ def test_login_rate_limit_exceeded(client):
         None: Assertions verify that rate limiting works as intended.
 
     """
-    test_ip = '203.0.113.1'
+    test_ip = "203.0.113.1"
     for _ in range(5):
-        ok_response = client.get('/login', environ_overrides={'REMOTE_ADDR': test_ip})
+        ok_response = client.get("/login", environ_overrides={"REMOTE_ADDR": test_ip})
         assert ok_response.status_code == 200
-    limited_response = client.get('/login', environ_overrides={'REMOTE_ADDR': test_ip})
+    limited_response = client.get("/login", environ_overrides={"REMOTE_ADDR": test_ip})
     assert limited_response.status_code == 429

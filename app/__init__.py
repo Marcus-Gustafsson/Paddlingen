@@ -28,12 +28,12 @@ rate_limiter = Limiter(key_func=get_remote_address)
 def create_app() -> Flask:
     """Create and configure a :class:`~flask.Flask` application instance.
 
-    The factory pattern keeps application creation explicit and makes
-testing very easy.  Every caller gets a brand new app configured with
-our extensions and routes.
+        The factory pattern keeps application creation explicit and makes
+    testing very easy.  Every caller gets a brand new app configured with
+    our extensions and routes.
 
-    Returns:
-        Flask: A fully configured Flask application.
+        Returns:
+            Flask: A fully configured Flask application.
     """
 
     flask_application = Flask(

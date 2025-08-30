@@ -36,7 +36,11 @@ def get_images_for_year(year: str) -> list[str]:
         all_files = []
 
     valid_extensions = (".png", ".jpg", ".jpeg", ".gif", ".webp")
-    image_files = [file_name for file_name in all_files if file_name.lower().endswith(valid_extensions)]
+    image_files = [
+        file_name
+        for file_name in all_files
+        if file_name.lower().endswith(valid_extensions)
+    ]
 
     random.shuffle(image_files)
 

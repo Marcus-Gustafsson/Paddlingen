@@ -5,13 +5,13 @@ from app.util.db_models import RentForm, PendingBooking
 
 def test_home_page(client):
     """Send GET '/' and verify the public landing page responds with 200."""
-    response = client.get('/')
+    response = client.get("/")
     assert response.status_code == 200
 
 
 def test_login_page(client):
     """Ensure the login route renders so users can start authentication."""
-    response = client.get('/login')
+    response = client.get("/login")
     assert response.status_code == 200
 
 
@@ -23,15 +23,15 @@ def test_booking_over_limit_shows_error(client):
     than are available. Flask should respond with a flash error on the home
     page and refuse to create any :class:`PendingBooking` records.
     """
-    client.application.config['MAX_CANOEES'] = 1
+    client.application.config["MAX_CANOEES"] = 1
 
     response = client.post(
-        '/create-checkout-session',
-        data={'canoeCount': '2'},
+        "/create-checkout-session",
+        data={"canoeCount": "2"},
         follow_redirects=True,
     )
     page = response.get_data(as_text=True)
-    assert 'Tyvärr, bara 1 kanot(er) kvar' in page
+    assert "Tyvärr, bara 1 kanot(er) kvar" in page
 
     with client.application.app_context():
         assert PendingBooking.query.count() == 0
@@ -45,24 +45,25 @@ def test_successful_booking_creates_records(client):
     :class:`RentForm` rows should be created and the temporary
     :class:`PendingBooking` table left empty.
     """
-    client.application.config['MAX_CANOEES'] = 3
+    client.application.config["MAX_CANOEES"] = 3
 
     booking_data = {
-        'canoeCount': '2',
-        'canoe1_fname': 'Alice',
-        'canoe1_lname': 'Andersson',
-        'canoe2_fname': 'Bob',
-        'canoe2_lname': 'Berg',
+        "canoeCount": "2",
+        "canoe1_fname": "Alice",
+        "canoe1_lname": "Andersson",
+        "canoe2_fname": "Bob",
+        "canoe2_lname": "Berg",
     }
-    client.post('/create-checkout-session', data=booking_data)
+    client.post("/create-checkout-session", data=booking_data)
 
-    client.get('/payment-success')
+    client.get("/payment-success")
 
     with client.application.app_context():
         names = [r.name for r in RentForm.query.order_by(RentForm.id)]
-        assert 'Alice Andersson' in names
-        assert 'Bob Berg' in names
+        assert "Alice Andersson" in names
+        assert "Bob Berg" in names
         assert PendingBooking.query.count() == 0
+
 
 def test_invalid_form_data_returns_flash_error(client):
     """Submit empty form data and expect an error without database changes.
@@ -79,7 +80,7 @@ def test_invalid_form_data_returns_flash_error(client):
         None: This test relies on assertions instead of returning a value.
 
     """
-    response = client.post('/create-checkout-session', data={}, follow_redirects=True)
+    response = client.post("/create-checkout-session", data={}, follow_redirects=True)
     assert response.status_code == 200
     page = response.get_data(as_text=True)
     assert "Ogiltigt antal kanoter." in page

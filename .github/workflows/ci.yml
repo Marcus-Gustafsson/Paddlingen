@@ -1,0 +1,88 @@
+name: CI (simple, UV)
+
+on:
+  #push:
+    #branches: [ "main" ]         # run on pushes to main
+  pull_request:
+    branches: [ "main" ]         # and on PRs targeting main
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest       # clean Linux VM for each run
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+        # Pulls your repo code so later steps can see files.
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+        # Selects the Python version available on the runner.
+
+      - name: 📦 Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          uv --version
+        # Installs UV and adds it to PATH for later steps.
+
+      - name: 🧪 Create venv & install deps (UV)
+        run: uv sync   # installs deps from pyproject.toml and uv.lock
+        # Uses UV for a fast, isolated environment.
+
+      - name: ✅ Tests (pytest)
+        run: uv run pytest -q
+        # Runs tests from the .venv without activating it explicitly.
+
+      - name: 🧹 Lint (ruff)
+        run: uv run ruff check .
+        # Fast linter; fails CI if issues remain.
+
+      - name: 🎨 Format check (black)
+        run: uv run black --check .
+        # Verifies formatting; locally, run `uv run black .` to auto-fix.
+
+      - name: Type check (mypy)
+        run: uv run mypy .
+        # Catches type errors early (makes python more statically typed, like Go)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# name: pydocstyle
+
+# on:
+#   push:
+#   pull_request:
+
+# jobs:
+#   lint:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.x'
+#       - run: pip install -r requirements.txt
+#       - run: pydocstyle

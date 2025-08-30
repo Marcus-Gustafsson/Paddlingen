@@ -6,7 +6,6 @@ rely on stable and predictable behavior.
 """
 
 from app import db, RentForm
-import pytest
 
 
 def test_booking_count_api_returns_number(client):
@@ -24,13 +23,13 @@ def test_booking_count_api_returns_number(client):
 
     """
     with client.application.app_context():
-        db.session.add(RentForm(name='Test', transaction_id='t1'))
+        db.session.add(RentForm(name="Test", transaction_id="t1"))
         db.session.commit()
 
-    response = client.get('/api/booking-count')
+    response = client.get("/api/booking-count")
     assert response.status_code == 200
     data = response.get_json()
-    assert data['count'] == 1
+    assert data["count"] == 1
 
 
 def test_forecast_api_returns_data(client, monkeypatch):
@@ -78,7 +77,7 @@ def test_forecast_api_returns_data(client, monkeypatch):
 
     monkeypatch.setattr("requests.get", fake_get)
 
-    response = client.get('/api/forecast?date=2024-07-01')
+    response = client.get("/api/forecast?date=2024-07-01")
     assert response.status_code == 200
     data = response.get_json()
     assert data["temperature"] == 15
@@ -100,7 +99,7 @@ def test_forecast_api_missing_date(client):
         None: The test checks response status and JSON content.
 
     """
-    response = client.get('/api/forecast')
+    response = client.get("/api/forecast")
     assert response.status_code == 400
     assert "error" in response.get_json()
 
@@ -120,7 +119,9 @@ def test_forecast_api_no_data(client, monkeypatch):
         None: Assertions verify the 404 behavior.
 
     """
-    sample_payload = {"properties": {"timeseries": [{"time": "2024-07-01T09:00:00Z", "data": {}}]}}
+    sample_payload = {
+        "properties": {"timeseries": [{"time": "2024-07-01T09:00:00Z", "data": {}}]}
+    }
 
     def fake_get(url, headers=None, params=None):
         class FakeResponse:
@@ -134,6 +135,6 @@ def test_forecast_api_no_data(client, monkeypatch):
 
     monkeypatch.setattr("requests.get", fake_get)
 
-    response = client.get('/api/forecast?date=2024-07-01')
+    response = client.get("/api/forecast?date=2024-07-01")
     assert response.status_code == 404
     assert "error" in response.get_json()

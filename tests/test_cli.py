@@ -1,7 +1,6 @@
 """Tests for custom Flask command line interface commands."""
 
-import pytest
-from app import db, User
+from app import User
 
 
 def test_init_db_command_resets_tables(client):
@@ -23,8 +22,8 @@ def test_init_db_command_resets_tables(client):
 
     runner = client.application.test_cli_runner()
     with client.application.app_context():
-        result = runner.invoke(args=['init-db'])
-        assert 'Initialized the database.' in result.output
+        result = runner.invoke(args=["init-db"])
+        assert "Initialized the database." in result.output
         assert User.query.count() == 0
 
 
@@ -44,13 +43,13 @@ def test_seed_admin_command_creates_user(client, monkeypatch):
 
     """
     runner = client.application.test_cli_runner()
-    monkeypatch.setenv('ADMIN_USERNAME', 'cliadmin')
-    monkeypatch.setenv('ADMIN_PASSWORD', 'secret')
+    monkeypatch.setenv("ADMIN_USERNAME", "cliadmin")
+    monkeypatch.setenv("ADMIN_PASSWORD", "secret")
 
     with client.application.app_context():
-        result = runner.invoke(args=['seed-admin'])
+        result = runner.invoke(args=["seed-admin"])
         assert "Created admin 'cliadmin'." in result.output
-        assert User.query.filter_by(username='cliadmin').first() is not None
+        assert User.query.filter_by(username="cliadmin").first() is not None
 
 
 def test_seed_admin_command_requires_env_vars(client, monkeypatch):
@@ -69,10 +68,13 @@ def test_seed_admin_command_requires_env_vars(client, monkeypatch):
 
     """
     runner = client.application.test_cli_runner()
-    monkeypatch.delenv('ADMIN_USERNAME', raising=False)
-    monkeypatch.delenv('ADMIN_PASSWORD', raising=False)
+    monkeypatch.delenv("ADMIN_USERNAME", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD", raising=False)
 
     with client.application.app_context():
-        result = runner.invoke(args=['seed-admin'])
+        result = runner.invoke(args=["seed-admin"])
         assert result.exit_code != 0
-        assert 'ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required' in result.output
+        assert (
+            "ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required"
+            in result.output
+        )
