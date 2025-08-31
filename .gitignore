@@ -20,3 +20,12 @@ instance/
 
 # Other artifacts
 *.log
+
+# MyPy cache
+.mypy*
+
+# Pytest cache
+.pytest*
+
+# ruff cache
+.ruff*
