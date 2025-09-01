@@ -19,23 +19,32 @@ export FLASK_DEBUG=False
 export SESSION_COOKIE_SECURE=True
 ```
 
+## Installing dependencies
+Install locked production dependencies using [uv](https://github.com/astral-sh/uv):
+
+```bash
+uv sync --frozen --no-dev
+```
+
+
+
 ## Running database migrations
 From a PythonAnywhere console, run migrations to bring the database up to date:
 
 ```
 cd /path/to/app
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
 ## Starting the app
 Start the application using the WSGI entrypoint:
 
 ```
-python wsgi.py
+uv run python wsgi.py
 ```
 
 or with Gunicorn:
 
 ```
-gunicorn wsgi:application
+uv run gunicorn wsgi:application
 ```
