@@ -9,8 +9,8 @@ than importing a global ``app`` object.
 from __future__ import annotations
 
 from flask import Flask
-from flask_wtf import CSRFProtect
-from flask_login import LoginManager
+from flask_wtf import CSRFProtect  # type: ignore[import-untyped]
+from flask_login import LoginManager  # type: ignore[import-untyped]
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import click

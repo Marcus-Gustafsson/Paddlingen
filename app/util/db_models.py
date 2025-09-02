@@ -15,14 +15,15 @@ Why it’s here:
 
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
+from flask_login import UserMixin  # type: ignore[import-untyped]
+from typing import Any
 
 # -------------------------------------------------------------------
 # 1) Create the SQLAlchemy `db` object
 #
 #    We will bind this to our Flask app later with db.init_app(app).
 # -------------------------------------------------------------------
-db = SQLAlchemy()
+db: Any = SQLAlchemy()
 
 
 # -------------------------------------------------------------------

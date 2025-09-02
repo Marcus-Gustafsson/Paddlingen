@@ -50,6 +50,7 @@ dev = [
     "pip-audit>=2.9.0",
     "pytest>=8.2.0",
     "ruff>=0.12.11",
+    "types-requests>=2.32.0",
 ]
 
 

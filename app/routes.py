@@ -20,7 +20,12 @@ from flask import (
     session,
     url_for,
 )
-from flask_login import current_user, login_required, login_user, logout_user
+from flask_login import (  # type: ignore[import-untyped]
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
 
 from .util.helper_functions import get_images_for_year
 from .util.db_models import db, RentForm, User, PendingBooking

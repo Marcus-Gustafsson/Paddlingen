@@ -20,8 +20,12 @@ def get_images_for_year(year: str) -> list[str]:
         A list of image filenames (not full paths) ready for
         ``url_for('static', filename=f'images/{year}/<filename>')``.
     """
+    static_folder = current_app.static_folder
+    if static_folder is None:
+        raise RuntimeError("Static folder is not configured")
+
     image_folder = os.path.join(
-        current_app.static_folder,
+        static_folder,
         "images",
         year,
     )
