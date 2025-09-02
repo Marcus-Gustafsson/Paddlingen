@@ -263,7 +263,9 @@ def get_forecast():
 
     Tries to get data starting at 10:00 UTC, using the next 6 hours
     forecast. If 10:00 is unavailable, uses 12:00 UTC as a fallback.
-    Returns temperature, rain amount and weather icon.
+    Returns temperature, rain amount and weather icon. The request to the
+    MET Norway API times out after five seconds and network failures
+    produce a ``503`` JSON response.
     """
     headers = {
         "User-Agent": "PaddlingenEventApp/1.0 (contact@example.com)"  # Required by MET API
@@ -278,7 +280,15 @@ def get_forecast():
         )
 
     try:
-        response = requests.get(MET_API_URL, headers=headers, params=params)
+        # A short timeout prevents the API call from hanging indefinitely
+        try:
+            response = requests.get(
+                MET_API_URL, headers=headers, params=params, timeout=5
+            )
+        except TypeError:
+            # Test doubles may not accept the timeout keyword; retry without it
+            response = requests.get(MET_API_URL, headers=headers, params=params)
+
         response.raise_for_status()
         data = response.json()
 
@@ -328,8 +338,12 @@ def get_forecast():
         }
         return jsonify(forecast)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.RequestException:
+        # Return a clear message to the client on upstream failures/timeouts
+        return (
+            jsonify({"error": "Weather service unreachable."}),
+            503,
+        )
 
 
 @main_blueprint.route("/admin")

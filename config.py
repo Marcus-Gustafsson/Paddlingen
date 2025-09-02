@@ -6,6 +6,8 @@ What it does:
   - It keeps configuration separate from our main application logic, which is a
     very good practice. This includes things like database location, debug modes,
     and secret keys.
+  - When ``FLASK_ENV`` is set to ``"production"`` the module checks that all
+    required credentials are provided.  Missing values raise an immediate and error so deployments fail.
 
 Why it’s here:
   - By centralizing configuration, we can easily change settings for different
@@ -67,6 +69,27 @@ PAYMENT_API_KEY = os.getenv("PAYMENT_API_KEY")
 # you might create the first admin using a separate command-line script.
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+# In production all of the above values must be defined.
+# The variables must be set in ``.env`` or the hosting environment.
+if os.getenv("FLASK_ENV") == "production":
+    _missing: list[str] = [
+        name
+        for name, value in {
+            "SECRET_KEY": SECRET_KEY,
+            "PAYMENT_API_KEY": PAYMENT_API_KEY,
+            "ADMIN_USERNAME": ADMIN_USERNAME,
+            "ADMIN_PASSWORD": ADMIN_PASSWORD,
+        }.items()
+        if not value
+    ]
+    if _missing:
+        joined = ", ".join(_missing)
+        raise RuntimeError(
+            "Missing required environment variable(s): "
+            f"{joined}. Create a '.env' file (see '.env.example') "
+            "or set them in your shell before starting the server."
+        )
 
 
 # --- Database Configuration ---

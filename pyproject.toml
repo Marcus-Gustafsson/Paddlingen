@@ -51,3 +51,10 @@ dev = [
     "pytest>=8.2.0",
     "ruff>=0.12.11",
 ]
+
+
+# You can also be explicit instead of `strict` and toggle rules you want.
+
+[[tool.mypy.overrides]]
+module = ["flask_login.*", "flask_wtf.*"]
+ignore_missing_imports = true
