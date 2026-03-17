@@ -16,6 +16,7 @@ Why it’s here:
 """
 
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 
 # --- Loading Environment Variables ---
@@ -48,6 +49,71 @@ def _bool_from_env(name: str, default: bool = False) -> bool:
     if value is None:
         return default
     return value.lower() in {"1", "true", "t", "yes", "y", "on"}
+
+
+def _format_swedish_date_display(iso_date: str, include_year: bool = False) -> str:
+    """Return a simple Swedish date string for a YYYY-MM-DD date.
+
+    Args:
+        iso_date (str): Date in ``YYYY-MM-DD`` format.
+        include_year (bool, optional): Whether the returned string should
+            include the year. Defaults to ``False``.
+
+    Returns:
+        str: Date formatted like ``"28 juni"`` or ``"28 juni 2026"``.
+    """
+
+    month_names = {
+        1: "januari",
+        2: "februari",
+        3: "mars",
+        4: "april",
+        5: "maj",
+        6: "juni",
+        7: "juli",
+        8: "augusti",
+        9: "september",
+        10: "oktober",
+        11: "november",
+        12: "december",
+    }
+    parsed_date = datetime.strptime(iso_date, "%Y-%m-%d")
+    base_display = f"{parsed_date.day} {month_names[parsed_date.month]}"
+    if include_year:
+        return f"{base_display} {parsed_date.year}"
+    return base_display
+
+
+# --- Event Settings ---
+#
+# Keep the most important event-specific values here so they are easy to find
+# and update before each year's booking period.
+EVENT_YEAR = 2026
+EVENT_DATE_ISO = "2026-03-20"
+EVENT_TIME_24H = "10:00"
+EVENT_DATETIME_LOCAL_ISO = f"{EVENT_DATE_ISO}T{EVENT_TIME_24H}:00"
+EVENT_DATE_DISPLAY = _format_swedish_date_display(EVENT_DATE_ISO)
+EVENT_FULL_DATE_DISPLAY = _format_swedish_date_display(
+    EVENT_DATE_ISO, include_year=True
+)
+EVENT_TIME_DISPLAY = f"Kl {EVENT_TIME_24H}"
+EVENT_TAGLINE = '"Bästa dagen på hela året!" - Mathias Axelsson'
+EVENT_LOCATION_NAME = "Havsjömossen"
+EVENT_LOCATION_URL = (
+    "https://www.google.com/maps/dir/Kopparberg/Havsjomossen,+714+92+Kopparberg/"
+    "@59.8803129,14.8725218,12.45z/data=!4m14!4m13!1m5!1m1!"
+    "1s0x465da83f08095abd:0x5881b6deffa02146!2m2!1d15.00051!2d59.87549!"
+    "1m5!1m1!1s0x465d07135a643b4d:0xd9ffac76e697a6b5!2m2!1d14.8500001!"
+    "2d59.8666667!3e0?entry=ttu"
+)
+EVENT_LATITUDE = 59.866580523479584
+EVENT_LONGITUDE = 14.850996977247622
+WEATHER_FORECAST_DAYS_BEFORE_EVENT = 7
+
+
+# Total number of canoes available for booking this year and price per canoe.
+AVAILABLE_CANOES = 40
+CANOE_PRICE_SEK = 1200
 
 
 # --- Secret Keys & Credentials ---
@@ -121,10 +187,6 @@ else:
 # It tracks modifications to objects and emits signals, which can use extra memory.
 # Disabling it is a common practice and helps avoid a deprecation warning.
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-# config.py
-MAX_CANOEES = 50
-
 
 # --- Form & CSRF Protection Configuration (Flask-WTF) ---
 

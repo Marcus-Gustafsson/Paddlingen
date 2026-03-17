@@ -46,20 +46,72 @@ logger = logging.getLogger(__name__)
 main_blueprint = Blueprint("main", __name__)
 
 
+def get_total_available_canoes() -> int:
+    """Return the configured total number of available canoes.
+
+    Returns:
+        int: Total number of canoes available for the current event year.
+    """
+
+    return current_app.config.get("AVAILABLE_CANOES", 50)
+
+
+def build_event_settings() -> dict[str, object]:
+    """Return the current event settings needed by templates and scripts.
+
+    Returns:
+        dict[str, object]: A beginner-friendly collection of event values used
+        by the homepage template and frontend JavaScript.
+    """
+
+    event_year = current_app.config["EVENT_YEAR"]
+    total_available_canoes = get_total_available_canoes()
+
+    return {
+        "year": event_year,
+        "section_id": f"year-{event_year}",
+        "date_display": current_app.config["EVENT_DATE_DISPLAY"],
+        "full_date_display": current_app.config["EVENT_FULL_DATE_DISPLAY"],
+        "time_display": current_app.config["EVENT_TIME_DISPLAY"],
+        "datetime_local_iso": current_app.config["EVENT_DATETIME_LOCAL_ISO"],
+        "tagline": current_app.config["EVENT_TAGLINE"],
+        "location_name": current_app.config["EVENT_LOCATION_NAME"],
+        "location_url": current_app.config["EVENT_LOCATION_URL"],
+        "available_canoes_total": total_available_canoes,
+        "price_per_canoe_sek": current_app.config["CANOE_PRICE_SEK"],
+        "weather_forecast_days_before_event": current_app.config[
+            "WEATHER_FORECAST_DAYS_BEFORE_EVENT"
+        ],
+    }
+
+
+def get_event_coordinates() -> tuple[float, float]:
+    """Return the configured latitude and longitude for the event location.
+
+    Returns:
+        tuple[float, float]: Event latitude and longitude used by the weather
+        forecast integration.
+    """
+
+    latitude = current_app.config.get("EVENT_LATITUDE", 59.866580523479584)
+    longitude = current_app.config.get("EVENT_LONGITUDE", 14.850996977247622)
+    return latitude, longitude
+
+
 @main_blueprint.route("/")
 def index():
     """Homepage route handler.
 
-    We also calculate how many canoes are still free
-    (current_app.config.get('MAX_CANOEES', 50) – current bookings) and
-    send that to the template for client-side dropdown limiting.
+    We also calculate how many canoes are still free and send that to the
+    template for client-side dropdown limiting.
     """
     # fetch all bookings for your overview panel
     alla_bokningar = RentForm.query.order_by(RentForm.id).all()
 
     # server‐side business rule from config
     current = RentForm.query.count()
-    available_canoes = max(0, current_app.config.get("MAX_CANOEES", 50) - current)
+    available_canoes = max(0, get_total_available_canoes() - current)
+    event_settings = build_event_settings()
 
     return render_template(
         "index.html",
@@ -72,6 +124,7 @@ def index():
         pics2025=get_images_for_year("2025"),
         bokningar=alla_bokningar,
         available_canoes=available_canoes,
+        event_settings=event_settings,
     )
 
 
@@ -98,7 +151,7 @@ def payment():
 
     # 2) count existing bookings
     current = RentForm.query.count()
-    available = current_app.config.get("MAX_CANOEES", 50) - current
+    available = get_total_available_canoes() - current
 
     # 3) if they want too many, stop here
     # Log the requested and available canoe counts for debugging purposes.
@@ -158,7 +211,7 @@ def payment_success():
     requested = pending.canoe_count
     names = json.loads(pending.participant_names)
     current = RentForm.query.count()
-    if current + requested > current_app.config.get("MAX_CANOEES", 50):
+    if current + requested > get_total_available_canoes():
         flash("Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.", "error")
         db.session.delete(pending)
         db.session.commit()
@@ -238,10 +291,6 @@ def logout():
     return redirect(url_for("main.login"))
 
 
-# === Coordinates for your specific event location ===
-LAT = 59.866580523479584
-LON = 14.850996977247622
-
 # MET Norway Weather API endpoint
 MET_API_URL = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
 
@@ -275,7 +324,8 @@ def get_forecast():
     headers = {
         "User-Agent": "PaddlingenEventApp/1.0 (contact@example.com)"  # Required by MET API
     }
-    params = {"lat": LAT, "lon": LON}
+    latitude, longitude = get_event_coordinates()
+    params = {"lat": latitude, "lon": longitude}
 
     target_date = request.args.get("date")
     if not target_date:

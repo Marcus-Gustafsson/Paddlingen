@@ -18,12 +18,12 @@ def test_login_page(client):
 def test_booking_over_limit_shows_error(client):
     """Request too many canoes and confirm an error message is shown.
 
-    This test temporarily lowers ``MAX_CANOEES`` to a very small number to
+    This test temporarily lowers ``AVAILABLE_CANOES`` to a very small number to
     simulate a fully booked day. It then posts a form asking for more canoes
     than are available. Flask should respond with a flash error on the home
     page and refuse to create any :class:`PendingBooking` records.
     """
-    client.application.config["MAX_CANOEES"] = 1
+    client.application.config["AVAILABLE_CANOES"] = 1
 
     response = client.post(
         "/create-checkout-session",
@@ -45,7 +45,7 @@ def test_successful_booking_creates_records(client):
     :class:`RentForm` rows should be created and the temporary
     :class:`PendingBooking` table left empty.
     """
-    client.application.config["MAX_CANOEES"] = 3
+    client.application.config["AVAILABLE_CANOES"] = 3
 
     booking_data = {
         "canoeCount": "2",

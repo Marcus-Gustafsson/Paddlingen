@@ -36,29 +36,48 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ADMIN_PASSWORD=changeme
    FLASK_DEBUG=True
    SESSION_COOKIE_SECURE=False
-   # Optional: use PostgreSQL instead of the default SQLite database
-   # DATABASE_URL=postgresql+psycopg://paddlingen:password@localhost:5432/paddlingen
+   DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<database-password>@<host>:5432/postgres?sslmode=require
+   # Optional later if you test Supabase API features
+   SUPABASE_URL=https://<project-ref>.supabase.co
+   SUPABASE_ANON_KEY=replace-me-if-needed-later
+   SUPABASE_SERVICE_ROLE_KEY=replace-me-if-needed-later
    ```
 
-   `DATABASE_URL` controls which database is used. Leave it unset to store data in `instance/paddlingen.db` (SQLite). To develop against a local PostgreSQL server, set it to a connection string like the example above.
+   `DATABASE_URL` controls which database is used. Leave it unset to store data in `instance/paddlingen.db` (SQLite). To test the current app against Supabase, set it to the Supabase Postgres connection string.
 
-   ### PostgreSQL example
+   ### Supabase setup for the current implementation
 
-   1. **Create the database**
+   1. **Open your Supabase project dashboard**
+      Go to your project and find the database connection details.
 
-      ```bash
-      createdb -U <your_postgres_user> paddlingen
+   2. **Choose the database connection method**
+      For the current Flask app, use a normal Postgres connection string. If direct connection support is awkward in your environment, use the Supavisor session pooler connection string instead.
+
+   3. **Set the connection string** – add a `DATABASE_URL` to your `.env` file (replace the placeholders):
+
       ```
-
-   2. **Set the connection string** – add a `DATABASE_URL` to your `.env` file (replace the placeholders):
-
-      ```
-      DATABASE_URL=postgresql+psycopg://<username>:<password>@<host>:5432/paddlingen
+      DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<database-password>@<host>:5432/postgres?sslmode=require
       ```
 
       The `psycopg[binary]` driver is already declared in `pyproject.toml`; ensure it is installed via `uv sync` or `make install`.
 
-   Tests continue to use an in-memory SQLite database via [`tests/conftest.py`](tests/conftest.py), so `pytest` runs without requiring PostgreSQL.
+      Important note:
+
+      Supabase often shows the URL in the generic form `postgresql://...`.
+      For this project, change that prefix to `postgresql+psycopg://...` so
+      SQLAlchemy uses the installed `psycopg` v3 driver instead of looking for
+      `psycopg2`.
+
+      If the direct host fails with an error showing an IPv6 address and
+      `Network is unreachable`, switch to the Supavisor session pooler
+      connection string from the Supabase dashboard. That usually works better
+      from local WSL and home-network setups that do not have working IPv6
+      connectivity.
+
+   4. **Keep the API-style Supabase variables optional for now**
+      `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are only needed later if you decide to test Supabase API features such as Storage. They are not required for the current SQLAlchemy-based setup.
+
+   Tests continue to use an in-memory SQLite database via [`tests/conftest.py`](tests/conftest.py), so `pytest` runs without requiring Supabase.
 
 4. **Initialize the database**
    ```bash
@@ -99,10 +118,8 @@ Paddlingen uses [Alembic](https://alembic.sqlalchemy.org/) to keep the database 
 
 For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
 
-## Deployment
+## Project docs
 
-See [docs/deployment.md](docs/deployment.md) for deployment instructions.
-
-## WSL
-
-See [docs/wsl.md](docs/wsl.md) for WSL-specific development notes (mostly how to view website on phone).
+- [docs/TechnicalOverview.md](docs/TechnicalOverview.md) explains how the app is currently built.
+- [docs/Roadmap.md](docs/Roadmap.md) tracks the planned implementation steps.
+- [docs/dev_doc.md](docs/dev_doc.md) is the practical development commands and workflow document.

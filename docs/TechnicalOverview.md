@@ -109,6 +109,13 @@ This is the current role of the main files and folders.
   Repository-level instructions for coding style, workflow expectations, WSL
   assumptions, and documentation upkeep.
 
+- `Dockerfile`
+  First application container definition for running the Flask app in Docker.
+
+- `.dockerignore`
+  Prevents local caches, docs, tests, and other unnecessary files from being
+  copied into the Docker build context.
+
 - `README.md`
   The current top-level setup document. Some parts are now outdated and will
   need to be refreshed as the roadmap progresses.
@@ -252,6 +259,7 @@ Why this matters now:
 
 ### What it currently controls
 
+- event year, date, time, location, canoe count, and price
 - `SECRET_KEY`
 - `PAYMENT_API_KEY`
 - `ADMIN_USERNAME`
@@ -261,7 +269,7 @@ Why this matters now:
 - `SESSION_COOKIE_SECURE`
 - session security settings
 - CSRF settings
-- `MAX_CANOEES`
+- `AVAILABLE_CANOES`
 
 ### Why configuration is separated from route code
 
@@ -272,6 +280,10 @@ It allows the app to:
 - behave differently in development and production,
 - keep secrets outside source code,
 - swap database backends without rewriting route logic.
+
+It also makes yearly event updates easier because important event-specific
+values can now be changed in one obvious place instead of being hardcoded in
+multiple files.
 
 ### Current database behavior
 
@@ -285,8 +297,8 @@ If `DATABASE_URL` is not set:
 
 Important note:
 
-- The roadmap now plans to move the project toward Docker plus PostgreSQL as the
-  default development path, so this area will likely change.
+- The roadmap now plans to move the project toward Docker for the app, with
+  Supabase as the first hosted database to test against.
 
 ## Database Design
 
@@ -405,7 +417,7 @@ the file is now growing large enough that it may later need to be split.
 
 The main business rule is simple:
 
-- the total number of booked canoes must not exceed `MAX_CANOEES`.
+- the total number of booked canoes must not exceed `AVAILABLE_CANOES`.
 
 ### Where availability is currently checked
 
@@ -590,8 +602,9 @@ The main test fixture in `tests/conftest.py`:
 ### Why this will probably evolve
 
 - SQLite is convenient for fast tests.
-- But PostgreSQL can behave differently.
-- The roadmap therefore includes adding PostgreSQL-focused integration tests.
+- But hosted Postgres behavior can differ from local SQLite.
+- The roadmap therefore includes testing against Supabase as the first hosted
+  database platform.
 
 ## Migrations
 
@@ -700,7 +713,9 @@ Current state:
 
 Planned improvement:
 
-- Move toward Docker plus PostgreSQL as the main local workflow.
+- Move toward Docker for the app plus Supabase as the first hosted database
+  workflow to validate.
+- Keep SQLAlchemy and Alembic as the default path for booking-critical data.
 
 ### Monitoring
 
@@ -716,11 +731,12 @@ Planned improvement:
 
 Current state:
 
-- Not yet standardized.
+- Early container support now exists through the root `Dockerfile`, but the
+  full local Docker stack is not finished yet.
 
 Planned improvement:
 
-- Test a Cloud Run deployment with Neon or Supabase.
+- Test a Cloud Run deployment with Supabase.
 
 ## What Someone New Should Understand First
 

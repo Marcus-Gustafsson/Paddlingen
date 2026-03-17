@@ -13,13 +13,17 @@
 
 //////// CONSTANTS ////////
 
-// How many canoes are available
-const TOTAL_CANOES_CURRENT_YEAR = 50; 
+const eventSettings = window.PADDLINGEN_EVENT_SETTINGS || {};
 
-// Set event’s date & time here:
-const currentYearEventDate = new Date('2025-06-14T10:00:00');
-
-const PRICE_PER_CANOE = 1200;   // in SEK
+// Keep event-specific values in the server-side config so they can be changed
+// in one place before each year's event.
+const TOTAL_CANOES_CURRENT_YEAR = eventSettings.available_canoes_total || 50;
+const currentYearEventDate = new Date(
+  eventSettings.datetime_local_iso || '2026-06-28T10:00:00'
+);
+const PRICE_PER_CANOE = eventSettings.price_per_canoe_sek || 1200;
+const WEATHER_FORECAST_DAYS_BEFORE_EVENT =
+  eventSettings.weather_forecast_days_before_event || 7;
 
 ////////////////////
 
@@ -164,8 +168,8 @@ function fetchWeatherIfAvailable(currentYearEventDate) {
   const diffDays = Math.ceil(diffMs / msPerDay);
 
   // Show countdown or fetch forecast
-  if (diffDays > 7) {
-    const daysUntil = diffDays - 7;
+  if (diffDays > WEATHER_FORECAST_DAYS_BEFORE_EVENT) {
+    const daysUntil = diffDays - WEATHER_FORECAST_DAYS_BEFORE_EVENT;
     document.getElementById('weatherStatus').innerHTML = `
       Prognos kommer vara tillgänglig om
       <span id="daysUntil">${daysUntil}</span> dagar
@@ -182,7 +186,8 @@ function fetchWeatherIfAvailable(currentYearEventDate) {
         updateWeather(currentYearEventDate, data);
       })
       .catch(err => {
-        document.getElementById('weatherStatus').innerText = "Tillgänglig 7 dagar innan";
+        document.getElementById('weatherStatus').innerText =
+          `Tillgänglig ${WEATHER_FORECAST_DAYS_BEFORE_EVENT} dagar innan`;
         console.error("Forecast error:", err);
       });
   }

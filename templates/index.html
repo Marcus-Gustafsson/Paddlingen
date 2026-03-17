@@ -26,6 +26,9 @@ Why it’s here:
 
   <!-- 4. Link to our custom CSS served by Flask -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script>
+    window.PADDLINGEN_EVENT_SETTINGS = {{ event_settings | tojson }};
+  </script>
 </head>
 
 <body>
@@ -50,7 +53,7 @@ Why it’s here:
      <!-- ===== YEAR SIDEBAR (OVERLAY) ===== -->
   <aside class="year-sidebar">
     <!-- 1. Current year as a link -->
-    <a href="#year-2026" class="current-year">2026</a>
+    <a href="#{{ event_settings.section_id }}" class="current-year">{{ event_settings.year }}</a>
 
     <!-- 2. Divider -->
     <hr class="sidebar-divider">
@@ -101,25 +104,25 @@ Why it’s here:
 
     <!-- ===== Current Year Section ===== -->
     <!-- “year-section” will now handle centering for us -->
-    <section id="year-2026" class="year-section current-year-section scroll-animate">
-      <h1 class="main-title no-select scroll-animate">Paddlingen 2026</h1>
-      <h2 class="main-subtitle no-select scroll-animate">"Bästa dagen på hela året!" – Mathias Axelsson</h2>
-      <div class="date-time no-select scroll-animate" id="dateTime">28 juni – Kl 10:00</div>
+    <section id="{{ event_settings.section_id }}" class="year-section current-year-section scroll-animate">
+      <h1 class="main-title no-select scroll-animate">Paddlingen {{ event_settings.year }}</h1>
+      <h2 class="main-subtitle no-select scroll-animate">{{ event_settings.tagline }}</h2>
+      <div class="date-time no-select scroll-animate" id="dateTime">{{ event_settings.date_display }} – {{ event_settings.time_display }}</div>
       <div class="location scroll-animate">
         Samlingsplats:
-        <a href="https://www.google.com/maps/dir/Kopparberg/Havsjomossen,+714+92+Kopparberg/@59.8803129,14.8725218,12.45z/data=!4m14!4m13!1m5!1m1!1s0x465da83f08095abd:0x5881b6deffa02146!2m2!1d15.00051!2d59.87549!1m5!1m1!1s0x465d07135a643b4d:0xd9ffac76e697a6b5!2m2!1d14.8500001!2d59.8666667!3e0?entry=ttu&g_ep=EgoyMDI1MDUyNy4wIKXMDSoASAFQAw%3D%3D"
+        <a href="{{ event_settings.location_url }}"
            target="_blank" rel="noopener">
-          Havsjömossen
+          {{ event_settings.location_name }}
         </a>
       </div>
 
       <!-- Weather widget -->
       <div class="weather-widget weather-widget-inline scroll-animate" id="weatherWidget">
         <h4 class="widget-title">
-          Väder för <span id="eventDateText">28 juni 2026</span>
+          Väder för <span id="eventDateText">{{ event_settings.full_date_display }}</span>
         </h4>
         <p class="widget-status" id="weatherStatus">
-          Prognos kommer vara tillgänglig om <span id="daysUntil">14</span> dagar
+          Prognos laddas...
         </p>
         <div class="widget-forecast" id="widgetForecast" style="display:none;">
           <div>
@@ -457,7 +460,7 @@ Why it’s here:
       <!-- Tab content: Questions -->
       <div class="modal-body modal-body--hidden" id="questions">
         <ul>
-          <li><strong>Hur många kanoter?</strong> Max 50 – först till kvarn.</li>
+          <li><strong>Hur många kanoter?</strong> Max {{ event_settings.available_canoes_total }} – först till kvarn.</li>
           <li><strong>Ålder:</strong> Barn under 12 år måste ha vuxet sällskap.</li>
           <li><strong>Avbokning:</strong> Senast 7 dagar före eventet.</li>
           <!-- …fler frågor här… -->
@@ -572,5 +575,3 @@ Why it’s here:
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
-
-

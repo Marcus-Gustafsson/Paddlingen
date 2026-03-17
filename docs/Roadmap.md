@@ -13,9 +13,9 @@ It is written to be:
 - easy to test after each change,
 - aligned with the current direction:
   - local development with Docker,
-  - local PostgreSQL for development and testing,
+  - Supabase as the first hosted database to test with,
   - later deployment experiments with Google Cloud Run,
-  - later managed PostgreSQL testing with Neon or Supabase,
+  - Supabase API features used only later if they clearly help,
   - Stripe for payments,
   - proper logging and monitoring before public launch.
 
@@ -33,26 +33,24 @@ These are the main goals the roadmap should support:
 
 Important development rule:
 
-- We should still use a local PostgreSQL database in Docker as the main
-  development database.
-- Later, we should also create a free Neon or Supabase project for integration
-  testing before deployment.
+- We will use the Supabase test project as the first real hosted database to
+  validate the application.
+- We will keep the current SQLAlchemy and Alembic architecture unless there is a
+  strong reason to rewrite it.
 
 Why:
 
-- Local PostgreSQL makes development faster, cheaper, and more predictable.
-- Neon or Supabase should be treated as deployment-like environments, not as the
-  main place where everyday development happens.
-- This gives us both:
-  - a stable local workflow,
-  - and realistic cloud testing before launch.
+- The current app already uses SQLAlchemy models and Alembic migrations.
+- That means the easiest Supabase path is to treat Supabase as hosted Postgres
+  first.
+- This avoids rewriting the whole backend before we know it is necessary.
 
 ## Phase 1: Understand The Current Project
 
 Goal:
 
 
-### Step 1. Fix obvious inconsistencies
+### Step 1. Fix obvious inconsistencies (Completed 2026-03-17)
 
 What to do:
 
@@ -70,19 +68,28 @@ How to test:
 - Refresh the site and confirm the visible data matches the intended event year
   and current logic.
 
-## Phase 2: Standardize Local Development With Docker And PostgreSQL
+Completed work:
+
+- Centralized important current-event settings in `config.py`.
+- Standardized the canoe-limit setting to `AVAILABLE_CANOES`.
+- Fixed the current-year date mismatch between the backend/template values and
+  the frontend weather logic.
+- Updated the README to remove references to deleted docs.
+
+## Phase 2: Standardize Local Development With Docker And Supabase
 
 Goal:
 
-- Make local development reproducible and closer to production.
+- Make local development reproducible while testing against a real hosted
+  Supabase project.
 
 Why this phase matters:
 
 - Docker gives us a predictable setup.
-- Local PostgreSQL helps us practice the same database type we expect to use in
-  the cloud.
+- Supabase lets us test against the database platform we want to evaluate
+  without waiting until final deployment.
 
-### Step 1. Add a Dockerfile for the Flask app
+### Step 1. Add a Dockerfile for the Flask app (Completed 2026-03-17)
 
 What to do:
 
@@ -96,84 +103,135 @@ How to test:
 
 - Build the image successfully.
 
-### Step 2. Add a PostgreSQL service in Docker Compose
+Completed work:
+
+- Added a first `Dockerfile` for the Flask application.
+- Added a `.dockerignore` so local caches and development-only files are not
+  copied into the Docker build context.
+
+Current note:
+
+- This step only containerizes the Flask app.
+- Supabase database wiring still belongs to the next roadmap steps.
+
+### Step 2. Create a Supabase test project and collect the required credentials
 
 What to do:
 
-- Add a PostgreSQL container for local development.
+- Use the existing Supabase account and create one test project for this app.
+- Collect:
+  - project URL,
+  - database password,
+  - connection string,
+  - anon key,
+  - service role key.
 
 Why:
 
-- The database should run as a separate service from the app.
+- We need one real hosted environment to test against before deployment.
+- The credentials must be identified clearly before the app can connect.
 
 How to test:
 
-- Start the database container and confirm it is reachable.
+- Confirm you can view the project details in the Supabase dashboard and locate
+  the connection information and API keys.
 
-### Step 3. Add Docker Compose for app + database together
+### Step 3. Choose the correct Supabase database connection method
 
 What to do:
 
-- Create a single local command that starts the whole stack.
+- Decide whether to use:
+  - direct connection, or
+  - Supavisor session pooler.
 
 Why:
 
-- This reduces setup mistakes and makes development easier to repeat.
+- Supabase recommends connection strings for Postgres clients.
+- For persistent backend services, direct connection is preferred when IPv6 is
+  supported; otherwise the session pooler is the safer choice.
 
 How to test:
 
-- Start both containers and load the website in the browser.
+- Write down which connection string will be used and why.
 
-### Step 4. Move configuration into a Docker-friendly setup
+### Step 4. Add Supabase environment variables to the app configuration
 
 What to do:
 
-- Make sure environment variables work clearly with the containers.
+- Add the environment variables needed for the first Supabase test.
+- Required now:
+  - `DATABASE_URL`
+- Optional later:
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
 
 Why:
 
-- The app needs predictable configuration for database connection, secrets, and
-  admin credentials.
+- The current app only needs the database connection string.
+- The API-style Supabase variables can wait until we actually test features
+  like Storage or other Supabase services.
 
 How to test:
 
-- Change configuration values through environment variables and confirm the app
-  still starts correctly.
+- Start the app with the new variables present and confirm configuration loads
+  correctly.
 
-### Step 5. Configure the app to use local PostgreSQL by default in Docker
+### Step 5. Connect the current SQLAlchemy app to Supabase Postgres
 
 What to do:
 
-- Point the app container to the PostgreSQL container.
+- Point `DATABASE_URL` to the chosen Supabase Postgres connection string.
 
 Why:
 
-- This becomes the default local development path.
+- This lets the current backend use Supabase without rewriting the data layer.
+- It matches how the app already works today.
 
 How to test:
 
-- Start the stack and confirm the app can read and write data in PostgreSQL.
+- Start the app and confirm it can read and write data in the Supabase-hosted
+  database.
 
-### Step 6. Make migrations the normal schema workflow
+### Step 6. Run Alembic migrations against Supabase Postgres
 
 What to do:
 
-- Make sure schema changes are applied through Alembic migrations.
+- Apply the existing schema to the Supabase database through Alembic.
 
 Why:
 
-- This is the safer long-term way to manage database changes.
+- The current project already uses Alembic, so schema changes should remain
+  migration-driven.
 
 How to test:
 
-- Run migrations against the local PostgreSQL container and confirm the schema
-  is created correctly.
+- Run migrations successfully and confirm the expected tables appear in
+  Supabase.
 
-### Step 7. Update the README for the Docker-first workflow
+### Step 7. Test the current booking and admin flows against Supabase
 
 What to do:
 
-- Replace old setup instructions with the new local workflow.
+- Run the app locally with the Supabase-backed `DATABASE_URL`.
+- Test the booking flow and the admin flow manually.
+
+Why:
+
+- This confirms the real hosted database works with the current code before any
+  refactor is attempted.
+
+How to test:
+
+- Create a test booking, confirm it appears in the database and admin view, and
+  verify the admin can still log in and edit data.
+
+### Step 8. Update the README for the Docker + Supabase workflow
+
+What to do:
+
+- Replace outdated setup instructions with the current Supabase-based testing
+  path.
 
 Why:
 
@@ -183,22 +241,24 @@ How to test:
 
 - Follow the README from a clean state and confirm it works.
 
-## Phase 3: Test The Local Stack Properly
+## Phase 3: Test The Docker Plus Supabase Stack Properly
 
 Goal:
 
-- Make sure the new local environment is stable before adding cloud services.
+- Make sure the new Docker plus Supabase setup is stable before adding payment
+  and deployment work.
 
 Why this phase matters:
 
-- We should trust the local setup before we start testing cloud-specific
-  behavior.
+- We should trust the core development setup before we build more features on
+  top of it.
 
 ### Step 1. Make the automated tests pass with the new setup
 
 What to do:
 
-- Run the test suite and fix anything broken by the Docker/PostgreSQL changes.
+- Run the test suite and fix anything broken by the Docker and Supabase-related
+  changes.
 
 Why:
 
@@ -243,33 +303,39 @@ How to test:
 
 - Re-run the race-condition test and confirm it passes reliably.
 
-### Step 4. Add at least one PostgreSQL integration test
+### Step 4. Add at least one optional Supabase-backed integration check
 
 What to do:
 
-- Add one test that verifies key database behavior against PostgreSQL.
+- Add one integration test or verification script that runs only when the
+  Supabase test environment variables are present.
+- Use it to verify one important database behavior against the hosted Supabase
+  database.
 
 Why:
 
-- SQLite and PostgreSQL can behave differently.
+- SQLite and hosted Postgres can behave differently.
+- This should not make normal local test runs depend on the internet or a cloud
+  account, so the check should stay optional.
 
 How to test:
 
-- Run the test against the local PostgreSQL setup and confirm it passes.
+- Run the Supabase-backed check intentionally and confirm it passes.
 
-### Step 5. Test database reset and seed flows
+### Step 5. Test migration and seed flows against the Supabase test database
 
 What to do:
 
-- Verify initialization, migrations, and admin seeding in the Docker setup.
+- Verify migrations and admin seeding against a disposable Supabase test
+  database or clearly reset test data between runs.
 
 Why:
 
-- These are the commands needed when setting up a fresh environment.
+- These are the commands needed when preparing a fresh hosted environment.
 
 How to test:
 
-- Start from an empty database and confirm setup commands work.
+- Start from a clean Supabase test state and confirm setup commands work.
 
 ## Phase 4: Add ngrok For Real Device And Webhook Testing
 
@@ -326,109 +392,85 @@ How to test:
 
 - Confirm the app can receive a test request through the public tunnel.
 
-## Phase 5: Test Managed PostgreSQL In The Cloud
+## Phase 5: Add Previous-Years Image Support
 
 Goal:
 
-- Verify that the app also works with a real hosted PostgreSQL provider.
+- Show previous-years images in a simple way that fits the hosting plan.
 
 Why this phase matters:
 
-- Local PostgreSQL is the main development setup.
-- Neon or Supabase should be the next test step before deployment.
+- Previous-years images are part of the website goal.
+- It is easier to choose a simple image approach early than to bolt it on late.
 
-### Step 1. Compare Neon and Supabase for this project
-
-What to do:
-
-- Choose one provider to test first.
-
-Why:
-
-- Both are useful, but it is better to test one properly than both at once.
-
-Suggested first choice:
-
-- Start with Neon if the main focus is simple hosted PostgreSQL.
-- Start with Supabase if storage for images may soon matter as well.
-
-How to test:
-
-- Write down the selected provider and the reason for the choice.
-
-### Step 2. Create one free managed PostgreSQL project
-
-What to do:
-
-- Create a free account and one test database project.
-
-Why:
-
-- This gives us a realistic cloud database to test against.
-
-How to test:
-
-- Confirm you can connect to the database from the app locally.
-
-### Step 3. Run migrations against the managed database
-
-What to do:
-
-- Apply the schema to the hosted database.
-
-Why:
-
-- We need to confirm the real cloud database works with our migration flow.
-
-How to test:
-
-- Run migrations successfully and inspect the created tables.
-
-### Step 4. Run the app locally against the managed database
-
-What to do:
-
-- Point the local app container to Neon or Supabase.
-
-Why:
-
-- This tests a production-like database setup without deploying the app yet.
-
-How to test:
-
-- Create and read bookings successfully through the app.
-
-### Step 5. Decide how images should be stored
+### Step 1. Decide where images should live first
 
 What to do:
 
 - Decide between:
-  - keeping images as app static files for now,
-  - or moving them to object storage later.
+  - storing a small first set of images inside the project as static files,
+  - or using Supabase Storage.
 
 Why:
 
-- This affects hosting simplicity and future maintainability.
+- This choice affects complexity, deployment, and how much Supabase is used at
+  the start.
+
+Recommended first choice:
+
+- Start with static files if the number of images is small and you want the
+  simplest first version.
+- Move to Supabase Storage later if image management becomes annoying or you
+  want uploads outside the codebase.
 
 How to test:
 
-- Confirm the chosen approach works for at least one image example.
+- Write down the selected image approach and the reason for the choice.
 
-### Step 6. Implement the previous-years image display approach
+### Step 2. Add the first previous-years images
 
 What to do:
 
-- Implement the chosen image setup so previous-year images actually render in
-  the website using the selected source.
+- Add a small set of real images from previous years using the chosen storage
+  approach.
 
 Why:
 
-- The website goal is not just to store images, but to show them correctly to
-  visitors.
+- We should prove the image plan works with real files, not just a placeholder
+  idea.
 
 How to test:
 
-- Open the website and confirm previous-year sections display images correctly.
+- Confirm the files are accessible in development.
+
+### Step 3. Display the images on the website
+
+What to do:
+
+- Render the previous-years images in a clear section on the site.
+
+Why:
+
+- The goal is to show the images to visitors, not only store them somewhere.
+
+How to test:
+
+- Open the website and confirm the images render correctly.
+
+### Step 4. Check image performance and maintenance effort
+
+What to do:
+
+- Decide whether the chosen image approach is still simple enough.
+
+Why:
+
+- It is better to evaluate this early before more images are added.
+
+How to test:
+
+- Review the result and decide whether to keep it or switch to Supabase Storage
+  before launch.
 
 ## Phase 6: Replace The Fake Payment Flow With Stripe
 
@@ -637,11 +679,11 @@ How to test:
 
 - Deploy a test version and confirm the app starts.
 
-### Step 2. Connect Cloud Run to the managed database
+### Step 2. Connect Cloud Run to Supabase
 
 What to do:
 
-- Connect the deployed app to Neon or Supabase.
+- Connect the deployed app to Supabase.
 
 Why:
 
@@ -762,6 +804,9 @@ How to test:
 
 The next best step is:
 
-1. Define what booking information must be stored.
-2. Verify the current booking and admin flows manually.
-3. Then implement the Docker + local PostgreSQL setup.
+1. Create the Supabase test project and collect the connection details and API
+   details.
+2. Add `DATABASE_URL` to the local `.env` file and keep the other Supabase
+   values as optional placeholders for later.
+3. Run the current app against Supabase before considering any SDK-based
+   refactor.
