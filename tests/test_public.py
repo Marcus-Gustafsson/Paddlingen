@@ -11,6 +11,9 @@ def test_home_page(client):
     assert "Boka kanot" in page
     assert "Tryck för att se deltagare" in page
     assert "Visa bilder från tidigare år" in page
+    assert "Steg 1 av 2" in page
+    assert "Regler och vanliga frågor" in page
+    assert "info@paddlingen.se" in page
 
 
 def test_login_page(client):
@@ -36,6 +39,24 @@ def test_booking_over_limit_shows_error(client):
     )
     page = response.get_data(as_text=True)
     assert "Tyvärr, bara 1 kanot(er) kvar" in page
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 0
+
+
+def test_booking_over_per_booking_limit_shows_error(client):
+    """Reject bookings larger than the configured per-order limit."""
+
+    client.application.config["AVAILABLE_CANOES"] = 20
+    client.application.config["MAX_CANOES_PER_BOOKING"] = 5
+
+    response = client.post(
+        "/create-checkout-session",
+        data={"canoeCount": "6"},
+        follow_redirects=True,
+    )
+    page = response.get_data(as_text=True)
+    assert "Du kan boka högst 5 kanoter åt gången." in page
 
     with client.application.app_context():
         assert BookingOrder.query.count() == 0

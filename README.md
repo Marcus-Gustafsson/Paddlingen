@@ -179,3 +179,11 @@ For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en
 - [docs/TechnicalOverview.md](docs/TechnicalOverview.md) explains how the app is currently built.
 - [docs/Roadmap.md](docs/Roadmap.md) tracks the planned implementation steps.
 - [docs/dev_doc.md](docs/dev_doc.md) is the practical development commands and workflow document.
+
+
+
+### Icon attributions
+
+<a href="https://www.freepik.com/animated-icon/questions-answers_12205154#fromView=search&page=1&position=25&uuid=dea22ebe-c84f-4a5c-becc-13cc1116ad77">Icon by Freepik</a>
+
+<a href="https://www.flaticon.com/free-animated-icons/contact" title="contact animated icons">Contact animated icons created by Freepik - Flaticon</a>

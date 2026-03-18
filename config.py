@@ -112,7 +112,8 @@ WEATHER_FORECAST_DAYS_BEFORE_EVENT = 7
 
 
 # Total number of canoes available for booking this year and price per canoe.
-AVAILABLE_CANOES = 40
+AVAILABLE_CANOES = 50
+MAX_CANOES_PER_BOOKING = 5
 CANOE_PRICE_SEK = 1200
 
 

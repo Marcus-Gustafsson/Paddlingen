@@ -86,19 +86,33 @@ Current homepage note:
   the active homepage CSS so the new hero layout is easier to reason about.
 - The previous-years ribbon now loops continuously through the available image
   list instead of using the older preview-only ribbon animation.
+- On phone-width screens, the layout now shifts to a portrait-first stacked
+  layout so the weather widget and icon buttons sit above the title instead of
+  competing with it from the sides.
+- On tablet-width screens, the hero now uses its own breakpoint so the center
+  content can sit lower and feel more balanced on devices such as iPad Pro in
+  landscape mode.
+- The FAQ and contact popups now share the same darker card-based style
+  direction as the booking modal so the public UI feels more consistent.
+- The contact popup currently uses direct `mailto:` and phone links instead of
+  an in-site message form.
 
 ### Booking flow
 
 1. A visitor opens the booking modal on the homepage.
-2. JavaScript builds the booking form fields in the browser.
-3. The form is submitted to `/create-checkout-session`.
-4. Flask checks the requested canoe count against current confirmed
+2. The first booking step lets the visitor choose the number of canoes.
+3. The second booking step collects first and last names for each canoe and
+   shows a booking summary before submission.
+4. One booking is now limited to at most 5 canoes, so larger groups must make
+   more than one booking.
+5. The form is submitted to `/create-checkout-session`.
+6. Flask checks the requested canoe count against current confirmed
    availability.
-5. Flask creates one `BookingOrder` row with status `pending_payment`.
-6. Flask creates one `BookedCanoe` row per participant with status `reserved`.
-7. The `pending_booking_order_id` is stored in the user session.
-8. The user is redirected to `/payment-success`.
-9. The app reads the pending order from the database and marks the order as
+7. Flask creates one `BookingOrder` row with status `pending_payment`.
+8. Flask creates one `BookedCanoe` row per participant with status `reserved`.
+9. The `pending_booking_order_id` is stored in the user session.
+10. The user is redirected to `/payment-success`.
+11. The app reads the pending order from the database and marks the order as
    `paid` and the canoe rows as `confirmed`.
 
 Important note:
@@ -486,6 +500,7 @@ JavaScript.
 - event presentation,
 - previous-years ribbon,
 - booking modal,
+- two-step booking flow with summary,
 - participant overview modal,
 - FAQ modal,
 - contact modal,
@@ -572,7 +587,7 @@ Important current limitation:
 
 ## CLI Commands
 
-The app registers two custom Flask CLI commands.
+The app registers several custom Flask CLI commands.
 
 ### `init-db`
 
@@ -598,6 +613,29 @@ Why it exists:
 
 - It gives a quick way to bootstrap admin access without manually editing the
   database.
+
+### `seed-test-bookings`
+
+What it does:
+
+- Removes any older seeded development bookings.
+- Creates a chosen number of confirmed test bookings marked with
+  `payment_provider = "dev_seed"`.
+
+Why it exists:
+
+- It gives a fast way to test the booking UI near capacity without manually
+  creating many bookings in the browser.
+
+### `clear-test-bookings`
+
+What it does:
+
+- Removes all development bookings marked with `payment_provider = "dev_seed"`.
+
+Why it exists:
+
+- It gives a clean reset for booking-UI testing without touching real bookings.
 
 ## Testing Strategy
 

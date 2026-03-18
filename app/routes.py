@@ -56,6 +56,12 @@ def get_total_available_canoes() -> int:
     return current_app.config.get("AVAILABLE_CANOES", 50)
 
 
+def get_max_canoes_per_booking() -> int:
+    """Return the maximum number of canoes allowed in one booking."""
+
+    return current_app.config.get("MAX_CANOES_PER_BOOKING", 5)
+
+
 def get_confirmed_booked_canoes_query():
     """Return the query used for canoe rows that count as real bookings."""
 
@@ -127,6 +133,7 @@ def build_event_settings() -> dict[str, object]:
         "location_name": current_app.config["EVENT_LOCATION_NAME"],
         "location_url": current_app.config["EVENT_LOCATION_URL"],
         "available_canoes_total": total_available_canoes,
+        "max_canoes_per_booking": get_max_canoes_per_booking(),
         "price_per_canoe_sek": current_app.config["CANOE_PRICE_SEK"],
         "weather_forecast_days_before_event": current_app.config[
             "WEATHER_FORECAST_DAYS_BEFORE_EVENT"
@@ -244,6 +251,13 @@ def payment():
     if requested > available:
         flash(
             f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",
+            "error",
+        )
+        return redirect(url_for("main.index"))
+
+    if requested > get_max_canoes_per_booking():
+        flash(
+            f"Du kan boka högst {get_max_canoes_per_booking()} kanoter åt gången.",
             "error",
         )
         return redirect(url_for("main.index"))

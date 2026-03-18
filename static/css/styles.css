@@ -356,7 +356,7 @@ html {
   top: 0; left: 0;                   /* Cover entire viewport */
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);     /* Semi-transparent black backdrop */
+  background: rgba(3, 10, 14, 0.76); /* Darker backdrop for readability */
   z-index: 500;                      /* Above other content */
   justify-content: center;           /* Center horizontally */
   align-items: center;               /* Center vertically */
@@ -365,15 +365,16 @@ html {
 
 /* White box inside the modal */
 .modal-content {
-  background: rgba(69, 69, 69, 0.975);      /* White background so text is readable */
-  border-radius: 0.5rem;             /* Rounded corners */
-  max-width: 500px;                  /* Never wider than 500px */
-  width: 100%;                       /* Full width up to max */
-  max-height: 90vh;                  /* At most 90% of viewport height */
-  overflow-y: auto;                  /* Scroll if content is tall */
-  position: relative;                /* For positioning the close button */
-  padding: 1.5rem;                   /* Inner padding */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.34);
+  background: rgba(18, 27, 34, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.35rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 1.6rem;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.36);
 }
 
 /* Hyperlink style */
@@ -384,69 +385,78 @@ html {
 
 /* Close “×” button */
 .modal-close {
-  position: absolute;                /* Place relative to .modal-content */
-  top: 0.5rem;
-  right: 1.0rem;
-  background: transparent;
-  border: none;
-  font-size: 1.5rem;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
   color: #dbdbdb;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 /* Modal headings */
 .modal-content h2 {
-  margin-top: 0;                     /* Remove default margin */
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-  color: #dbdbdb;
-  justify-content: center;
-  align-items: center;
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  font-size: 1.9rem;
+  color: #f4f1ea;
   text-align: center;
 }
 
 /* Body text inside modal */
 .modal-body {
   font-size: 1rem;
-  line-height: 1.5;
+  line-height: 1.6;
   color: #dbdbdb;
 }
 
 
 /* ===== DARK-MODE MODAL CONTENT ===== */
 .modal-content--dark {
-  background: #2a2a2a;      /* Dark grey box */
-  color: #dbdbdb;              /* Light text */
+  background: rgba(18, 27, 34, 0.96);
+  color: #dbdbdb;
 }
 
 /* ===== TABS AT THE TOP OF THE MODAL ===== */
 .modal-tabs {
-  display: flex;                    /* Place tabs side by side */
-  margin: 1rem 0;                   /* Vertical spacing */
-  border-bottom: 2px solid #444;    /* Underline all tabs */
+  display: flex;
+  gap: 0.6rem;
+  margin: 1.25rem 0 1rem;
 }
 
 .modal-tab {
-  flex: 1;                          /* Each tab equal width */
-  padding: 0.75rem 1rem;            /* Clickable area */
-  background: transparent;
-  border: none;
-  color: #ccc;                      /* Inactive tab color */
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: #ccc;
   font-weight: 500;
   cursor: pointer;
   text-align: center;
-  transition: background 0.2s, color 0.2s;
-  font-size: 1.0rem
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  font-size: 1rem;
 }
 
 .modal-tab:hover {
-  background: #3a3a3a;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .modal-tab--active {
-  color: #fff;                      /* Active tab text */
-  border-bottom: 3px solid #28a745; /* Accent line (green) */
+  color: #fff;
+  border-color: rgba(159, 209, 222, 0.4);
+  background: rgba(159, 209, 222, 0.16);
 }
 
 
@@ -459,6 +469,95 @@ html {
 /* Utility to hide inactive panels */
 .modal-body--hidden {
   display: none;
+}
+
+.info-modal-content {
+  max-width: 760px;
+  padding: 2rem;
+}
+
+.info-modal-header {
+  margin-bottom: 0.35rem;
+  text-align: center;
+}
+
+.info-modal-kicker {
+  margin-bottom: 0.45rem;
+  color: #fff3b6;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.info-modal-intro {
+  max-width: 560px;
+  margin: 0 auto;
+  color: rgba(219, 219, 219, 0.84);
+  line-height: 1.55;
+}
+
+.info-modal-panel {
+  margin-top: 1rem;
+}
+
+.info-card-grid,
+.contact-card-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.info-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.info-card,
+.contact-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.05rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1.05rem 1.1rem;
+}
+
+.info-card h3,
+.contact-card-label {
+  margin-bottom: 0.65rem;
+  color: #f5f4ef;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.info-list {
+  display: grid;
+  gap: 0.7rem;
+  padding-left: 1.1rem;
+}
+
+.info-list li {
+  color: rgba(219, 219, 219, 0.9);
+}
+
+.info-list strong {
+  color: #fff3b6;
+}
+
+.contact-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contact-card-value {
+  display: block;
+  color: #f5f4ef;
+  font-size: 1.03rem;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.contact-card-note {
+  margin-top: 0.55rem;
+  color: rgba(219, 219, 219, 0.76);
+  line-height: 1.5;
 }
 
 
@@ -562,112 +661,299 @@ html {
 
 /* ===== BOOKING FORM STYLES ===== */
 
-/* Labels & selects */
-#bookingForm label {
+.booking-modal-content {
+  max-width: 860px;
+  padding: 2rem;
+  background: rgba(18, 27, 34, 0.98);
+}
+
+.booking-modal-header {
+  margin-bottom: 1.4rem;
+  text-align: center;
+}
+
+.booking-step-label {
+  margin-bottom: 0.45rem;
+  color: #fff3b6;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.booking-intro {
+  max-width: 560px;
+  margin: 0.65rem auto 0;
+  color: rgba(219, 219, 219, 0.84);
+  line-height: 1.5;
+}
+
+.booking-step {
+  display: none;
+}
+
+.booking-step.booking-step--active {
   display: block;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1rem;
-  color: #dbdbdb;
-}
-#bookingForm select {
-  width: 50%;
-  padding: 0.5rem;
-  margin-top: 0.25rem;
-  font-size: 1rem;
-  border-radius: 0.25rem;
-  border: 1px solid #555;
-  background: #1e1e1e;
-  color: #fff;
 }
 
-/* ===== TWO‐COLUMN NAME FIELDS FOR EACH CANOE ===== */
-.canoe-field {
-  margin-top: 0.75rem;           /* space between each canoe block */
+.booking-step-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.9fr);
+  gap: 1.2rem;
+  align-items: start;
 }
 
-/* Wrap the two inputs in a flex container */
-.canoe-field .inputs {
+.booking-step-panel,
+.booking-summary-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.15rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1.2rem;
+}
+
+.booking-step-heading {
+  margin-bottom: 0.55rem;
+}
+
+.booking-step-eyebrow {
+  margin-bottom: 0.35rem;
+  color: #9fd1de;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.booking-step-heading h3,
+.booking-summary-card h3 {
+  color: #f5f4ef;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.booking-step-text {
+  margin-bottom: 1rem;
+  color: rgba(219, 219, 219, 0.82);
+  line-height: 1.45;
+}
+
+.quantity-selector {
   display: flex;
-  gap: 0.5rem;                   /* space between first + last name */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
 }
 
-/* Each input takes up half the width */
-.canoe-field input {
-  flex: 1;                       /* grow equally */
-  padding: 0.5rem;
-  font-size: 1rem;
-  border-radius: 0.25rem;
-  border: 1px solid #555;
-  background: #1e1e1e;
-  color: #fff;
+.quantity-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex: 0 0 116px;
+  width: 116px;
+  min-height: 92px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(10, 21, 28, 0.72);
+  color: #f5f4ef;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* The canoe label above the inputs */
+.quantity-option:hover,
+.quantity-option:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(159, 209, 222, 0.55);
+  background: rgba(17, 32, 41, 0.92);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.18);
+  outline: none;
+}
+
+.quantity-option.is-selected {
+  border-color: rgba(159, 209, 222, 0.82);
+  background: linear-gradient(180deg, rgba(33, 58, 69, 0.92) 0%, rgba(18, 37, 47, 0.95) 100%);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.22);
+}
+
+.quantity-option-number {
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.quantity-option-label {
+  color: rgba(245, 244, 239, 0.72);
+  font-size: 0.92rem;
+}
+
+.booking-empty-state {
+  color: rgba(219, 219, 219, 0.82);
+}
+
+.participant-card-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.canoe-field {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  background: rgba(12, 23, 30, 0.74);
+  padding: 1rem;
+}
+
 .canoe-field label {
   display: block;
-  margin-bottom: 0.25rem;
-  color: #dbdbdb;
-  font-weight: 500;
-  font-size: 0.9rem;
+  margin-bottom: 0.65rem;
+  color: #f1eee6;
+  font-weight: 600;
+  font-size: 0.98rem;
 }
 
-/* Price info text */
-#priceInfo {
-  margin-top: 1rem;
-  font-weight: bold;
-  color: #ffee00;
+.canoe-field .inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
-/* Buttons container */
-.booking-buttons {
+.canoe-field input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f5f4ef;
+  font-size: 1rem;
+}
+
+.canoe-field input::placeholder {
+  color: rgba(219, 219, 219, 0.45);
+}
+
+.canoe-field input:focus {
+  outline: 2px solid rgba(159, 209, 222, 0.55);
+  outline-offset: 2px;
+  border-color: rgba(159, 209, 222, 0.55);
+}
+
+.booking-summary-card {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  align-self: start;
+}
+
+.booking-summary-list {
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.booking-summary-item,
+.booking-summary-empty {
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(245, 244, 239, 0.9);
+}
+
+.booking-summary-item-title {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: #fff3b6;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.booking-summary-item-value {
+  color: #f5f4ef;
+  font-weight: 600;
+}
+
+.booking-summary-totals {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.booking-summary-row {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  margin-top: 1.5rem;
+  color: rgba(245, 244, 239, 0.88);
 }
 
-/* Primary button */
-.button-primary {
-  background-color: #28a745;
-  color: #fff;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background 0.2s;
+.booking-summary-row dt {
+  color: rgba(219, 219, 219, 0.76);
 }
+
+.booking-summary-row dd {
+  font-weight: 700;
+}
+
+.booking-summary-row--total {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.05rem;
+}
+
+.booking-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.booking-buttons--modal {
+  margin-top: 1.35rem;
+}
+
+.button-primary,
+.button-secondary {
+  min-width: 170px;
+  padding: 0.85rem 1.25rem;
+  font-size: 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.button-primary {
+  background-color: #f4f1ea;
+  color: #0c202b;
+  border: 1px solid transparent;
+  font-weight: 700;
+}
+
 .button-primary:disabled {
-  background: #6c757d;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(245, 244, 239, 0.48);
   cursor: not-allowed;
 }
+
 .button-primary:not(:disabled):hover {
-  background: #218838;
+  background: #ffffff;
+  transform: translateY(-1px);
 }
 
-/* Secondary button */
 .button-secondary {
   background: transparent;
-  color: #fff;
-  border: 2px solid #fff;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.button-secondary:hover {
-  background: #fff;
-  color: #162938;
+  color: #f5f4ef;
+  border: 1px solid rgba(255, 255, 255, 0.26);
 }
 
-/* Payment‐note style */
+.button-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
 .payment-note {
   margin-top: 1rem;
-  font-size: 0.85rem;
-  color: #ccc;
+  font-size: 0.88rem;
+  color: rgba(219, 219, 219, 0.72);
   text-align: center;
 }
 
@@ -790,7 +1076,30 @@ html {
     overflow-y: auto;
   }
 
-    /* Force inputs to stack vertically on narrow screens */
+  .booking-step-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-modal-content {
+    padding: 1.4rem;
+  }
+
+  .booking-buttons {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .info-card-grid,
+  .contact-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .button-primary,
+  .button-secondary {
+    width: 100%;
+  }
+
+  /* Force inputs to stack vertically on narrow screens */
   .canoe-field .inputs {
     flex-direction: column;
   }
@@ -926,7 +1235,7 @@ body.home-page {
 .home-page .hero-center {
   width: min(100%, 860px);
   margin: 0.1rem auto 0;
-  padding: 0.1rem 1rem 1.5rem;
+  padding: 0.2rem 1rem 1.5rem;
   text-align: center;
 }
 
@@ -935,11 +1244,11 @@ body.home-page {
   line-height: 0.95;
   font-weight: 300;
   letter-spacing: -0.04em;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.55rem;
 }
 
 .home-page .main-subtitle {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
   color: rgba(244, 241, 234, 0.84);
   font-size: clamp(1rem, 2.2vw, 1.35rem);
   font-weight: 400;
@@ -950,8 +1259,8 @@ body.home-page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  margin-bottom: 2rem;
+  gap: 0.4rem;
+  margin-bottom: 1.8rem;
   color: rgba(244, 241, 234, 0.94);
   font-size: 1rem;
 }
@@ -1027,9 +1336,9 @@ body.home-page {
 }
 
 .home-page .book-btn {
-  margin-top: 1.25rem;
+    margin-top: 1.8rem;
   min-width: 220px;
-  padding: 0.95rem 1.8rem;
+  padding: 0.85rem 1.8rem;
   border-radius: 999px;
   background: #f4f1ea;
   color: #0b202a;
@@ -1046,8 +1355,8 @@ body.home-page {
 .home-page .gallery-ribbon {
   position: relative;
   width: min(100%, 860px);
-  height: 160px;
-  margin: 1rem auto 0;
+  height: 140px;
+  margin: 2rem auto 0;
   border-radius: 1.5rem;
   overflow: hidden;
   background: transparent;
@@ -1142,38 +1451,105 @@ body.home-page {
   text-align: center;
 }
 
-@media (max-width: 900px) {
+@media (min-width: 721px) and (max-width: 1380px) {
+  .home-page .hero-shell {
+    padding: 1rem 1.25rem 1.1rem;
+  }
+
+  .home-page .hero-header {
+    align-items: flex-start;
+  }
+
+  .home-page .weather-widget-hero {
+    width: min(100%, 320px);
+  }
+
   .home-page .hero-center {
-    margin-top: 3.5rem;
-    padding-top: 2rem;
+    width: min(100%, 760px);
+    margin-top: 5rem;
+    padding-top: 2.5rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .home-page .main-title {
+    font-size: clamp(4rem, 8vw, 5.8rem);
+  }
+
+  .home-page .main-subtitle {
+    font-size: 1.15rem;
+  }
+
+  .home-page .progress-trigger {
+    width: min(100%, 600px);
   }
 
   .home-page .gallery-ribbon {
-    width: min(100%, 680px);
+    width: min(100%, 720px);
+    height: 136px;
+    margin-top: 3.5rem;
   }
 
   .home-page .gallery-ribbon-tile {
-    width: 140px;
+    width: 150px;
   }
 }
 
 @media (max-width: 720px) {
+  .info-modal-content {
+    padding: 1.45rem 1rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.55rem;
+  }
+
+  .modal-tabs {
+    flex-direction: column;
+  }
+
   .home-page .hero-shell {
     padding: 0.75rem 0.8rem 1rem;
   }
 
   .home-page .hero-header {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.8rem;
   }
 
+  .home-page .hero-utility {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .home-page .hero-utility-left,
   .home-page .hero-utility-right {
-    justify-content: flex-end;
+    justify-content: center;
+  }
+
+  .home-page .weather-widget-hero {
+    width: min(100%, 320px);
+    padding: 0.8rem 0.9rem;
+  }
+
+  .home-page .hero-icon-button {
+    width: 2.85rem;
+    height: 2.85rem;
   }
 
   .home-page .hero-center {
-    margin-top: 2.75rem;
-    padding: 1.75rem 0.25rem 1.5rem;
+    margin-top: 1rem;
+    padding: 1.15rem 0.25rem 1.1rem;
+  }
+
+  .home-page .main-title {
+    font-size: clamp(2.9rem, 15vw, 4.25rem);
+  }
+
+  .home-page .main-subtitle {
+    font-size: 1rem;
+    margin-bottom: 0.7rem;
   }
 
   .home-page .hero-location {
@@ -1187,7 +1563,8 @@ body.home-page {
   }
 
   .home-page .gallery-ribbon {
-    height: 136px;
+    height: 120px;
+    margin-top: 3.5rem;
   }
 
   .home-page .gallery-ribbon-tile {

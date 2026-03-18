@@ -8,7 +8,9 @@ than importing a global ``app`` object.
 
 from __future__ import annotations
 
-from flask import Flask
+from datetime import timedelta
+
+from flask import Flask, current_app
 from flask_wtf import CSRFProtect  # type: ignore[import-untyped]
 from flask_login import LoginManager  # type: ignore[import-untyped]
 from flask_limiter import Limiter
@@ -17,7 +19,13 @@ import click
 import os
 
 # Database models and session object
-from .util.db_models import BookedCanoe, BookingOrder, User, db
+from .util.db_models import (
+    BookedCanoe,
+    BookingOrder,
+    User,
+    db,
+    get_current_utc_time,
+)
 
 # Flask extension instances -------------------------------------------------
 csrf_protect = CSRFProtect()
@@ -66,6 +74,8 @@ def create_app() -> Flask:
     # ------------------------------------------------------------------
     flask_application.cli.add_command(init_db_command)
     flask_application.cli.add_command(seed_admin_command)
+    flask_application.cli.add_command(seed_test_bookings_command)
+    flask_application.cli.add_command(clear_test_bookings_command)
 
     return flask_application
 
@@ -115,6 +125,84 @@ def seed_admin_command() -> None:
     click.echo(f"Created admin '{username}'.")
 
 
+def clear_seed_test_bookings() -> int:
+    """Delete all development seed bookings and return the deleted order count.
+
+    Returns:
+        int: Number of seeded booking orders removed.
+    """
+
+    seeded_booking_orders = BookingOrder.query.filter_by(
+        payment_provider="dev_seed"
+    ).all()
+    deleted_order_count = len(seeded_booking_orders)
+
+    for seeded_booking_order in seeded_booking_orders:
+        db.session.delete(seeded_booking_order)
+
+    db.session.commit()
+    return deleted_order_count
+
+
+@click.command("seed-test-bookings")
+@click.option(
+    "--count",
+    default=1,
+    type=click.IntRange(min=1),
+    show_default=True,
+    help="How many confirmed test canoes to create.",
+)
+def seed_test_bookings_command(count: int) -> None:
+    """Create a repeatable set of confirmed development-only test bookings.
+
+    The command first removes any older seeded test bookings marked with
+    ``payment_provider='dev_seed'``. It then creates one paid order and one
+    confirmed canoe row per requested test booking so the booking UI can be
+    tested near capacity without creating manual bookings one by one.
+    """
+
+    deleted_order_count = clear_seed_test_bookings()
+    if deleted_order_count:
+        click.echo(f"Removed {deleted_order_count} old seeded booking order(s).")
+
+    for booking_number in range(1, count + 1):
+        booking_order = BookingOrder(
+            public_booking_reference="TEMP",
+            status="paid",
+            canoe_count=1,
+            total_amount_ore=current_app.config["CANOE_PRICE_SEK"] * 100,
+            currency="sek",
+            payment_provider="dev_seed",
+            payer_full_name=f"Testbokning {booking_number:03d}",
+            payer_email=f"testbokning{booking_number:03d}@example.invalid",
+            paid_at=get_current_utc_time(),
+            expires_at=get_current_utc_time() + timedelta(minutes=15),
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+
+        booking_order.public_booking_reference = f"TEST-{booking_order.id:05d}"
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=booking_order.id,
+                participant_first_name="Test",
+                participant_last_name=f"Booking {booking_number:03d}",
+                status="confirmed",
+            )
+        )
+
+    db.session.commit()
+    click.echo(f"Created {count} seeded test booking(s).")
+
+
+@click.command("clear-test-bookings")
+def clear_test_bookings_command() -> None:
+    """Remove all development-only seeded bookings from the database."""
+
+    deleted_order_count = clear_seed_test_bookings()
+    click.echo(f"Removed {deleted_order_count} seeded test booking order(s).")
+
+
 @login_manager.user_loader
 def load_user(user_id: str) -> User | None:
     """Return the :class:`User` instance for the given ``user_id``.
@@ -138,4 +226,6 @@ __all__ = [
     "rate_limiter",
     "init_db_command",
     "seed_admin_command",
+    "seed_test_bookings_command",
+    "clear_test_bookings_command",
 ]

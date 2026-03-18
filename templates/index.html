@@ -154,76 +154,217 @@ Why it’s here:
     </div>
   </div>
 
-  <div id="faqModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
-    <div class="modal-content modal-content--dark">
+  <div id="faqModal" class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
+    <div class="modal-content modal-content--dark info-modal-content faq-modal-content">
       <button class="modal-close" aria-label="Stäng">&times;</button>
-      <h2 id="faqTitle">Regler &amp; Frågor</h2>
-      <div class="modal-tabs">
-        <button class="modal-tab modal-tab--active" data-tab="rules">Regler</button>
-        <button class="modal-tab" data-tab="questions">Frågor</button>
+      <div class="info-modal-header">
+        <p class="info-modal-kicker">Praktisk information</p>
+        <h2 id="faqTitle">Regler och vanliga frågor</h2>
+        <p class="info-modal-intro">
+          Här finns den viktigaste informationen inför dagen, så det blir lättare
+          att förstå vad som gäller före start.
+        </p>
       </div>
-      <div class="modal-body modal-body--hidden" id="questions">
-        <ul>
-          <li><strong>Hur många kanoter?</strong> Max {{ event_settings.available_canoes_total }} – först till kvarn.</li>
-          <li><strong>Ålder:</strong> Barn under 12 år måste ha vuxet sällskap.</li>
-          <li><strong>Avbokning:</strong> Senast 7 dagar före eventet.</li>
-        </ul>
+      <div class="modal-tabs info-modal-tabs" role="tablist" aria-label="Välj informationskategori">
+        <button
+          class="modal-tab modal-tab--active"
+          data-tab="rules"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="rules"
+        >
+          Regler
+        </button>
+        <button
+          class="modal-tab"
+          data-tab="questions"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="questions"
+        >
+          Vanliga frågor
+        </button>
       </div>
-      <div class="modal-body" id="rules">
-        <ul>
-          <li><strong>VAR SNÄLL MOT KANOTGUBBEN</strong></li>
-          <li>Håll avstånd i kanoten – max 2 personer.</li>
-          <li>hehe</li>
-          <li>Plocka upp ditt skräp – lämna naturen ren.</li>
-        </ul>
+      <div class="modal-body modal-body--hidden info-modal-panel" id="questions" role="tabpanel" hidden>
+        <div class="info-card-grid">
+          <article class="info-card">
+            <h3>Bokning</h3>
+            <ul class="info-list">
+              <li><strong>Hur många kanoter finns?</strong> Max {{ event_settings.available_canoes_total }} stycken, först till kvarn.</li>
+              <li><strong>Hur många kanoter per bokning?</strong> Du kan boka upp till {{ event_settings.max_canoes_per_booking }} kanoter åt gången.</li>
+              <li><strong>Kan jag boka åt någon annan?</strong> Ja, ange förnamn och efternamn för varje deltagare i bokningen.</li>
+            </ul>
+          </article>
+          <article class="info-card">
+            <h3>Eventdagen</h3>
+            <ul class="info-list">
+              <li><strong>När ses vi?</strong> {{ event_settings.date_display }} – {{ event_settings.time_display }}.</li>
+              <li><strong>Var samlas vi?</strong> Vid {{ event_settings.location_name }}.</li>
+              <li><strong>Vem får delta?</strong> Barn under 12 år behöver vuxet sällskap.</li>
+            </ul>
+          </article>
+          <article class="info-card">
+            <h3>Ändringar och frågor</h3>
+            <ul class="info-list">
+              <li><strong>Avbokning:</strong> Senast 7 dagar före eventet.</li>
+              <li><strong>Behöver du hjälp?</strong> Använd kontaktfönstret för att hitta e-post, telefon och adress.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+      <div class="modal-body info-modal-panel" id="rules" role="tabpanel">
+        <div class="info-card-grid">
+          <article class="info-card">
+            <h3>På vattnet</h3>
+            <ul class="info-list">
+              <li>Var rädd om kanoterna och följ instruktionerna från arrangören.</li>
+              <li>Max två personer per kanot om inget annat meddelas på plats.</li>
+              <li>Håll avstånd till andra kanoter och visa hänsyn vid start och landning.</li>
+            </ul>
+          </article>
+          <article class="info-card">
+            <h3>Säkerhet</h3>
+            <ul class="info-list">
+              <li>Lyssna på genomgången innan start.</li>
+              <li>Barn under 12 år måste paddla tillsammans med en vuxen.</li>
+              <li>Följ eventuella väder- eller säkerhetsbesked från arrangören.</li>
+            </ul>
+          </article>
+          <article class="info-card">
+            <h3>Efter paddlingen</h3>
+            <ul class="info-list">
+              <li>Lämna tillbaka utrustningen där arrangören visar.</li>
+              <li>Ta med skräp och lämna området i gott skick.</li>
+              <li>Fråga hellre en gång extra än att chansa om något känns oklart.</li>
+            </ul>
+          </article>
+        </div>
       </div>
     </div>
   </div>
 
-  <div id="contactModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
-    <div class="modal-content modal-content--dark">
+  <div id="contactModal" class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
+    <div class="modal-content modal-content--dark info-modal-content contact-modal-content">
       <button class="modal-close" aria-label="Stäng">&times;</button>
-      <h2 id="contactTitle">Kontakt</h2>
-      <div class="modal-body">
-        <p>Har du frågor eller behöver hjälp? Kontakta oss gärna:</p>
-        <ul>
-          <li>E-post: <a href="mailto:info@paddlingen.se">info@paddlingen.se</a></li>
-          <li>Telefon: <a href="tel:+46123456789">012-345 6789</a></li>
-          <li>Adress: PaddlingsKlubben, Storgatan 1, 123 45 Kopparberg</li>
-        </ul>
+      <div class="info-modal-header">
+        <p class="info-modal-kicker">Kontakt</p>
+        <h2 id="contactTitle">Frågor eller funderingar?</h2>
+        <p class="info-modal-intro">
+          Om något är oklart inför paddlingen kan du kontakta arrangören direkt.
+          Just nu är enklaste vägen att skicka ett vanligt mejl eller ringa.
+        </p>
+      </div>
+      <div class="modal-body info-modal-panel">
+        <div class="contact-card-grid">
+          <article class="contact-card">
+            <span class="contact-card-label">E-post</span>
+            <a class="contact-card-value" href="mailto:info@paddlingen.se">info@paddlingen.se</a>
+            <p class="contact-card-note">Bra för frågor som inte är akuta eller om du vill skriva lite mer.</p>
+          </article>
+          <article class="contact-card">
+            <span class="contact-card-label">Telefon</span>
+            <a class="contact-card-value" href="tel:+46123456789">012-345 6789</a>
+            <p class="contact-card-note">Bra om du behöver snabb hjälp nära inpå eventet.</p>
+          </article>
+        </div>
       </div>
     </div>
   </div>
 
   <div id="bookingModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
-    <div class="modal-content modal-content--dark">
+    <div class="modal-content modal-content--dark booking-modal-content">
       <button class="modal-close" aria-label="Stäng">&times;</button>
-      <h2 id="bookingTitle">Boka kanot</h2>
+      <div class="booking-modal-header">
+        <p id="bookingStepLabel" class="booking-step-label">Steg 1 av 2</p>
+        <h2 id="bookingTitle">Boka kanot</h2>
+        <p class="booking-intro">
+          Fyll i namnen på de personer som
+          ska hämta ut de valda kanoterna.
+        </p>
+      </div>
       <form id="bookingForm" method="POST" action="{{ url_for('main.payment') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <label for="canoeCount">Antal kanoter:</label>
-        <select id="canoeCount" name="canoeCount" required>
-          <option value="" disabled selected>Välj antal</option>
-          {% set max_opts = available_canoes if available_canoes < 10 else 10 %}
-          {% for i in range(1, max_opts + 1) %}
-            <option value="{{ i }}">{{ i }}</option>
-          {% endfor %}
-          {% if max_opts == 0 %}
-            <option disabled>Utsålt</option>
-          {% endif %}
-        </select>
+        <input type="hidden" id="canoeCount" name="canoeCount" value="">
 
-        <div id="nameFieldsContainer"></div>
+        <section id="bookingStepOne" class="booking-step booking-step--active" aria-labelledby="bookingStepOneTitle">
+          <div class="booking-step-panel">
+            <div class="booking-step-heading">
+              <p class="booking-step-eyebrow">Steg 1</p>
+              <h3 id="bookingStepOneTitle">Välj antal kanoter</h3>
+            </div>
+            <p class="booking-step-text">
+              Du kan boka upp till det antal kanoter som fortfarande finns kvar.
+            </p>
 
-        <div id="priceInfo">Totalt: 0 kr (x kr per kanot)</div>
+            <div id="canoeQuantitySelector" class="quantity-selector" role="list" aria-label="Antal kanoter">
+              {% set max_opts = available_canoes if available_canoes < event_settings.max_canoes_per_booking else event_settings.max_canoes_per_booking %}
+              {% for i in range(1, max_opts + 1) %}
+                <button
+                  type="button"
+                  class="quantity-option"
+                  data-canoe-count="{{ i }}"
+                  aria-pressed="false"
+                >
+                  <span class="quantity-option-number">{{ i }}</span>
+                  <span class="quantity-option-label">kanot{% if i > 1 %}er{% endif %}</span>
+                </button>
+              {% endfor %}
+              {% if max_opts == 0 %}
+                <p class="booking-empty-state">Det finns inga lediga kanoter kvar just nu.</p>
+              {% endif %}
+            </div>
+          </div>
+        </section>
 
-        <div class="booking-buttons">
+        <section id="bookingStepTwo" class="booking-step" aria-labelledby="bookingStepTwoTitle" hidden>
+          <div class="booking-step-layout">
+            <div class="booking-step-panel booking-step-panel--fields">
+              <div class="booking-step-heading">
+                <p class="booking-step-eyebrow">Steg 2</p>
+                <h3 id="bookingStepTwoTitle">Fyll i deltagarnas namn</h3>
+              </div>
+              <p class="booking-step-text">
+                Namnen används för att koppla rätt kanot till rätt deltagare vid uthämtning.
+              </p>
+
+              <div id="nameFieldsContainer" class="participant-card-list"></div>
+            </div>
+
+            <aside class="booking-summary-card" aria-labelledby="bookingSummaryTitle">
+              <h3 id="bookingSummaryTitle">Bokningsöversikt</h3>
+              <ul id="bookingSummaryList" class="booking-summary-list">
+                <li class="booking-summary-empty">Välj antal kanoter för att se översikten.</li>
+              </ul>
+
+              <dl class="booking-summary-totals">
+                <div class="booking-summary-row">
+                  <dt>Antal kanoter</dt>
+                  <dd id="summaryCanoeCount">0</dd>
+                </div>
+                <div class="booking-summary-row">
+                  <dt>Pris per kanot</dt>
+                  <dd id="summaryPricePerCanoe">{{ event_settings.price_per_canoe_sek }} kr</dd>
+                </div>
+                <div class="booking-summary-row booking-summary-row--total">
+                  <dt>Totalt</dt>
+                  <dd id="priceInfo">0 kr</dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+        </section>
+
+        <div class="booking-buttons booking-buttons--modal">
           <button type="button" id="cancelBooking" class="button-secondary">Avbryt</button>
-          <button type="submit" id="confirmBooking" class="button-primary" disabled>Betala</button>
+          <button type="button" id="confirmBooking" class="button-primary" disabled>Fortsätt</button>
         </div>
 
-        <p class="payment-note">Du kommer att omdirigeras till en säker betalningssida.</p>
+        <p id="bookingPaymentNote" class="payment-note" hidden>
+          Du kommer att omdirigeras till en säker betalningssida.
+        </p>
       </form>
     </div>
   </div>

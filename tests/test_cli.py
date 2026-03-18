@@ -1,6 +1,6 @@
 """Tests for custom Flask command line interface commands."""
 
-from app import User
+from app import BookedCanoe, BookingOrder, User, db
 
 
 def test_init_db_command_resets_tables(client):
@@ -78,3 +78,54 @@ def test_seed_admin_command_requires_env_vars(client, monkeypatch):
             "ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required"
             in result.output
         )
+
+
+def test_seed_test_bookings_command_creates_marked_bookings(client):
+    """Create seeded development bookings and verify the marker fields.
+
+    The command should create one paid order and one confirmed canoe row per
+    requested booking. The orders must be marked with
+    ``payment_provider='dev_seed'`` so they can be safely removed later.
+    """
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        result = runner.invoke(args=["seed-test-bookings", "--count", "3"])
+        assert "Created 3 seeded test booking(s)." in result.output
+        assert BookingOrder.query.filter_by(payment_provider="dev_seed").count() == 3
+        assert BookedCanoe.query.filter_by(status="confirmed").count() == 3
+
+
+def test_clear_test_bookings_command_removes_only_seeded_bookings(client):
+    """Delete only seeded development bookings and leave real ones intact."""
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        real_booking_order = BookingOrder(
+            public_booking_reference="PAD-2026-00001",
+            status="paid",
+            canoe_count=1,
+            total_amount_ore=120000,
+            currency="sek",
+            payment_provider="simulated",
+        )
+        db.session.add(real_booking_order)
+        db.session.flush()
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=real_booking_order.id,
+                participant_first_name="Real",
+                participant_last_name="Booking",
+                status="confirmed",
+            )
+        )
+        db.session.commit()
+
+        runner.invoke(args=["seed-test-bookings", "--count", "2"])
+        result = runner.invoke(args=["clear-test-bookings"])
+
+        assert "Removed 2 seeded test booking order(s)." in result.output
+        assert BookingOrder.query.filter_by(payment_provider="dev_seed").count() == 0
+        assert BookingOrder.query.filter_by(payment_provider="simulated").count() == 1

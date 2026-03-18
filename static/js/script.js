@@ -239,20 +239,37 @@ function registerBasicModalTriggers() {
     const tabPanels = faqModal.querySelectorAll(".modal-body");
 
     tabButtons.forEach((button) => {
+      const targetPanelId = button.getAttribute("data-tab");
+      const targetPanel = targetPanelId
+        ? faqModal.querySelector(`#${targetPanelId}`)
+        : null;
+
+      if (targetPanel) {
+        button.setAttribute("aria-controls", targetPanel.id);
+      }
+    });
+
+    tabButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const target = button.getAttribute("data-tab");
 
         tabButtons.forEach((tabButton) => {
           tabButton.classList.remove("modal-tab--active");
+          tabButton.setAttribute("aria-selected", "false");
         });
         tabPanels.forEach((panel) => {
           panel.classList.add("modal-body--hidden");
+          panel.hidden = true;
         });
 
         button.classList.add("modal-tab--active");
-        faqModal
-          .querySelector(`#${target}`)
-          .classList.remove("modal-body--hidden");
+        button.setAttribute("aria-selected", "true");
+
+        const activePanel = faqModal.querySelector(`#${target}`);
+        if (activePanel) {
+          activePanel.classList.remove("modal-body--hidden");
+          activePanel.hidden = false;
+        }
       });
     });
   }
@@ -414,9 +431,16 @@ function registerBookingModal() {
   const openButton = document.getElementById("bookBtn");
   const modal = document.getElementById("bookingModal");
   const form = document.getElementById("bookingForm");
-  const canoeCountSelect = document.getElementById("canoeCount");
+  const canoeCountInput = document.getElementById("canoeCount");
+  const quantityOptionButtons = document.querySelectorAll(".quantity-option");
+  const bookingStepOne = document.getElementById("bookingStepOne");
+  const bookingStepTwo = document.getElementById("bookingStepTwo");
+  const bookingStepLabel = document.getElementById("bookingStepLabel");
   const nameFieldsContainer = document.getElementById("nameFieldsContainer");
   const priceInfo = document.getElementById("priceInfo");
+  const bookingSummaryList = document.getElementById("bookingSummaryList");
+  const summaryCanoeCount = document.getElementById("summaryCanoeCount");
+  const bookingPaymentNote = document.getElementById("bookingPaymentNote");
   const cancelButton = document.getElementById("cancelBooking");
   const submitButton = document.getElementById("confirmBooking");
 
@@ -424,52 +448,62 @@ function registerBookingModal() {
     !openButton ||
     !modal ||
     !form ||
-    !canoeCountSelect ||
+    !canoeCountInput ||
+    !bookingStepOne ||
+    !bookingStepTwo ||
+    !bookingStepLabel ||
     !nameFieldsContainer ||
     !priceInfo ||
+    !bookingSummaryList ||
+    !summaryCanoeCount ||
+    !bookingPaymentNote ||
     !cancelButton ||
     !submitButton
   ) {
     return;
   }
 
-  function closeModal() {
-    modal.style.display = "none";
+  let currentBookingStep = 1;
+  let selectedCanoeCount = 0;
+
+  function updateStepVisibility() {
+    const isStepOneActive = currentBookingStep === 1;
+    bookingStepOne.hidden = !isStepOneActive;
+    bookingStepTwo.hidden = isStepOneActive;
+    bookingPaymentNote.hidden = isStepOneActive;
+    bookingStepOne.classList.toggle("booking-step--active", isStepOneActive);
+    bookingStepTwo.classList.toggle("booking-step--active", !isStepOneActive);
+
+    if (isStepOneActive) {
+      bookingStepLabel.innerText = "Steg 1 av 2";
+      cancelButton.innerText = "Avbryt";
+      submitButton.innerText = "Fortsätt";
+      submitButton.disabled = selectedCanoeCount === 0;
+    } else {
+      bookingStepLabel.innerText = "Steg 2 av 2";
+      cancelButton.innerText = "Tillbaka";
+      submitButton.innerText = "Fortsätt till betalning";
+      validateParticipantForm();
+    }
   }
 
-  openButton.addEventListener("click", () => {
-    modal.style.display = "flex";
-    form.reset();
-    nameFieldsContainer.innerHTML = "";
-    priceInfo.textContent = `Totalt: 0 kr (${pricePerCanoeSek} kr per kanot)`;
-    submitButton.disabled = true;
-    cancelButton.disabled = false;
-  });
+  function resetQuantitySelection() {
+    quantityOptionButtons.forEach((button) => {
+      button.classList.remove("is-selected");
+      button.setAttribute("aria-pressed", "false");
+    });
+  }
 
-  cancelButton.addEventListener("click", closeModal);
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && modal.style.display === "flex") {
-      closeModal();
-    }
-  });
-
-  canoeCountSelect.addEventListener("change", () => {
-    const count = parseInt(canoeCountSelect.value, 10);
+  function buildParticipantFields(canoeCount) {
     nameFieldsContainer.innerHTML = "";
 
-    for (let canoeNumber = 1; canoeNumber <= count; canoeNumber += 1) {
-      const wrapper = document.createElement("div");
+    for (let canoeNumber = 1; canoeNumber <= canoeCount; canoeNumber += 1) {
+      const wrapper = document.createElement("section");
       wrapper.className = "canoe-field";
 
       const label = document.createElement("label");
       label.setAttribute("for", `canoe${canoeNumber}_fname`);
-      label.innerText = `Kanot ${canoeNumber}: \n (Ange namn på den som hämtar ut kanoten)`;
+      label.innerText = `Kanot ${canoeNumber}`;
       wrapper.appendChild(label);
 
       const inputsContainer = document.createElement("div");
@@ -494,23 +528,144 @@ function registerBookingModal() {
       wrapper.appendChild(inputsContainer);
       nameFieldsContainer.appendChild(wrapper);
     }
+  }
 
-    priceInfo.textContent =
-      `Totalt: ${count * pricePerCanoeSek} kr (${pricePerCanoeSek} kr per kanot)`;
+  function updateBookingSummary() {
+    bookingSummaryList.innerHTML = "";
 
-    const allInputs = nameFieldsContainer.querySelectorAll("input");
-
-    function validateForm() {
-      const allFilled = Array.from(allInputs).every((inputField) => {
-        return inputField.value.trim() !== "";
-      });
-      submitButton.disabled = !allFilled;
+    if (selectedCanoeCount === 0) {
+      bookingSummaryList.innerHTML =
+        '<li class="booking-summary-empty">Välj antal kanoter för att se översikten.</li>';
+      summaryCanoeCount.innerText = "0";
+      priceInfo.innerText = "0 kr";
+      return;
     }
 
-    allInputs.forEach((inputField) => {
-      inputField.addEventListener("input", validateForm);
+    summaryCanoeCount.innerText = String(selectedCanoeCount);
+    priceInfo.innerText = `${selectedCanoeCount * pricePerCanoeSek} kr`;
+
+    for (let canoeNumber = 1; canoeNumber <= selectedCanoeCount; canoeNumber += 1) {
+      const firstNameInput = document.getElementById(`canoe${canoeNumber}_fname`);
+      const lastNameInput = document.getElementById(`canoe${canoeNumber}_lname`);
+      const firstName = firstNameInput ? firstNameInput.value.trim() : "";
+      const lastName = lastNameInput ? lastNameInput.value.trim() : "";
+      const summaryItem = document.createElement("li");
+      summaryItem.className = "booking-summary-item";
+
+      const title = document.createElement("span");
+      title.className = "booking-summary-item-title";
+      title.innerText = `Kanot ${canoeNumber}`;
+
+      const value = document.createElement("span");
+      value.className = "booking-summary-item-value";
+      value.innerText = firstName || lastName ? `${firstName} ${lastName}`.trim() : "Namn saknas";
+
+      summaryItem.appendChild(title);
+      summaryItem.appendChild(value);
+      bookingSummaryList.appendChild(summaryItem);
+    }
+  }
+
+  function validateParticipantForm() {
+    if (currentBookingStep !== 2) {
+      return;
+    }
+
+    const allInputs = nameFieldsContainer.querySelectorAll("input");
+    const allFilled = Array.from(allInputs).every((inputField) => {
+      return inputField.value.trim() !== "";
     });
-    validateForm();
+    submitButton.disabled = !allFilled;
+    updateBookingSummary();
+  }
+
+  function handleQuantitySelection(canoeCount) {
+    selectedCanoeCount = canoeCount;
+    canoeCountInput.value = String(canoeCount);
+    buildParticipantFields(canoeCount);
+    updateBookingSummary();
+    updateStepVisibility();
+
+    const participantInputs = nameFieldsContainer.querySelectorAll("input");
+    participantInputs.forEach((inputField) => {
+      inputField.addEventListener("input", validateParticipantForm);
+    });
+  }
+
+  function resetBookingModalState() {
+    currentBookingStep = 1;
+    selectedCanoeCount = 0;
+    form.reset();
+    canoeCountInput.value = "";
+    nameFieldsContainer.innerHTML = "";
+    bookingSummaryList.innerHTML =
+      '<li class="booking-summary-empty">Välj antal kanoter för att se översikten.</li>';
+    summaryCanoeCount.innerText = "0";
+    priceInfo.innerText = "0 kr";
+    resetQuantitySelection();
+    updateStepVisibility();
+  }
+
+  function closeModal() {
+    modal.style.display = "none";
+  }
+
+  openButton.addEventListener("click", () => {
+    modal.style.display = "flex";
+    resetBookingModalState();
+    cancelButton.disabled = false;
+  });
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal.style.display === "flex") {
+      closeModal();
+    }
+  });
+
+  quantityOptionButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      resetQuantitySelection();
+      button.classList.add("is-selected");
+      button.setAttribute("aria-pressed", "true");
+      handleQuantitySelection(parseInt(button.dataset.canoeCount, 10));
+    });
+  });
+
+  cancelButton.addEventListener("click", () => {
+    if (currentBookingStep === 1) {
+      closeModal();
+      return;
+    }
+
+    currentBookingStep = 1;
+    updateStepVisibility();
+  });
+
+  submitButton.addEventListener("click", () => {
+    if (currentBookingStep === 1) {
+      if (selectedCanoeCount === 0) {
+        return;
+      }
+
+      currentBookingStep = 2;
+      updateBookingSummary();
+      updateStepVisibility();
+      const firstParticipantInput = nameFieldsContainer.querySelector("input");
+      if (firstParticipantInput) {
+        firstParticipantInput.focus();
+      }
+      return;
+    }
+
+    if (!submitButton.disabled) {
+      form.requestSubmit();
+    }
   });
 }
 

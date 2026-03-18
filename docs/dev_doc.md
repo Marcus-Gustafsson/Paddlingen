@@ -203,7 +203,15 @@ What to check:
 - The information and contact buttons are in the top-right area.
 - The booking progress bar shows the helper text `Tryck för att se deltagare`.
 - Clicking the progress bar opens the participant list modal.
+- Clicking the information button opens the redesigned FAQ popup.
+- Clicking the contact button opens the redesigned contact popup.
 - Clicking `Visa bilder från tidigare år` opens the gallery modal.
+
+Current contact note:
+
+- The contact popup currently uses direct email and phone links.
+- The site uses a `mailto:` link for email contact instead of an in-site
+  message form.
 
 ## Current Docker Commands
 
@@ -430,6 +438,81 @@ Why:
 
 - Reverts the latest migration step.
 
+## Development Test Booking Commands
+
+These commands are useful when you want to test how the homepage and booking
+UI behave when the event is close to full or fully booked.
+
+Why these commands exist:
+
+- Manually creating many test bookings in the browser is slow.
+- Lowering `AVAILABLE_CANOES` changes the total supply, not the current demand.
+- These commands create and remove test bookings in a repeatable way.
+
+Important rule:
+
+- Test bookings created by these commands are marked with
+  `payment_provider = "dev_seed"`.
+- That means the cleanup command can remove only the seeded test bookings
+  without touching normal bookings.
+
+### Seed test bookings
+
+```bash
+uv run flask --app wsgi seed-test-bookings --count 39
+```
+
+What this does:
+
+- Removes any older seeded test bookings first.
+- Creates `39` confirmed test bookings.
+- Each seeded booking counts like a normal confirmed booking in the UI.
+
+When to use it:
+
+- Test how the progress bar looks near capacity.
+- Test how the booking form behaves when only a few canoes are left.
+- Test the sold-out state.
+
+Example ideas:
+
+```bash
+uv run flask --app wsgi seed-test-bookings --count 35
+uv run flask --app wsgi seed-test-bookings --count 39
+uv run flask --app wsgi seed-test-bookings --count 40
+```
+
+### Clear test bookings
+
+```bash
+uv run flask --app wsgi clear-test-bookings
+```
+
+What this does:
+
+- Removes all bookings created by `seed-test-bookings`.
+
+When to use it:
+
+- Reset the UI back to a clean state after testing.
+- Remove old seeded bookings before testing another capacity level.
+
+### Suggested testing workflow
+
+1. Seed a near-full state:
+
+```bash
+uv run flask --app wsgi seed-test-bookings --count 39
+```
+
+2. Open the homepage and booking modal and test the remaining options.
+
+3. Clear the test data:
+
+```bash
+uv run flask --app wsgi clear-test-bookings
+```
+
 ## Current Admin Setup
 
 The project currently expects admin credentials from environment variables.
@@ -490,3 +573,17 @@ Use this section to record notable development workflow changes over time.
   no longer belong to the redesigned homepage.
 - Changed the previous-years ribbon to a continuous marquee that loops through
   the full previous-years image list instead of a smaller preview subset.
+- Adjusted the phone-width homepage breakpoint so the weather widget and the
+  icon buttons stack above the title in a portrait-first layout.
+- Added a dedicated tablet breakpoint for `721px` to `1366px` so the hero
+  content can be positioned more naturally on larger tablets.
+- Reworked the booking modal into a two-step flow with:
+  - quantity selection cards,
+  - separate participant cards for each canoe,
+  - a booking summary panel,
+  - and dynamic action buttons for `Avbryt`, `Tillbaka`, and
+    `Fortsätt till betalning`.
+- Limited one booking to at most `5` canoes, with the backend enforcing the
+  same rule as the UI.
+- Removed the heavy backdrop blur from the booking modal and stopped the
+  summary card from stretching to the full height of the participant column.
