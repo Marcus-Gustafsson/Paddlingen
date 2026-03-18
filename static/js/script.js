@@ -1,572 +1,556 @@
 /**
  * File: app/static/js/script.js
-
+ *
  * What it does:
- *   - Controls frontend interactivity (opening/closing pop-up modals).
- 
- * Why it’s here:
- *   - Keeps JavaScript separate from HTML so behavior is easy to update.
+ *   - Controls public page interactivity such as modals, the booking form,
+ *     the booking progress bar, the weather widget, and the image gallery.
+ *
+ * Why it is here:
+ *   - Keeping JavaScript separate from HTML makes the public page easier to
+ *     update as the design changes.
  */
-
-
-// script.js
-
-//////// CONSTANTS ////////
 
 const eventSettings = window.PADDLINGEN_EVENT_SETTINGS || {};
+const previousYearGalleryImages = window.PADDLINGEN_PREVIOUS_YEAR_IMAGES || [];
 
-// Keep event-specific values in the server-side config so they can be changed
-// in one place before each year's event.
-const TOTAL_CANOES_CURRENT_YEAR = eventSettings.available_canoes_total || 50;
+const totalCanoesCurrentYear = eventSettings.available_canoes_total || 50;
 const currentYearEventDate = new Date(
-  eventSettings.datetime_local_iso || '2026-06-28T10:00:00'
+  eventSettings.datetime_local_iso || "2026-06-28T10:00:00"
 );
-const PRICE_PER_CANOE = eventSettings.price_per_canoe_sek || 1200;
-const WEATHER_FORECAST_DAYS_BEFORE_EVENT =
+const pricePerCanoeSek = eventSettings.price_per_canoe_sek || 1200;
+const weatherForecastDaysBeforeEvent =
   eventSettings.weather_forecast_days_before_event || 7;
 
-////////////////////
-
-
-
 /**
- * PROGRESS BAR FUNCTIONALITY
- * 
- * This section handles the visual progress bar that shows how many canoes are booked.
- * Think of it like a gas gauge in a car - it shows how "full" the bookings are.
- */
-
-/**
- * Updates the visual progress bar to show booking status.
- * 
- * How it works:
- * - Calculates what percentage of canoes are booked
- * - Changes color from green (few bookings) to red (almost full)
- * - Updates the text to show "X / Y kanoter bokade"
- * 
- * @param {number} booked - How many canoes have been booked so far
- * @param {number} total - Maximum number of canoes available
- * 
- * Example: updateBookingProgress(25, 50) means 25 out of 50 canoes are booked
+ * Update the progress bar and its helper text.
+ *
+ * Args:
+ *   booked: Number of currently confirmed canoe bookings.
+ *   total: Total number of canoes available.
  */
 function updateBookingProgress(booked, total) {
-  // Step 1: Calculate percentage (0-100)
-  // Math.min() ensures we never go above 100%
-  // Math.max() ensures we never go below 0%
-  // This protects against weird data (like 60 bookings out of 50 total)
   const percent = Math.min(100, Math.max(0, (booked / total) * 100));
-
-  // Step 2: Set up colors using the HSL color system
-  // HSL = Hue, Saturation, Lightness
-  // Hue is like a color wheel: 0° = red, 120° = green, 240° = blue
-  const startHue = 120;   // Green (like grass) when few bookings
-  const endHue   = 0;     // Red (like a stop sign) when almost full
-
-  // Step 3: Calculate the current color based on how full we are
-  // When percent = 0%, hue = 120 (green)
-  // When percent = 100%, hue = 0 (red)
-  // Everything in between is a smooth gradient
+  const startHue = 120;
+  const endHue = 0;
   const hue = startHue + (endHue - startHue) * (percent / 100);
-
-  // Step 4: Create the color string that CSS understands
-  // hsl(60, 100%, 50%) would be yellow
-  // The 100% means "fully saturated" (vivid color)
-  // The 50% means "normal brightness" (not too dark or light)
   const color = `hsl(${hue}, 100%, 50%)`;
 
-  // Step 5: Find the progress bar element in your HTML
-  // This looks for an element with id="progressBar"
-  const bar = document.getElementById('progressBar');
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+  const bookButton = document.getElementById("bookBtn");
 
-  // Step 6: Update the bar's width to match the percentage
-  // If 60% are booked, the bar fills 60% of its container
-  bar.style.width = percent + '%';
+  if (!progressBar || !progressText || !bookButton) {
+    return;
+  }
 
-  // Step 7: Apply the calculated color
-  bar.style.backgroundColor = color;
+  progressBar.style.width = `${percent}%`;
+  progressBar.style.backgroundColor = color;
+  progressText.innerHTML = `
+    <span class="progress-text-main">${booked} / ${total} kanoter bokade</span>
+    <span class="progress-text-hint">Tryck för att se deltagare</span>
+  `;
 
-  // Step 8: Update the text display
-  // This shows something like "25 / 50 kanoter bokade"
-  const text = document.getElementById('progressText');
-  text.innerText = `${booked} / ${total} kanoter bokade`;
-
-
-  // Step 2: Find the booking button in the HTML
-  const bookBtn = document.getElementById('bookBtn');
-
-  // Step 3: Check if we're at capacity
   if (booked >= total) {
-    // We're full! Disable booking
-    bookBtn.disabled = true;                      // Makes button unclickable
-    bookBtn.innerText = 'Fullbokat';             // Changes button text
-    bookBtn.setAttribute('aria-disabled', 'true'); // Helps screen readers
+    bookButton.disabled = true;
+    bookButton.innerText = "Fullbokat";
+    bookButton.setAttribute("aria-disabled", "true");
   } else {
-    // Still room! Enable booking
-    bookBtn.disabled = false;                      // Makes button clickable
-    bookBtn.innerText = 'Boka kanot';              // Normal button text
-    bookBtn.setAttribute('aria-disabled', 'false'); // Helps screen readers
+    bookButton.disabled = false;
+    bookButton.innerText = "Boka kanot";
+    bookButton.setAttribute("aria-disabled", "false");
   }
 }
 
-
-
 /**
- * Fetches the current number of bookings from your Flask server.
- * 
- * This function:
- * 1. Sends a request to your Python backend
- * 2. Gets the count of bookings in the database
- * 3. Returns that number
- * 
- * @returns {Promise<number>} The number of bookings (or 0 if error)
+ * Fetch the current number of confirmed bookings from the backend.
+ *
+ * Returns:
+ *   Promise<number>: Booking count, or 0 if the request fails.
  */
 async function fetchBookingCount() {
   try {
-    // Send HTTP request to your Flask server
-    // The '/api/booking-count' endpoint needs to be created in your Python code
-    const response = await fetch('/api/booking-count');
-    
-    // Convert the response to JSON format
+    const response = await fetch("/api/booking-count");
     const data = await response.json();
-    
-    // Expected response format: {count: 25}
     return data.count;
   } catch (error) {
-    // If something goes wrong (network error, server down, etc.)
-    console.error('Failed to fetch booking count:', error);
-    return 0;  // Return 0 as a safe default
+    console.error("Failed to fetch booking count:", error);
+    return 0;
   }
 }
 
 /**
- * Updates the progress bar with real data from the database.
- * This is the main function that connects everything together.
+ * Refresh the booking progress using live database data.
  */
 async function updateProgressFromDatabase() {
-  // Step 1: Get the actual number of bookings from the server
   const currentBookings = await fetchBookingCount();
-  
-  // Step 2: Update the progress bar and button with real data
-  updateBookingProgress(currentBookings, TOTAL_CANOES_CURRENT_YEAR);
+  updateBookingProgress(currentBookings, totalCanoesCurrentYear);
 }
 
-// This runs once when the page loads (including after payment redirect)
-document.addEventListener('DOMContentLoaded', async () => {
-  // Get real booking data and update the progress bar
-  await updateProgressFromDatabase();
-});
+/**
+ * Show a countdown or fetch the forecast when it becomes available.
+ */
+function fetchWeatherIfAvailable(eventDate) {
+  const weatherStatus = document.getElementById("weatherStatus");
+  const widgetForecast = document.getElementById("widgetForecast");
 
+  if (!weatherStatus || !widgetForecast) {
+    return;
+  }
 
-
-// ===== Event Weather Forecast Widget =====
-
-// 2. Fetch weather data from backend if within 14 days
-function fetchWeatherIfAvailable(currentYearEventDate) {
   const today = new Date();
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const diffMs = currentYearEventDate - today;
-  const diffDays = Math.ceil(diffMs / msPerDay);
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+  const diffMilliseconds = eventDate - today;
+  const diffDays = Math.ceil(diffMilliseconds / millisecondsPerDay);
 
-  // Show countdown or fetch forecast
-  if (diffDays > WEATHER_FORECAST_DAYS_BEFORE_EVENT) {
-    const daysUntil = diffDays - WEATHER_FORECAST_DAYS_BEFORE_EVENT;
-    document.getElementById('weatherStatus').innerHTML = `
+  if (diffDays > weatherForecastDaysBeforeEvent) {
+    const daysUntil = diffDays - weatherForecastDaysBeforeEvent;
+    weatherStatus.innerHTML = `
       Prognos kommer vara tillgänglig om
       <span id="daysUntil">${daysUntil}</span> dagar
     `;
-    document.getElementById('widgetForecast').style.display = 'none';
-  } else {
-    // Format date to YYYY-MM-DD
-    const formattedDate = currentYearEventDate.toISOString().split('T')[0];
+    widgetForecast.style.display = "none";
+    return;
+  }
 
-    fetch(`/api/forecast?date=${formattedDate}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) throw new Error(data.error);
-        updateWeather(currentYearEventDate, data);
-      })
-      .catch(err => {
-        document.getElementById('weatherStatus').innerText =
-          `Tillgänglig ${WEATHER_FORECAST_DAYS_BEFORE_EVENT} dagar innan`;
-        console.error("Forecast error:", err);
+  const formattedDate = eventDate.toISOString().split("T")[0];
+
+  fetch(`/api/forecast?date=${formattedDate}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      updateWeather(eventDate, data);
+    })
+    .catch((error) => {
+      weatherStatus.innerText =
+        `Tillgänglig ${weatherForecastDaysBeforeEvent} dagar innan`;
+      console.error("Forecast error:", error);
+    });
+}
+
+/**
+ * Write forecast data into the weather widget.
+ *
+ * Args:
+ *   eventDate: Date of the event.
+ *   forecast: Forecast data returned by the backend.
+ */
+function updateWeather(eventDate, forecast) {
+  const eventDateText = document.getElementById("eventDateText");
+  const weatherStatus = document.getElementById("weatherStatus");
+  const widgetForecast = document.getElementById("widgetForecast");
+  const weatherIcon = document.getElementById("weatherIcon");
+  const temperature = document.getElementById("temperature");
+  const rainChance = document.getElementById("rainChance");
+
+  if (
+    !eventDateText ||
+    !weatherStatus ||
+    !widgetForecast ||
+    !weatherIcon ||
+    !temperature ||
+    !rainChance
+  ) {
+    return;
+  }
+
+  eventDateText.innerText = eventDate.toLocaleDateString("sv-SE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  weatherStatus.style.display = "none";
+  widgetForecast.style.display = "block";
+  weatherIcon.innerText = forecast.icon;
+  temperature.innerText = forecast.temperature;
+  rainChance.innerText = forecast.rainChance;
+}
+
+/**
+ * Open and close the shared modal components used on the homepage.
+ */
+function registerBasicModalTriggers() {
+  const faqButton = document.getElementById("faqBtn");
+  const contactButton = document.getElementById("contactBtn");
+  const overviewTrigger = document.getElementById("overviewTrigger");
+  const faqModal = document.getElementById("faqModal");
+  const contactModal = document.getElementById("contactModal");
+  const overviewModal = document.getElementById("overviewModal");
+  const closeButtons = document.querySelectorAll(".modal-close");
+
+  function openModal(modalElement) {
+    if (modalElement) {
+      modalElement.style.display = "flex";
+    }
+  }
+
+  function closeModal(modalElement) {
+    if (modalElement) {
+      modalElement.style.display = "none";
+    }
+  }
+
+  if (faqButton && faqModal) {
+    faqButton.addEventListener("click", () => openModal(faqModal));
+  }
+
+  if (contactButton && contactModal) {
+    contactButton.addEventListener("click", () => openModal(contactModal));
+  }
+
+  if (overviewTrigger && overviewModal) {
+    overviewTrigger.addEventListener("click", () => openModal(overviewModal));
+    overviewTrigger.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openModal(overviewModal);
+      }
+    });
+  }
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      closeModal(button.closest(".modal"));
+    });
+  });
+
+  [faqModal, contactModal, overviewModal].forEach((modalElement) => {
+    if (!modalElement) {
+      return;
+    }
+
+    modalElement.addEventListener("click", (event) => {
+      if (event.target === modalElement) {
+        closeModal(modalElement);
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      [faqModal, contactModal, overviewModal].forEach(closeModal);
+    }
+  });
+
+  if (faqModal) {
+    const tabButtons = faqModal.querySelectorAll(".modal-tab");
+    const tabPanels = faqModal.querySelectorAll(".modal-body");
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.getAttribute("data-tab");
+
+        tabButtons.forEach((tabButton) => {
+          tabButton.classList.remove("modal-tab--active");
+        });
+        tabPanels.forEach((panel) => {
+          panel.classList.add("modal-body--hidden");
+        });
+
+        button.classList.add("modal-tab--active");
+        faqModal
+          .querySelector(`#${target}`)
+          .classList.remove("modal-body--hidden");
       });
+    });
   }
 }
 
 /**
- * Updates the weather widget with real forecast data.
- * @param {Date} currentYearEventDate - The date/time of your event
- * @param {Object} forecast - Contains temperature, rainChance and icon
+ * Register the previous-years gallery modal and its controls.
  */
-function updateWeather(currentYearEventDate, forecast) {
-  // Format and display event date (e.g. “13 juni 2025”)
-  document.getElementById('eventDateText').innerText =
-    currentYearEventDate.toLocaleDateString('sv-SE', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    });
+function registerGalleryModal() {
+  const modal = document.getElementById("galleryModal");
+  const imageElement = modal ? modal.querySelector(".gallery-image") : null;
+  const counterElement = modal ? modal.querySelector(".gallery-counter") : null;
+  const closeButton = modal ? modal.querySelector(".gallery-close") : null;
+  const previousButton = modal ? modal.querySelector(".gallery-prev") : null;
+  const nextButton = modal ? modal.querySelector(".gallery-next") : null;
+  const showGalleryButton = document.getElementById("showPreviousYearsGallery");
 
-  // Update UI elements with fetched forecast
-  document.getElementById('weatherStatus').style.display = 'none';
-  document.getElementById('widgetForecast').style.display = 'block';
-  document.getElementById('weatherIcon').innerText = forecast.icon;
-  document.getElementById('temperature').innerText = forecast.temperature;
-  document.getElementById('rainChance').innerText = forecast.rainChance;
-}
-
-// Run on page load
-document.addEventListener('DOMContentLoaded', () => {
-  fetchWeatherIfAvailable(currentYearEventDate);
-});
-
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Grab all year sections and sidebar links
-  const sections = document.querySelectorAll('.year-section');
-  const sidebarLinks = document.querySelectorAll('.year-sidebar a');
-
-  // 2. Build a map from section ID → sidebar <a>
-  const linkMap = {};
-  sidebarLinks.forEach(link => {
-    const target = link.getAttribute('href').slice(1); // "year-2024"
-    linkMap[target] = link;
-  });
-
-  // 3. IntersectionObserver callback
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const id = entry.target.id;       // e.g. "year-2024"
-      const link = linkMap[id];
-      if (entry.isIntersecting) {
-        // a) Section is in view → mark its link active
-        link.classList.add('active');
-      } else {
-        // b) Section is out of view → remove active
-        link.classList.remove('active');
-      }
-    });
-  }, {
-    root: null,                        // viewport
-    threshold: 0.25                     // 50% of section must be visible
-  });
-
-  // 4. Observe each section
-  sections.forEach(section => observer.observe(section));
-});
-
-
-
-// ===== SCROLL-TRIGGERED ANIMATIONS =====
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Select all elements marked for scroll animation
-  const animatables = document.querySelectorAll('.scroll-animate');
-
-  // 2. Create an IntersectionObserver
-  const animObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        // a) Entered viewport: add .in-view to trigger CSS animation
-        entry.target.classList.add('in-view');
-      } else {
-        // b) Left viewport: remove if you want to re-animate on re-entry
-        entry.target.classList.remove('in-view');
-      }
-    });
-  }, {
-    root: null,        // Use the browser viewport
-    threshold: 0.25     // Fire when X-% of the element is visible
-  });
-
-  // 3. Observe each target element
-  animatables.forEach(el => animObserver.observe(el));
-});
-
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const overviewBtn = document.getElementById("mobileOverviewBtn");
-  const overviewDiv = document.getElementById("overviewPanel");
-
-  if (overviewBtn && overviewDiv) {
-    // Show overview on “Översikt” click
-    overviewBtn.addEventListener("click", () => {
-      overviewDiv.classList.add("scrolled");
-    });
-
-    // Hide when tapping outside the table (backdrop)
-    overviewDiv.addEventListener("click", e => {
-      if (e.target === overviewDiv) {
-        overviewDiv.classList.remove("scrolled");
-      }
-    });
-
-    // ===== OUR NEW CLOSE-BUTTON =====
-    const closeBtn = overviewDiv.querySelector(".overview-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        overviewDiv.classList.remove("scrolled");
-      });
-    }
+  if (
+    !modal ||
+    !imageElement ||
+    !counterElement ||
+    !closeButton ||
+    !previousButton ||
+    !nextButton
+  ) {
+    return;
   }
-});
 
+  let galleryImages = [];
+  let currentIndex = 0;
 
-document.addEventListener("DOMContentLoaded", () => {
-  // 1. Grab our buttons and modals
-  const faqBtn      = document.getElementById("faqBtn");
-  const contactBtn  = document.getElementById("contactBtn");
-  const faqModal    = document.getElementById("faqModal");
-  const contactModal= document.getElementById("contactModal");
-  const closeBtns   = document.querySelectorAll(".modal-close");
-  const tabButtons = faqModal.querySelectorAll(".modal-tab");
-  const tabPanels  = faqModal.querySelectorAll(".modal-body");
+  function updateGallery() {
+    if (!galleryImages.length) {
+      return;
+    }
 
-  // 2. Utility to open a modal
-  function openModal(modal) {
+    imageElement.src = galleryImages[currentIndex];
+    counterElement.innerText = `${currentIndex + 1} / ${galleryImages.length}`;
+    previousButton.style.display = galleryImages.length > 1 ? "block" : "none";
+    nextButton.style.display = galleryImages.length > 1 ? "block" : "none";
+  }
+
+  function openGallery(images, startIndex = 0) {
+    if (!images.length) {
+      return;
+    }
+
+    galleryImages = images;
+    currentIndex = startIndex;
+    updateGallery();
     modal.style.display = "flex";
   }
 
-  // 3. Utility to close a modal
-  function closeModal(modal) {
-    modal.style.display = "none";
-  }
-
-  // 4. Hook up button clicks to open
-  faqBtn.addEventListener("click",   () => openModal(faqModal));
-  contactBtn.addEventListener("click", () => openModal(contactModal));
-
-  // 5. Hook up each “×” close button
-  closeBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const modal = btn.closest(".modal");
-      closeModal(modal);
-    });
-  });
-
-  // 6. Click outside content box to close
-  [faqModal, contactModal].forEach(modal => {
-    modal.addEventListener("click", e => {
-      if (e.target === modal) {         // only if we click the backdrop
-        closeModal(modal);
-      }
-    });
-  });
-
-  // 7. Press Escape to close any open modal
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
-      [faqModal, contactModal].forEach(closeModal);
-    }
-  });
-
-
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = btn.getAttribute("data-tab");  // "questions" or "rules"
-
-      // a) Remove active class from all tabs
-      tabButtons.forEach(t => t.classList.remove("modal-tab--active"));
-      // b) Hide all panels
-      tabPanels.forEach(p => p.classList.add("modal-body--hidden"));
-
-      // c) Activate clicked tab
-      btn.classList.add("modal-tab--active");
-      // d) Show the matching panel
-      faqModal.querySelector(`#${target}`).classList.remove("modal-body--hidden");
-    });
-  });
-});
-
-
-
-
-// ===== IMAGE GALLERY (LIGHTBOX) =====
-document.addEventListener("DOMContentLoaded", () => {
-  // 1) Grab modal elements
-  const modal       = document.getElementById("galleryModal");
-  const imgEl       = modal.querySelector(".gallery-image");
-  const counterEl   = modal.querySelector(".gallery-counter");
-  const btnClose    = modal.querySelector(".gallery-close");
-  const btnPrev     = modal.querySelector(".gallery-prev");
-  const btnNext     = modal.querySelector(".gallery-next");
-
-  // 2) State: current image list and index
-  let galleryImages = [];
-  let currentIndex  = 0;
-
-  // 3) Utility: show modal
-  function openGallery(images, startIndex = 0) {
-    galleryImages = images;         // store URLs
-    currentIndex  = startIndex;     // start on chosen image
-    updateGallery();                // show image & caption
-    modal.style.display = "flex";   // reveal the modal
-  }
-
-  // 4) Utility: hide modal
   function closeGallery() {
     modal.style.display = "none";
     galleryImages = [];
   }
 
-  // 5) Utility: refresh the <img> and caption
-  function updateGallery() {
-    const url = galleryImages[currentIndex];
-    imgEl.src = url;                          // update image
-    counterEl.innerText = `${currentIndex+1} / ${galleryImages.length}`;
-    // Show or hide arrows if only one image
-    btnPrev.style.display = galleryImages.length > 1 ? "block" : "none";
-    btnNext.style.display = galleryImages.length > 1 ? "block" : "none";
-  }
-
-  // 6) Wire up Prev/Next buttons
-  btnPrev.addEventListener("click", () => {
+  previousButton.addEventListener("click", () => {
     currentIndex = (currentIndex - 1 + galleryImages.length) % galleryImages.length;
     updateGallery();
   });
-  btnNext.addEventListener("click", () => {
+
+  nextButton.addEventListener("click", () => {
     currentIndex = (currentIndex + 1) % galleryImages.length;
     updateGallery();
   });
 
-  // 7) Close by × or backdrop click
-  btnClose.addEventListener("click", closeGallery);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeGallery();
+  closeButton.addEventListener("click", closeGallery);
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeGallery();
+    }
   });
 
-  // 8) Close on Escape, Left/Right arrows for navigation
-  document.addEventListener("keydown", e => {
-    if (modal.style.display !== "flex") return; // only if open
-    if (e.key === "Escape")      closeGallery();
-    if (e.key === "ArrowLeft")   btnPrev.click();
-    if (e.key === "ArrowRight")  btnNext.click();
+  document.addEventListener("keydown", (event) => {
+    if (modal.style.display !== "flex") {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      closeGallery();
+    }
+    if (event.key === "ArrowLeft") {
+      previousButton.click();
+    }
+    if (event.key === "ArrowRight") {
+      nextButton.click();
+    }
   });
 
-  // 9) Hook up each "Visa bilder" button
-  //    Buttons have IDs like "showPhotos2024" in each .year-section
-  const galleryButtons = document.querySelectorAll("button[id^='showPhotos']");
-  galleryButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      // a) Find this button's section
-      const section = btn.closest(".year-section");
-      // b) Collect all .grid-cell background-image URLs
-      const cells   = section.querySelectorAll(".photo-grid-bg .grid-cell");
-      const urls    = Array.from(cells).map(cell => {
-        // cell.style.backgroundImage is like 'url("…/img.jpg")'
-        const bg = cell.style.backgroundImage;
-        // remove url("…") wrapper:
-        return bg.slice(5, -2);
-      });
-      // c) Open gallery starting at the first image
-      openGallery(urls, 0);
+  if (showGalleryButton) {
+    showGalleryButton.addEventListener("click", () => {
+      openGallery(previousYearGalleryImages, 0);
     });
-  });
-});
+  }
+}
 
+/**
+ * Start the continuous previous-years ribbon animation.
+ *
+ * This uses `requestAnimationFrame` instead of a CSS keyframe loop so the
+ * track can wrap based on its measured width without a visible jump.
+ */
+function initializeGalleryRibbonMarquee() {
+  const ribbonTrack = document.getElementById("galleryRibbonTrack");
 
+  if (!ribbonTrack) {
+    return;
+  }
 
-// ===== BOOKING MODAL & FORM LOGIC =====
-document.addEventListener("DOMContentLoaded", () => {
+  const ribbonGroups = ribbonTrack.querySelectorAll(".gallery-ribbon-group");
 
-  // 1) GRAB ALL THE ELEMENTS WE’LL NEED
-  const openBtn    = document.getElementById("bookBtn");           // “Boka kanot” button
-  const modal      = document.getElementById("bookingModal");      // The whole modal overlay
-  const form       = document.getElementById("bookingForm");       // The <form> inside the modal
-  const select     = document.getElementById("canoeCount");        // <select> for number of canoes
-  const namesWrap  = document.getElementById("nameFieldsContainer"); // Where we inject name inputs
-  const priceInfo  = document.getElementById("priceInfo");         // Shows “Totalt: … kr”
-  const cancelBtn  = document.getElementById("cancelBooking");     // “Avbryt” button
-  const submitBtn  = document.getElementById("confirmBooking");    // “Betala” button
+  if (ribbonGroups.length < 2) {
+    return;
+  }
 
-  // 2) OPEN THE MODAL
-  openBtn.addEventListener("click", () => {
-    // a) Show the modal
-    modal.style.display = "flex";
+  const firstRibbonGroup = ribbonGroups[0];
+  const trackGap = parseFloat(window.getComputedStyle(ribbonTrack).gap || "0");
+  const pixelsPerSecond = 28;
 
-    // b) Reset any previous state
-    form.reset();                   // clear select + inputs
-    namesWrap.innerHTML = "";       // remove old name fields
-    priceInfo.textContent = 
-      `Totalt: 0 kr (${PRICE_PER_CANOE} kr per kanot)`;
-    submitBtn.disabled = true;      // disable “Betala” until ready
-    cancelBtn.disabled = false;     // ensure “Avbryt” is clickable
-  });
+  let currentOffset = 0;
+  let previousTimestamp = 0;
 
-  // 3) CLOSE HELPER FUNCTION
+  function stepAnimation(timestamp) {
+    if (previousTimestamp === 0) {
+      previousTimestamp = timestamp;
+    }
+
+    const deltaSeconds = (timestamp - previousTimestamp) / 1000;
+    previousTimestamp = timestamp;
+
+    const ribbonLoopWidth =
+      firstRibbonGroup.getBoundingClientRect().width + trackGap;
+
+    if (ribbonLoopWidth <= 0) {
+      requestAnimationFrame(stepAnimation);
+      return;
+    }
+
+    currentOffset += pixelsPerSecond * deltaSeconds;
+
+    if (currentOffset >= ribbonLoopWidth) {
+      currentOffset -= ribbonLoopWidth;
+    }
+
+    ribbonTrack.style.transform = `translate3d(-${currentOffset}px, 0, 0)`;
+    requestAnimationFrame(stepAnimation);
+  }
+
+  requestAnimationFrame(stepAnimation);
+}
+
+/**
+ * Register the booking modal and participant field generation.
+ */
+function registerBookingModal() {
+  const openButton = document.getElementById("bookBtn");
+  const modal = document.getElementById("bookingModal");
+  const form = document.getElementById("bookingForm");
+  const canoeCountSelect = document.getElementById("canoeCount");
+  const nameFieldsContainer = document.getElementById("nameFieldsContainer");
+  const priceInfo = document.getElementById("priceInfo");
+  const cancelButton = document.getElementById("cancelBooking");
+  const submitButton = document.getElementById("confirmBooking");
+
+  if (
+    !openButton ||
+    !modal ||
+    !form ||
+    !canoeCountSelect ||
+    !nameFieldsContainer ||
+    !priceInfo ||
+    !cancelButton ||
+    !submitButton
+  ) {
+    return;
+  }
+
   function closeModal() {
     modal.style.display = "none";
   }
-  // a) Clicking “Avbryt”
-  cancelBtn.addEventListener("click", closeModal);
-  // b) Clicking outside the content box (the backdrop)
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeModal();
+
+  openButton.addEventListener("click", () => {
+    modal.style.display = "flex";
+    form.reset();
+    nameFieldsContainer.innerHTML = "";
+    priceInfo.textContent = `Totalt: 0 kr (${pricePerCanoeSek} kr per kanot)`;
+    submitButton.disabled = true;
+    cancelButton.disabled = false;
   });
-  // c) Pressing Escape
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && modal.style.display === "flex") {
+
+  cancelButton.addEventListener("click", closeModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
       closeModal();
     }
   });
 
-  // 4) WHEN USER CHOOSES NUMBER OF CANOES
-  select.addEventListener("change", () => {
-    const count = parseInt(select.value, 10); // how many canoes
-    namesWrap.innerHTML = "";                 // clear old fields
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal.style.display === "flex") {
+      closeModal();
+    }
+  });
 
-    // a) Build one pair of inputs (first + last name) per canoe
-    for (let i = 1; i <= count; i++) {
+  canoeCountSelect.addEventListener("change", () => {
+    const count = parseInt(canoeCountSelect.value, 10);
+    nameFieldsContainer.innerHTML = "";
+
+    for (let canoeNumber = 1; canoeNumber <= count; canoeNumber += 1) {
       const wrapper = document.createElement("div");
       wrapper.className = "canoe-field";
 
-      // Label above the inputs
-      const lbl = document.createElement("label");
-      lbl.setAttribute("for", `canoe${i}_fname`);
-      lbl.innerText = 
-        `Kanot ${i}: \n (Ange namn på den som hämtar ut kanoten)`;
-      wrapper.appendChild(lbl);
+      const label = document.createElement("label");
+      label.setAttribute("for", `canoe${canoeNumber}_fname`);
+      label.innerText = `Kanot ${canoeNumber}: \n (Ange namn på den som hämtar ut kanoten)`;
+      wrapper.appendChild(label);
 
-      // Container for two side-by-side inputs
-      const inputsDiv = document.createElement("div");
-      inputsDiv.className = "inputs";
+      const inputsContainer = document.createElement("div");
+      inputsContainer.className = "inputs";
 
-      // First name input
-      const first = document.createElement("input");
-      first.type        = "text";
-      first.id          = `canoe${i}_fname`;
-      first.name        = `canoe${i}_fname`;
-      first.placeholder = "Förnamn";
-      first.required    = true;
+      const firstNameInput = document.createElement("input");
+      firstNameInput.type = "text";
+      firstNameInput.id = `canoe${canoeNumber}_fname`;
+      firstNameInput.name = `canoe${canoeNumber}_fname`;
+      firstNameInput.placeholder = "Förnamn";
+      firstNameInput.required = true;
 
-      // Last name input
-      const last = document.createElement("input");
-      last.type         = "text";
-      last.id           = `canoe${i}_lname`;
-      last.name         = `canoe${i}_lname`;
-      last.placeholder  = "Efternamn";
-      last.required     = true;
+      const lastNameInput = document.createElement("input");
+      lastNameInput.type = "text";
+      lastNameInput.id = `canoe${canoeNumber}_lname`;
+      lastNameInput.name = `canoe${canoeNumber}_lname`;
+      lastNameInput.placeholder = "Efternamn";
+      lastNameInput.required = true;
 
-      // Assemble the two inputs
-      inputsDiv.appendChild(first);
-      inputsDiv.appendChild(last);
-      wrapper.appendChild(inputsDiv);
-      namesWrap.appendChild(wrapper);
+      inputsContainer.appendChild(firstNameInput);
+      inputsContainer.appendChild(lastNameInput);
+      wrapper.appendChild(inputsContainer);
+      nameFieldsContainer.appendChild(wrapper);
     }
 
-    // b) Update the total price display
-    priceInfo.textContent = 
-      `Totalt: ${count * PRICE_PER_CANOE} kr (${PRICE_PER_CANOE} kr per kanot)`;
+    priceInfo.textContent =
+      `Totalt: ${count * pricePerCanoeSek} kr (${pricePerCanoeSek} kr per kanot)`;
 
-    // c) Form validation: only enable “Betala” when ALL inputs are non-empty
-    const allInputs = namesWrap.querySelectorAll("input");
-    function validate() {
-      // Check every input has some non-whitespace text
-      const allFilled = Array.from(allInputs)
-        .every(inp => inp.value.trim() !== "");
-      submitBtn.disabled = !allFilled;
+    const allInputs = nameFieldsContainer.querySelectorAll("input");
+
+    function validateForm() {
+      const allFilled = Array.from(allInputs).every((inputField) => {
+        return inputField.value.trim() !== "";
+      });
+      submitButton.disabled = !allFilled;
     }
-    // Attach an ‘input’ listener to each field
-    allInputs.forEach(i => i.addEventListener("input", validate));
-    validate(); // run once in case there’s only one canoe
+
+    allInputs.forEach((inputField) => {
+      inputField.addEventListener("input", validateForm);
+    });
+    validateForm();
   });
+}
+
+/**
+ * Register the scroll-based reveal animation used on the homepage.
+ */
+function registerScrollAnimations() {
+  const animatedElements = document.querySelectorAll(".scroll-animate");
+
+  if (!animatedElements.length) {
+    return;
+  }
+
+  const animationObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in-view");
+        } else {
+          entry.target.classList.remove("in-view");
+        }
+      });
+    },
+    {
+      root: null,
+      threshold: 0.2,
+    }
+  );
+
+  animatedElements.forEach((element) => {
+    animationObserver.observe(element);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await updateProgressFromDatabase();
+  fetchWeatherIfAvailable(currentYearEventDate);
+  registerBasicModalTriggers();
+  registerGalleryModal();
+  initializeGalleryRibbonMarquee();
+  registerBookingModal();
+  registerScrollAnimations();
 });

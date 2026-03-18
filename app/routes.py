@@ -134,6 +134,41 @@ def build_event_settings() -> dict[str, object]:
     }
 
 
+def build_previous_year_gallery_data() -> tuple[list[str], list[str]]:
+    """Build ribbon and gallery image URLs for previous-year photos.
+
+    Returns:
+        tuple[list[str], list[str]]: Two lists of static image URLs.
+        The first list is used by the homepage ribbon.
+        The second list contains the full combined gallery used by the image
+        viewer modal. For now both lists contain the same images because the
+        ribbon should loop through all available previous-year photos.
+    """
+
+    year_folders = [
+        "2025",
+        "2024",
+        "2023",
+        "2022",
+        "2021",
+        "2020",
+        "2019_&_tidigare",
+    ]
+    ribbon_image_urls: list[str] = []
+    gallery_image_urls: list[str] = []
+
+    for year_folder in year_folders:
+        image_filenames = get_images_for_year(year_folder)
+        image_urls = [
+            url_for("static", filename=f"images/{year_folder}/{image_filename}")
+            for image_filename in image_filenames
+        ]
+        gallery_image_urls.extend(image_urls)
+        ribbon_image_urls.extend(image_urls)
+
+    return ribbon_image_urls, gallery_image_urls
+
+
 def get_event_coordinates() -> tuple[float, float]:
     """Return the configured latitude and longitude for the event location.
 
@@ -161,19 +196,18 @@ def index():
     current = count_confirmed_booked_canoes()
     available_canoes = max(0, get_total_available_canoes() - current)
     event_settings = build_event_settings()
+    (
+        previous_year_ribbon_image_urls,
+        previous_year_gallery_image_urls,
+    ) = build_previous_year_gallery_data()
 
     return render_template(
         "index.html",
-        pics2019_earlier=get_images_for_year("2019_&_tidigare"),
-        pics2020=get_images_for_year("2020"),
-        pics2021=get_images_for_year("2021"),
-        pics2022=get_images_for_year("2022"),
-        pics2023=get_images_for_year("2023"),
-        pics2024=get_images_for_year("2024"),
-        pics2025=get_images_for_year("2025"),
         bokningar=alla_bokningar,
         available_canoes=available_canoes,
         event_settings=event_settings,
+        previous_year_ribbon_image_urls=previous_year_ribbon_image_urls,
+        previous_year_gallery_image_urls=previous_year_gallery_image_urls,
     )
 
 

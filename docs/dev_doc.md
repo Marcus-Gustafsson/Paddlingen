@@ -183,6 +183,28 @@ Current note:
   and Supabase for the first real hosted database tests.
 - When that happens, this section must be updated.
 
+### Test the current landing-page redesign locally
+
+```bash
+uv run flask --app wsgi --debug run
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+What to check:
+
+- The homepage shows one main landing hero instead of the older sidebar-led
+  layout.
+- The weather panel is in the top-left area.
+- The information and contact buttons are in the top-right area.
+- The booking progress bar shows the helper text `Tryck för att se deltagare`.
+- Clicking the progress bar opens the participant list modal.
+- Clicking `Visa bilder från tidigare år` opens the gallery modal.
+
 ## Current Docker Commands
 
 These commands are for the first app-container step only.
@@ -459,3 +481,12 @@ Use this section to record notable development workflow changes over time.
   running `uv` at container startup.
 - Added a root `compose.yaml` with a stable project name and container name for
   easier Docker Desktop usage.
+- Reworked the public homepage into a single landing hero with:
+  - weather in the top-left area,
+  - information and contact actions in the top-right area,
+  - a clickable progress bar that opens the participant list,
+  - and a previous-years image ribbon below the booking button.
+- Removed the old sidebar, archive-section, and overview-panel CSS blocks that
+  no longer belong to the redesigned homepage.
+- Changed the previous-years ribbon to a continuous marquee that loops through
+  the full previous-years image list instead of a smaller preview subset.

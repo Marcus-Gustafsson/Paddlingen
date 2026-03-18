@@ -65,12 +65,27 @@ finish.
 
 1. A browser requests the homepage at `/`.
 2. Flask receives the request.
-3. The route in `app/routes.py` loads booking data and image lists.
+3. The route in `app/routes.py` loads booking data and the image lists needed
+   for the previous-years ribbon and gallery.
 4. Flask renders `templates/index.html`.
 5. The browser receives the HTML.
 6. The browser then loads CSS and JavaScript from `static/`.
 7. JavaScript calls API routes like `/api/booking-count` to update parts of the
    page dynamically.
+
+Current homepage note:
+
+- The public page is being simplified into one main landing section.
+- The current direction is:
+  - one centered hero for the current event,
+  - weather in the top-left corner area,
+  - information and contact actions in the top-right area,
+  - a clickable progress bar that opens the participant list,
+  - and a previous-years image ribbon below the booking action.
+- The older sidebar and multi-section archive styling has now been removed from
+  the active homepage CSS so the new hero layout is easier to reason about.
+- The previous-years ribbon now loops continuously through the available image
+  list instead of using the older preview-only ribbon animation.
 
 ### Booking flow
 
@@ -162,7 +177,8 @@ This is the current role of the main files and folders.
 ### Frontend files
 
 - `templates/index.html`
-  Public website page.
+  Public website page. It now centers the current event hero and uses a
+  previous-years image ribbon instead of the older sidebar-heavy structure.
 
 - `templates/login.html`
   Admin login page.
@@ -468,9 +484,9 @@ JavaScript.
 `templates/index.html` handles a lot of responsibilities:
 
 - event presentation,
-- yearly sections,
+- previous-years ribbon,
 - booking modal,
-- overview panel,
+- participant overview modal,
 - FAQ modal,
 - contact modal,
 - gallery modal,

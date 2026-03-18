@@ -7,6 +7,10 @@ def test_home_page(client):
     """Send GET '/' and verify the public landing page responds with 200."""
     response = client.get("/")
     assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Boka kanot" in page
+    assert "Tryck för att se deltagare" in page
+    assert "Visa bilder från tidigare år" in page
 
 
 def test_login_page(client):

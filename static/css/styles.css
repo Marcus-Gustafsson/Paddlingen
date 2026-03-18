@@ -139,13 +139,13 @@ header {
 /* ===== PROGRESS BAR TRACK ===== */
 .progress-container {
   position: relative;             /* 1. Establish a positioning context for children */
-  width: 100%;                    
+  width: 100%;
   max-width: 500px;               /* Widened so the text fits comfortably */
-  height: 2rem;                   /* Tall enough for legible text */
+  height: 2.6rem;                   /* Tall enough for legible text */
   background-color: rgba(255,255,255,0.3);
   border-radius: 1rem;
   overflow: hidden;               /* Clip the colored fill at the corners */
-  margin: 0 auto;                 
+  margin: 0 auto;
 }
 
 /* ===== COLORED FILL ===== */
@@ -154,7 +154,7 @@ header {
   height: 100%;                                  /* Make the fill as tall as the container */
   width: 0%;                                     /* Start with 0% fill; JS will update this */
   background-color: hsl(120, 100%, 50%);         /* Initial color: green (120° hue in HSL) */
-  transition: 
+  transition:
     width 3s ease,                             /* Smoothly animate width changes over 0.5 seconds */
     background-color 3s ease;                  /* Smoothly animate color changes over 0.5 seconds */
   display: flex;                                 /* Turn this into a flex container */
@@ -172,13 +172,13 @@ header {
   top: 50%;                       /* 50% down the container */
   left: 50%;                      /* 50% across the container */
   transform: translate(-50%, -50%); /* Pull back by half its own size to truly center */
-  
+
   width: 100%;                    /* Span full container (so text-align works) */
   text-align: center;             /* Center text horizontally */
-  
+
   color: #162938;                 /* Dark text for contrast on gold */
-  font-weight: 600;              
-  font-size: 1rem;              
+  font-weight: 600;
+  font-size: 1rem;
   pointer-events: none;           /* Let clicks pass through to the bar or underlying elements if needed */
 }
 
@@ -187,19 +187,19 @@ header {
 .book-btn {
   /* 1. Spacing */
   margin-top: 2rem;            /* Space above the button so it’s not too close to the bar */
-  
+
   /* 2. Size & padding */
   padding: 0.75rem 1.5rem;     /* Top/bottom 0.75rem, left/right 1.5rem for a larger click target */
   font-size: 1.25rem;          /* Larger text for readability and emphasis */
-  
+
   /* 3. Colors & background */
   background-color: #28a745;   /* Bootstrap green for primary action */
   color: #ffffff;              /* White text for contrast */
-  
+
   /* 4. Border & shape */
   border: none;                /* Remove default border */
   border-radius: 0.75rem;      /* Rounded corners for a friendly look */
-  
+
   /* 5. Cursor & transition */
   cursor: pointer;             /* Pointer on hover indicates clickability */
   transition: background-color 0.3s ease, /* Smooth color fade on hover */
@@ -231,26 +231,26 @@ header {
   top: 25%;                     /* Center vertically */
   right: 3rem;                  /* Push in from the right edge */
   transform: translateY(-50%);  /* Perfect vertical centering */
-  
-  /* 
+
+  /*
     1. Fix the height so only 8 rows + header show, then scroll.
        Assuming each row ~2rem tall + header ~2.5rem, we use 18rem.
   */
-  max-height: 26.5rem;            
-  
+  max-height: 26.5rem;
+
   /* 2. Allow vertical scrolling when content exceeds max-height */
-  overflow-y: auto;             
-  
+  overflow-y: auto;
+
   /* 3. Padding & shape */
   padding: 1rem;
   border-radius: 0.5rem;
-  
+
   /* 4. Semi-opaque background for readability over the photo */
   background: rgba(69, 69, 69, 0.9);
-  
+
   /* 5. Subtle shadow for depth */
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  
+
   /* 6. Limit width so it doesn’t get too wide */
   max-width: 330px;
   width: 100%;
@@ -314,126 +314,6 @@ header {
   left:   1.5rem;     /* Distance from the left edge */
 }
 
-/* ===== INLINE OVERRIDE (Center in flow) ===== */
-.weather-widget-inline {
-  /* 1. Positioning override */
-  position: relative !important;  
-  bottom:   auto     !important;  
-  left:     auto     !important;  
-
-  /* 2. Display & centering */
-  display: block;                
-  margin: 1rem auto;           /* 1.5rem top/bottom, auto left/right */
-
-  /* 3. Width control (adjust for content) */
-  width: 100%;                   
-  max-width: 300px;              /* Maximum width of the pill */
-
-  /* 4. Extra padding for title + status lines */
-  padding: 1rem;                
-
-  /* 5. Title font-size override (optional tweak) */
-}
-
-
-/* ===== YEAR SIDEBAR (OVERLAY) ===== */
-.year-sidebar {
-  position: fixed;             /* Float it on top of everything */
-  top: 0;                      /* Align to the top of viewport */
-  left: 0;                     /* Stick to the left edge */
-  height: 100vh;               /* Full viewport height */
-  width: 120px;                /* Wider than before—adjust as desired */
-  
-  background: rgba(0,0,0,0.3); /* Dark translucent overlay */
-  color: #fff;                 /* White text */
-  
-  display: flex;               
-  flex-direction: column;      /* Stack items vertically */
-  align-items: center;         
-  
-  padding: 1rem 0;             /* Vertical padding, no horizontal padding */
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.2); /* Right‐side shadow */
-  z-index: 120;                /* Ensure it sits above header/main */
-}
-
-
-/* Current year (clickable link) */
-.year-sidebar .current-year {
-  display: block;              /* Full width clickable area */
-  font-size: 1.25rem;          /* Larger than the rest */
-  font-weight: bold;
-  color: #fff;                 /* White link text */
-  text-decoration: none;       /* No underline */
-  margin-bottom: 1rem;         
-  width: 100%;                 
-  text-align: center;          
-  padding: 0.5rem 0;           /* Increase hit‐area vertically */
-  transition: background 0.2s; /* Hover feedback */
-}
-.year-sidebar .current-year:hover {
-  text-decoration: none;
-  font-size: 1.25rem;
-  transition: color 0.5s;
-  color: #ffd900;
-}
-
-.year-sidebar .current-year a {
-  color: #fff;
-  text-decoration: none;
-  font-size: 1.1rem;
-  transition: color 0.5s;
-}
-.year-sidebar .current-year a:hover {
-  color: #ffd9004f;
-}
-
-/* Divider line */
-.year-sidebar .sidebar-divider {
-  width: 70%;                  
-  border: none;
-  border-top: 1px solid #fff;
-  margin-bottom: 1rem;
-}
-
-/* “Tidigare år” subtitle */
-.year-sidebar .sidebar-subtitle {
-  font-size: 1.0rem;
-  margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
-  font-weight: bold;
-}
-
-/* Previous years links */
-.year-sidebar .previous-years {
-  display: flex;
-  flex-direction: column;  /* stack links vertically */
-  align-items: center;     /* center them horizontally */
-  gap: 1rem;               /* 1rem of space between each link */
-  width: 100%;             /* full width of side-bar */
-}
-
-.year-sidebar .previous-years a {
-  display: block;         /* full-width clickable area */
-  width: 100%;
-  text-align: center;     /* center the text inside each link */
-  padding: 0.5rem 0;      /* vertical padding inside each link */
-  color: #fff;
-  text-decoration: none;
-  font-size: 1.1rem;
-  transition: color 0.5s;
-}
-
-.year-sidebar .previous-years a:hover {
-  color: #ffd900;
-}
-
-/* Sidebar link active styling */
-.year-sidebar a.active {
-  color: #ffd900;
-  border-radius: 1rem;      /* pill shape */
-}
-
-
 /* ===== SCROLL-ANIMATION BASE STATE ===== */
 /* Elements with .scroll-animate start hidden & shifted down */
 .scroll-animate {
@@ -457,136 +337,14 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ---------------------------------------- */
-/*  A) SHARED FOR ALL YEAR-SECTIONS        */
-/* ---------------------------------------- */
 .year-section {
-
-  min-height: 100vh;            /* each “page” fills one viewport */
-  position: relative;           /* for absolute children on prev years */
-  padding: 2rem 1rem;           /* inner breathing room */
+  min-height: 100vh;
+  position: relative;
   box-sizing: border-box;
 }
 
-
-/* ---------------------------------------- */
-/*  B) CURRENT YEAR (2025) STYLING         */
-/* ---------------------------------------- */
-/* You can add any special background or overlay for current year here */
 .current-year-section {
-  /* e.g. slightly darker tint to show “live” section */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background-color: rgba(0,0,0,0.20);
-  padding: 1rem;
-}
-
-
-/* Target ONLY the “previous‐year” sections that use the photo grid */
-.year-section.previous-year-section.with-bg-grid {
-  /* 1. Use the same background as the <body> so there’s never white 
-        “flash” before the grid animates in. */
-  background-image: url("/static/images/2026/nitten.png");
-  background-repeat: no-repeat;           /* Don’t tile */
-  background-position: center center;     /* Always center */
-  background-size: cover;                 /* Fill entire section */
-  background-color: rgba(0,0,0,0.20);
-  padding: 1rem;
-
-  /* 2. Ensure the section itself is positioned & full‐height */
-  position: relative;     /* parent for absolutely‐positioned grid inside */
-  min-height: 100vh;      /* fill exactly one viewport height */
-  overflow: hidden;       /* clip any overflow from the grid behind */
-
-  /* 3. Center overlay content (optional, your existing rules) */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-/* ------------------------------------------------------ */
-/* C) THE PHOTO‐GRID (LAYER 0) BEHIND THE OVERLAY CONTENT  */
-/* ------------------------------------------------------ */
-.year-section.previous-year-section.with-bg-grid .photo-grid-bg {
-  position: absolute;      /* Sit behind any overlay (z-index:0) */
-  top: 0; 
-  left: 0;
-  width: 100%;
-  height: 100%;            /* fill the entire section */
-
-  display: grid;           /* Activate CSS Grid */
-  grid-template-columns: repeat(9, 1fr);                 /* exactly 9 columns */
-  grid-auto-rows: minmax(150px, 1fr);                    /* up to 2 rows if 10–18 items */
-  gap: 3px;                  /* small gap between photos */
-
-  z-index: 0;                /* behind overlay content */
-  overflow: hidden;          /* crop any overflow */
-}
-
-/* EACH GRID CELL (THUMBNAIL)                          */
-.year-section.previous-year-section.with-bg-grid .photo-grid-bg .grid-cell {
-  background-size: cover;     /* fill each square (crop as needed) */
-  background-position: center;/* center the image in its cell */
-  border-radius: 0.5rem;      /* slightly rounded corners */
-}
-
-/* ------------------------------------------------------ */
-/* E) OVERLAY CONTENT (LAYER 1), ON TOP OF GRID           */
-/* ------------------------------------------------------ */
-.year-section.previous-year-section.with-bg-grid .overlay-content {
-  position: relative;   /* sits “over” the absolute grid behind */
-  z-index: 1;           /* higher than 0, so it displays on top of the grid */
-
-  display: flex;        /* center text/buttons */
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-
-  /* If you want a translucent backdrop behind the text: */
-  background: rgba(0,0,0,0.40);
-  padding: 1rem;
-  border-radius: 1rem;
-}
-
-/* ---------------------------------------- */
-/*  E) SCROLL-ANIMATE (unchanged)          */
-/* ---------------------------------------- */
-.scroll-animate {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-.scroll-animate.in-view {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-
-
-/* ===== PHOTO GRID LAYOUT ===== */
-.photo-grid {
-  display: grid;  
-  /* auto-fit: fill row with 150px cells, wrap as needed */
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  grid-auto-rows: 150px;   /* force square cells */
-  gap: 1.5rem;               /* space between pictures */
-  width: 100%;
-  max-width: 800px;        /* optional cap on total width */
-  margin: 2rem auto;       /* center horizontally with vertical gap */
-}
-
-/* ===== GRID ITEMS ===== */
-.grid-item {
-  background-size: cover;     /* fill each square */
-  background-position: center;/* center the image */
-  border-radius: 0.5rem;      /* rounded corners */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  padding: 0;
 }
 
 
@@ -672,7 +430,7 @@ html {
 .modal-tab {
   flex: 1;                          /* Each tab equal width */
   padding: 0.75rem 1rem;            /* Clickable area */
-  background: transparent;          
+  background: transparent;
   border: none;
   color: #ccc;                      /* Inactive tab color */
   font-weight: 500;
@@ -720,7 +478,7 @@ html {
 }
 
 .gallery-content {
-  /* 
+  /*
     1) We force the container to never exceed 90% of viewport width/height,
        but also cap it at a comfortable max so it’s always roughly the same size.
   */
@@ -968,35 +726,10 @@ html {
 }
 /* ───────────────────────────────────────────────────────────────────── */
 
-/* 1) Hide the hamburger toggle on desktop by default */
-.sidebar-toggle {
-  display: none;
-}
-
-/* 2) Hide the "Översikt" button on desktop by default */
-.mobile-only {
-  display: none;
-}
-
-
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
 /* ===== MOBILE TWEAKS @ max-width 600px ===== */
 /* ===== MOBILE SPECIFIC STYLES (max-width: 600px) ===== */
 @media (max-width: 1050px) {
-
-
-  /* ── B) HIDE FIXED SIDEBAR ───────────────────────────────────────── */
-  .year-sidebar {
-    display: none;             /* Completely hide the year-sidebar on mobile */
-  }
-
-
-  /* ── C) SHOW "ÖVERSIKT" BUTTON ───────────────────────────────────── */
-  .mobile-only {
-    display: block;            /* Show Översikt button under "Boka kanot" */
-    margin-top: 1rem;          /* Give a bit of vertical spacing */
-  }
-
 
   /* Header: wrap nav buttons and reduce padding */
   header {
@@ -1039,143 +772,6 @@ html {
     max-width: 300px;
     margin-left: auto;
     margin-right: auto;
-  }
-
-  /* Shrink weather widget pill if it’s too wide */
-  .weather-widget-inline {
-    max-width: 325px;
-    padding: 0.8rem;      /* A bit more padding for legibility */
-    font-size: 0.85rem;
-  }
-
-  /* 1. Target BOTH possible grid wrappers you’re using
-        a) .photo-grid           – the generic grid in your markup
-        b) .photo-grid-bg        – the background grid that lives
-           inside a “previous-year” section                     */
-  .photo-grid,
-  .year-section.previous-year-section.with-bg-grid .photo-grid-bg {
-
-    /* ---- LAYOUT -------------------------------------------------- */
-    display: grid;                           /* turn the element into a grid */
-    grid-template-columns: repeat(4, 1fr);   /* exactly 4 equal-width columns */
-    grid-template-rows:    repeat(3, 1fr);   /* exactly 2 equal-height rows   */
-    gap: 0.2rem;                             /* space between the cells       */
-
-    /* ---- OPTIONAL SIZING ----------------------------------------- */
-    /* If the parent should occupy the full width/height you can keep
-       these – but remove them if they conflict with your design      */
-    width: 100%;
-    height: 100%;
-
-    /* ---- CLIPPING ------------------------------------------------ */
-    /* Anything that would normally flow into a 3rd row is simply
-       clipped away so only 8 cells are visible.                      */
-    overflow: hidden;
-  }
-
-  /* 2. (Nice-to-have) Don’t render items #9 and onward at all.
-        This avoids unnecessary downloads/paint work.                 */
-  .photo-grid  > :nth-child(n+13),
-  .photo-grid-bg > :nth-child(n+13) {
-    display: none !important;                /* hide everything after #8 */
-  }
-
-
-  /* ── 6) OVERVIEW PANEL AS FULL-SCREEN POP-UP ───────────────────────── */
-  .overview {
-    /* 0. Replace the desktop placement -------------------------------- */
-    position: fixed;
-    transform: none !important;   /* <-- cancel the desktop translateY    */
-    left: 10%;          /* start 10 % in from the left edge   */
-    width: 80%;         /* so the right edge still lines up   */
-    
-
-    /* 1. The dark backdrop -------------------------------------------- */
-    background: rgba(0,0,0,0.8);
-    box-sizing: border-box;
-    z-index: 300;
-    overflow-y: auto;            /* scroll if the table gets very tall    */
-
-    /* 2. Make the whole overlay a flex-box and centre its children ----- */
-    display: none;               /* hidden until JS adds `.scrolled`      */
-    flex-direction: column;      /* keep heading above the table          */
-    justify-content: center;     /* centre vertically                     */
-    align-items:  center;        /* centre horizontally                   */
-  }
-
-  .overview.scrolled {
-    display: block;             /* Use this class (or toggle style) to show it */
-  }
-
-  /* Center the table inside the dark overlay */
-  .overview-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0 auto;             /* Center horizontally */
-    max-width: 500px;           /* Don’t let it get too wide */
-    background: rgba(69, 69, 69, 0.9);      /* White background so text is readable */
-    border-radius: 0.5rem;
-    overflow: hidden;
-  }
-
-  .overview-title {
-    color: #fff;
-    text-align: center;
-    margin-bottom: 1rem;
-    font-size: 1.4rem;
-  }
-
-  /* Table header on white bg */
-  .overview-table th {
-    padding: 0.5rem;
-    border-bottom: 2px solid #162938;
-    font-size: 1rem;
-    background: #162938;
-    color: #fff;
-  }
-  .overview-table td {
-    padding: 0.5rem;
-    border-bottom: 1px solid #ccc;
-    color: #162938;
-    background: #fff;
-  }
-
-  /* 1) Hide the existing ::before “X” so it doesn’t clash */
-  #overviewPanel::before {
-    display: none !important;
-  }
-
-  /* 2) Style our real close button */
-  .overview-close {
-    position: absolute;        /* float above everything in the panel */
-    top: 0.75rem;              /* distance from panel’s top */
-    right: 1rem;              /* distance from panel’s right edge */
-    background: transparent;   /* no background fill */
-    border: none;             /* remove default border */
-    color: #fff;              /* white X to stand out on dark backdrop */
-    font-size: 1.5rem;        /* large enough to tap */
-    line-height: 1;          
-    cursor: pointer;          /* pointer cursor on hover */
-    z-index: 10;              /* above the table content */
-  }
-
-  /* 3) (Optional) Hover feedback */
-  .overview-close:hover {
-    color: #ffd900;           /* match your accent color */
-  }
-
-  /* Main heading style */
-  .previous-year-heading {
-  background: transparent;
-  font-size: 1.3rem;                /* Very large text for the main event title */
-  margin-top: 3rem;          /* Space below the title before the subtitle */
-  color: #ffffff;                 /* White text for clear contrast on any background */
-  }
-
-  /* Subtitle style */
-  .downward-arrow {
-  font-size: 1.4rem;              /* Smaller than main title but still prominent */            /* Space below subtitle before next elements */
-  color: #ffffff;                 /* White text to match the title */
   }
 
   .gallery-prev, .gallery-next {
@@ -1224,3 +820,382 @@ html {
 
 
 
+
+/* ========================================================== */
+/* Homepage Redesign: single-page hero and previous-years bar */
+/* ========================================================== */
+
+body.home-page {
+  min-height: 100vh;
+  color: #f4f1ea;
+}
+
+.home-page main {
+  min-height: 100vh;
+}
+
+.home-page .hero-section {
+  min-height: 100vh;
+  padding: 0;
+  display: block;
+  background-image:
+    linear-gradient(180deg, rgba(4, 11, 16, 0.2) 0%, rgba(5, 16, 24, 0.4) 46%, rgba(6, 17, 25, 0.62) 100%),
+    linear-gradient(120deg, rgba(5, 23, 32, 0.34) 0%, rgba(5, 23, 32, 0.1) 40%, rgba(5, 23, 32, 0.4) 100%),
+    url("/static/images/2026/nitten.png");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  text-align: initial;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.home-page .hero-shell {
+  min-height: 100vh;
+  width: 100%;
+  padding: 0.5rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-page .hero-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  position: static;
+  top: auto;
+  left: auto;
+  width: 100%;
+  padding: 0;
+  z-index: auto;
+}
+
+.home-page .hero-utility {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.home-page .weather-widget-hero {
+  width: min(100%, 340px);
+  margin: 0;
+  padding: 0.95rem 1rem;
+  border: none;
+  border-radius: 1.15rem;
+  background: rgba(20, 38, 49, 0.34);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.home-page .widget-title {
+  margin-bottom: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.home-page .widget-status,
+.home-page .widget-forecast,
+.home-page .widget-source {
+  color: rgba(244, 241, 234, 0.92);
+  text-align: center;
+}
+
+.home-page .hero-icon-button {
+  width: 3rem;
+  height: 3rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(20, 38, 49, 0.3);
+  color: #f8f6f1;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: transform 0.25s ease, background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.home-page .hero-icon-button:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.home-page .hero-center {
+  width: min(100%, 860px);
+  margin: 0.1rem auto 0;
+  padding: 0.1rem 1rem 1.5rem;
+  text-align: center;
+}
+
+.home-page .main-title {
+  font-size: clamp(3.2rem, 10vw, 6.4rem);
+  line-height: 0.95;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.85rem;
+}
+
+.home-page .main-subtitle {
+  margin-bottom: 1.25rem;
+  color: rgba(244, 241, 234, 0.84);
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  font-weight: 400;
+}
+
+.home-page .hero-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-bottom: 2rem;
+  color: rgba(244, 241, 234, 0.94);
+  font-size: 1rem;
+}
+
+.home-page .date-time,
+.home-page .location {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.home-page .hero-location {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.home-page .hero-location a {
+  color: #fff3b6;
+}
+
+.home-page .progress-trigger {
+  display: block;
+  width: min(100%, 620px);
+  height: 2.6rem;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background-color: rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  box-shadow: 0 18px 36px rgba(4, 11, 16, 0.24);
+  backdrop-filter: blur(12px);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.home-page .progress-trigger:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 24px 40px rgba(4, 11, 16, 0.28);
+}
+
+.home-page .progress-trigger:focus-visible,
+.home-page .hero-icon-button:focus-visible,
+.home-page .gallery-ribbon-button:focus-visible,
+.home-page #bookBtn:focus-visible {
+  outline: 2px solid #fff3b6;
+  outline-offset: 3px;
+}
+
+.home-page .progress-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem;
+  padding-inline: 1rem;
+}
+
+.home-page .progress-text-main {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.05;
+  color: #f6f4ef;
+  text-shadow: 0 1px 10px rgba(5, 14, 20, 0.5);
+}
+
+.home-page .progress-text-hint {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #fff3b6;
+}
+
+.home-page .book-btn {
+  margin-top: 1.25rem;
+  min-width: 220px;
+  padding: 0.95rem 1.8rem;
+  border-radius: 999px;
+  background: #f4f1ea;
+  color: #0b202a;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 18px 30px rgba(5, 14, 20, 0.2);
+}
+
+.home-page .book-btn:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.home-page .gallery-ribbon {
+  position: relative;
+  width: min(100%, 860px);
+  height: 160px;
+  margin: 1rem auto 0;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: transparent;
+}
+
+.home-page .gallery-ribbon-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, 1) 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, 1) 88%, transparent 100%);
+}
+
+.home-page .gallery-ribbon-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: 0.75rem;
+  width: max-content;
+  height: 100%;
+  padding: 0.9rem;
+  will-change: transform;
+}
+
+.home-page .gallery-ribbon-group {
+  display: flex;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+  height: 100%;
+}
+
+.home-page .gallery-ribbon-tile {
+  width: 170px;
+  height: 100%;
+  flex: 0 0 auto;
+  border-radius: 1rem;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: saturate(0.92) contrast(0.96);
+}
+
+.home-page .gallery-ribbon-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  pointer-events: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.home-page .gallery-ribbon-button {
+  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(248, 246, 241, 0.92);
+  color: #0c202b;
+  padding: 0.85rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.25s ease, background-color 0.25s ease;
+}
+
+.home-page .gallery-ribbon-button:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.home-page .overview-modal-content {
+  max-width: 680px;
+}
+
+.home-page .overview-description {
+  margin-bottom: 1.25rem;
+  color: #dbdbdb;
+  text-align: center;
+}
+
+.home-page .overview-table-modal {
+  margin-top: 0.5rem;
+}
+
+.home-page .overview-empty {
+  color: #dbdbdb;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .home-page .hero-center {
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+  }
+
+  .home-page .gallery-ribbon {
+    width: min(100%, 680px);
+  }
+
+  .home-page .gallery-ribbon-tile {
+    width: 140px;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-page .hero-shell {
+    padding: 0.75rem 0.8rem 1rem;
+  }
+
+  .home-page .hero-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-page .hero-utility-right {
+    justify-content: flex-end;
+  }
+
+  .home-page .hero-center {
+    margin-top: 2.75rem;
+    padding: 1.75rem 0.25rem 1.5rem;
+  }
+
+  .home-page .hero-location {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .home-page .progress-trigger {
+    min-height: 4rem;
+    height: auto;
+  }
+
+  .home-page .gallery-ribbon {
+    height: 136px;
+  }
+
+  .home-page .gallery-ribbon-tile {
+    width: 120px;
+  }
+
+  .home-page .gallery-ribbon-button {
+    padding: 0.8rem 1.15rem;
+    font-size: 0.9rem;
+  }
+}
