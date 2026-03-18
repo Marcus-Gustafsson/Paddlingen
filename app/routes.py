@@ -6,7 +6,7 @@ registered by the application factory.
 """
 
 import logging
-import json
+from datetime import timedelta
 import requests
 from flask import (
     Blueprint,
@@ -28,7 +28,7 @@ from flask_login import (  # type: ignore[import-untyped]
 )
 
 from .util.helper_functions import get_images_for_year
-from .util.db_models import db, RentForm, User, PendingBooking
+from .util.db_models import BookedCanoe, BookingOrder, User, db, get_current_utc_time
 from . import rate_limiter
 
 # -----------------------------------------------------------------------------
@@ -54,6 +54,55 @@ def get_total_available_canoes() -> int:
     """
 
     return current_app.config.get("AVAILABLE_CANOES", 50)
+
+
+def get_confirmed_booked_canoes_query():
+    """Return the query used for canoe rows that count as real bookings."""
+
+    return BookedCanoe.query.filter_by(status="confirmed")
+
+
+def count_confirmed_booked_canoes() -> int:
+    """Return the number of confirmed canoes currently booked."""
+
+    return get_confirmed_booked_canoes_query().count()
+
+
+def build_public_booking_reference(booking_order_id: int) -> str:
+    """Create a simple public booking reference for admins and support."""
+
+    event_year = current_app.config["EVENT_YEAR"]
+    return f"PAD-{event_year}-{booking_order_id:05d}"
+
+
+def build_participant_names_from_form(requested_canoes: int) -> list[dict[str, str]]:
+    """Parse participant first and last names from the booking form.
+
+    Args:
+        requested_canoes: Number of canoe rows expected from the booking form.
+
+    Returns:
+        list[dict[str, str]]: One dictionary per canoe with separate first and
+        last name fields.
+    """
+
+    participants: list[dict[str, str]] = []
+    for canoe_number in range(1, requested_canoes + 1):
+        first_name = request.form.get(f"canoe{canoe_number}_fname", "").strip()
+        last_name = request.form.get(f"canoe{canoe_number}_lname", "").strip()
+
+        if not first_name and not last_name:
+            first_name = "Unnamed"
+            last_name = f"participant {canoe_number}"
+
+        participants.append(
+            {
+                "first_name": first_name,
+                "last_name": last_name,
+            }
+        )
+
+    return participants
 
 
 def build_event_settings() -> dict[str, object]:
@@ -106,10 +155,10 @@ def index():
     template for client-side dropdown limiting.
     """
     # fetch all bookings for your overview panel
-    alla_bokningar = RentForm.query.order_by(RentForm.id).all()
+    alla_bokningar = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
 
     # server‐side business rule from config
-    current = RentForm.query.count()
+    current = count_confirmed_booked_canoes()
     available_canoes = max(0, get_total_available_canoes() - current)
     event_settings = build_event_settings()
 
@@ -136,7 +185,7 @@ def payment():
     1) Parse the requested canoe count.
     2) Check how many are already booked.
     3) If they ask for more than available → reject immediately.
-    4) Otherwise create a PendingBooking record and proceed to
+    4) Otherwise create a temporary booking order and proceed to
        ``payment_success``.
 
     Storing the booking server-side means the customer cannot modify the
@@ -149,8 +198,8 @@ def payment():
         flash("Ogiltigt antal kanoter.", "error")
         return redirect(url_for("main.index"))
 
-    # 2) count existing bookings
-    current = RentForm.query.count()
+    # 2) count existing confirmed bookings
+    current = count_confirmed_booked_canoes()
     available = get_total_available_canoes() - current
 
     # 3) if they want too many, stop here
@@ -165,23 +214,35 @@ def payment():
         )
         return redirect(url_for("main.index"))
 
-    # 4) build names list as before
-    names = []
-    for i in range(1, requested + 1):
-        first = request.form.get(f"canoe{i}_fname", "").strip()
-        last = request.form.get(f"canoe{i}_lname", "").strip()
-        names.append((f"{first} {last}").strip() or f"Unnamed person #{i}")
-
-    # Create a PendingBooking row in the database. Only the resulting id is
-    # stored in the user session so the visitor cannot tamper with the
-    # actual booking details.
-    pending = PendingBooking(
-        canoe_count=requested, participant_names=json.dumps(names), status="pending"
+    participant_names = build_participant_names_from_form(requested)
+    pending_order = BookingOrder(
+        public_booking_reference="TEMP",
+        status="pending_payment",
+        canoe_count=requested,
+        total_amount_ore=requested * current_app.config["CANOE_PRICE_SEK"] * 100,
+        currency="sek",
+        payment_provider="simulated",
+        expires_at=get_current_utc_time() + timedelta(minutes=15),
     )
-    db.session.add(pending)
-    db.session.commit()  # commit to assign an id
+    db.session.add(pending_order)
+    db.session.flush()
+    pending_order.public_booking_reference = build_public_booking_reference(
+        pending_order.id
+    )
 
-    session["pending_booking_id"] = pending.id
+    for participant in participant_names:
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=pending_order.id,
+                participant_first_name=participant["first_name"],
+                participant_last_name=participant["last_name"],
+                status="reserved",
+            )
+        )
+
+    db.session.commit()
+
+    session["pending_booking_order_id"] = pending_order.id
     return redirect(url_for("main.payment_success"))
 
 
@@ -190,41 +251,36 @@ def payment_success():
     """Finalize the booking after (simulated) payment.
 
     Steps:
-        1. Look up the PendingBooking referenced in the user's session.
+        1. Look up the pending booking order referenced in the user's session.
         2. Re-check availability to avoid overbooking.
-        3. Convert the pending record into permanent RentForm entries.
-        4. Remove the PendingBooking row.
+        3. Mark the order and its canoe rows as confirmed.
 
     By storing only the database ID in the session and the actual booking
     details on the server we prevent clients from tampering with their
     reservations.
     """
-    pending_id = session.pop("pending_booking_id", None)
-    if not pending_id:
+    pending_order_id = session.pop("pending_booking_order_id", None)
+    if not pending_order_id:
         # No reference → user reloaded or came here directly
         return redirect(url_for("main.index"))
 
-    pending = db.session.get(PendingBooking, pending_id)
-    if not pending:
+    pending_order = db.session.get(BookingOrder, pending_order_id)
+    if not pending_order:
         return redirect(url_for("main.index"))
 
-    requested = pending.canoe_count
-    names = json.loads(pending.participant_names)
-    current = RentForm.query.count()
+    requested = pending_order.canoe_count
+    current = count_confirmed_booked_canoes()
     if current + requested > get_total_available_canoes():
         flash("Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.", "error")
-        db.session.delete(pending)
+        db.session.delete(pending_order)
         db.session.commit()
         return redirect(url_for("main.index"))
 
-    # Mark as paid for auditing, then create one RentForm per participant.
-    pending.status = "paid"
-    for name in names:
-        booking = RentForm(name=name, transaction_id="12345abcdefg")
-        db.session.add(booking)
+    pending_order.status = "paid"
+    pending_order.paid_at = get_current_utc_time()
+    for booked_canoe in pending_order.booked_canoes:
+        booked_canoe.status = "confirmed"
 
-    # Remove the temporary pending booking now that it is confirmed.
-    db.session.delete(pending)
     db.session.commit()
 
     return redirect(url_for("main.index"))
@@ -243,9 +299,8 @@ def get_booking_count():
     Returns:
         JSON object with the count: {"count": 25}
     """
-    # Count all rows in the RentForm table
-    # .count() is a SQLAlchemy method that counts database records
-    booking_count = RentForm.query.count()
+    # Count all rows that represent confirmed canoe bookings.
+    booking_count = count_confirmed_booked_canoes()
 
     # Return the count as JSON
     # jsonify() converts Python data to JSON format that JavaScript can read
@@ -406,10 +461,10 @@ def get_forecast():
 def admin_dashboard():
     """Show the admin dashboard page.
 
-    • Queries all ``RentForm`` bookings, ordered by ID.
+    • Queries all confirmed ``BookedCanoe`` rows, ordered by ID.
     • Renders ``templates/admin.html``, passing the booking list.
     """
-    bookings = RentForm.query.order_by(RentForm.id).all()
+    bookings = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
     return render_template("admin.html", bookings=bookings)
 
 
@@ -419,15 +474,36 @@ def admin_add():
     """Handle the "Add new booking" form submission.
 
     • Reads ``name`` from form data, strips whitespace.
-    • If non-empty, creates & commits a new ``RentForm`` record.
+    • If non-empty, creates a one-canoe manual booking order and canoe row.
     • Redirects back to the dashboard.
     """
-    # Get the 'name' field, defaulting to empty string
     name = request.form.get("name", "").strip()
     if name:
-        db.session.add(RentForm(name=name, transaction_id="12345678910"))
+        booking_order = BookingOrder(
+            public_booking_reference="TEMP",
+            status="paid",
+            canoe_count=1,
+            total_amount_ore=current_app.config["CANOE_PRICE_SEK"] * 100,
+            currency="sek",
+            payment_provider="admin_manual",
+            paid_at=get_current_utc_time(),
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        booking_order.public_booking_reference = build_public_booking_reference(
+            booking_order.id
+        )
+
+        booked_canoe = BookedCanoe(
+            booking_order_id=booking_order.id,
+            participant_first_name="",
+            participant_last_name="",
+            status="confirmed",
+        )
+        booked_canoe.name = name
+        db.session.add(booked_canoe)
         db.session.commit()
-    # Always redirect (PRG pattern—Prevents resubmission on refresh)
+
     return redirect(url_for("main.admin_dashboard"))
 
 
@@ -436,12 +512,12 @@ def admin_add():
 def admin_update(id):
     """Handle editing an existing booking's name.
 
-    • Fetches the ``RentForm`` record by ``id`` or 404s.
+    • Fetches the ``BookedCanoe`` record by ``id`` or 404s.
     • Reads the new ``name``, strips whitespace.
     • If non-empty, updates the record and commits.
     • Redirects back to the dashboard.
     """
-    booking = RentForm.query.get_or_404(id)
+    booking = BookedCanoe.query.get_or_404(id)
     new_name = request.form.get("name", "").strip()
     if new_name:
         booking.name = new_name
@@ -454,12 +530,18 @@ def admin_update(id):
 def admin_delete(id):
     """Handle deletion of a booking.
 
-    • Fetches the ``RentForm`` record by ``id`` or 404s.
+    • Fetches the ``BookedCanoe`` record by ``id`` or 404s.
     • Deletes it, commits the transaction.
     • Redirects back to the dashboard.
     """
-    booking = RentForm.query.get_or_404(id)
+    booking = BookedCanoe.query.get_or_404(id)
+    parent_order = booking.booking_order
     db.session.delete(booking)
+    db.session.flush()
+    if parent_order and not BookedCanoe.query.filter_by(
+        booking_order_id=parent_order.id
+    ).count():
+        db.session.delete(parent_order)
     db.session.commit()
     return redirect(url_for("main.admin_dashboard"))
 

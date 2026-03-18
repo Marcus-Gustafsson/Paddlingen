@@ -17,7 +17,7 @@ import click
 import os
 
 # Database models and session object
-from .util.db_models import db, RentForm, PendingBooking, User
+from .util.db_models import BookedCanoe, BookingOrder, User, db
 
 # Flask extension instances -------------------------------------------------
 csrf_protect = CSRFProtect()
@@ -51,10 +51,6 @@ def create_app() -> Flask:
     login_manager.init_app(flask_application)
     login_manager.login_view = "main.login"
     rate_limiter.init_app(flask_application)
-
-    # Create database tables if they do not yet exist.
-    with flask_application.app_context():
-        db.create_all()
 
     # Import and register blueprints containing route definitions.
     from .routes import main_blueprint
@@ -134,8 +130,8 @@ def load_user(user_id: str) -> User | None:
 __all__ = [
     "create_app",
     "db",
-    "RentForm",
-    "PendingBooking",
+    "BookedCanoe",
+    "BookingOrder",
     "User",
     "csrf_protect",
     "login_manager",

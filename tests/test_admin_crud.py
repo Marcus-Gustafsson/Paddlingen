@@ -1,6 +1,6 @@
 """Tests for CRUD operations in the admin interface."""
 
-from app import RentForm
+from app import BookedCanoe, BookingOrder, db
 
 
 def login(client):
@@ -50,8 +50,10 @@ def test_admin_crud_flow(client):
     response = client.post("/admin/add", data={"name": "Alice"}, follow_redirects=True)
     assert response.status_code == 200
     assert b"Alice" in response.data
-    booking = RentForm.query.filter_by(name="Alice").first()
+    booking = BookedCanoe.query.filter_by(participant_first_name="Alice").first()
     assert booking is not None
+    assert BookingOrder.query.count() == 1
+    assert response.get_data(as_text=True).count(f'/admin/update/{booking.id}') == 1
 
     # Update the booking
     response = client.post(
@@ -59,10 +61,11 @@ def test_admin_crud_flow(client):
     )
     assert response.status_code == 200
     assert b"Bob" in response.data
-    booking = RentForm.query.get(booking.id)
+    booking = db.session.get(BookedCanoe, booking.id)
     assert booking.name == "Bob"
 
     # Delete the booking
     response = client.post(f"/admin/delete/{booking.id}", follow_redirects=True)
     assert response.status_code == 200
-    assert RentForm.query.get(booking.id) is None
+    assert db.session.get(BookedCanoe, booking.id) is None
+    assert BookingOrder.query.count() == 0

@@ -1,139 +1,149 @@
-"""
-File: util/db_models.py
+"""Database models for bookings and administrator accounts.
 
-What it does:
-  - Defines the `db` object (SQLAlchemy) independently of any Flask app.
-  - Declares three ORM models:
-      • RentForm: stores confirmed canoe rental bookings
-      • PendingBooking: temporarily stores booking info waiting for payment
-      • User: stores admin user accounts for Flask-Login
-
-Why it’s here:
-  - Keeps your database schema definitions separate from application logic.
-  - Makes models reusable in other scripts/tests without pulling in the entire app.
+This module keeps the SQLAlchemy model declarations separate from the Flask
+application factory.  That makes the schema easier to reason about and easier
+to reuse in tests, migrations, and helper scripts.
 """
 
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin  # type: ignore[import-untyped]
+from __future__ import annotations
+
+from datetime import datetime, timezone
 from typing import Any
 
-# -------------------------------------------------------------------
-# 1) Create the SQLAlchemy `db` object
-#
-#    We will bind this to our Flask app later with db.init_app(app).
-# -------------------------------------------------------------------
+from flask_login import UserMixin  # type: ignore[import-untyped]
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash, generate_password_hash
+
 db: Any = SQLAlchemy()
 
 
-# -------------------------------------------------------------------
-# 2) Booking model: one row per canoe rental
-# -------------------------------------------------------------------
-class RentForm(db.Model):
-    """
-    ORM model for a canoe rental booking.
+def get_current_utc_time() -> datetime:
+    """Return the current UTC time with timezone information.
 
-    Attributes:
-        id              Integer primary key, auto-incremented
-        name            Text field (up to 120 chars) for the renter’s name
-        transaction_id  Text field for the payment transaction identifier
+    Returns:
+        datetime: A timezone-aware UTC timestamp for audit columns.
     """
 
-    __tablename__ = "rent_form"  # Optional: explicitly set table name
-
-    # Primary key column: unique identifier for each booking
-    id = db.Column(db.Integer, primary_key=True)
-    # Renter’s name, required
-    name = db.Column(db.String(120), nullable=False)
-    # Payment transaction ID (e.g. from Stripe), required
-    transaction_id = db.Column(db.String(120), nullable=False)
-
-    def __repr__(self):
-        """
-        Return a developer-friendly string representation of a booking.
-        Example: <RentForm 3 – Alice Müller - txn_1AbCDe>
-        """
-        return f"<RentForm {self.id} – {self.name} – {self.transaction_id}>"
+    return datetime.now(timezone.utc)
 
 
-# -------------------------------------------------------------------
-# 3) Pending booking model: holds data before payment is confirmed
-# -------------------------------------------------------------------
-class PendingBooking(db.Model):
-    """Temporary storage for a booking awaiting payment.
+class BookingOrder(db.Model):
+    """Store one booking or checkout attempt.
 
-    In the previous implementation booking details were stored in the
-    client's session cookie. Cookies live in the user's browser and can be
-    tampered with, so a malicious visitor could change the number of canoes
-    or participant names after the checkout step.  By saving the data on the
-    server we keep full control over it until the payment is completed.
-
-    Attributes:
-        id (int): Primary key.
-        canoe_count (int): Number of canoes requested.
-        participant_names (str): JSON-encoded list of names.
-        status (str): "pending", "paid", etc. (for future extensions).
+    Each row represents the parent order for one visitor action.  The related
+    :class:`BookedCanoe` rows contain the individual participant names.
     """
 
-    __tablename__ = "pending_booking"
+    __tablename__ = "booking_orders"
 
     id = db.Column(db.Integer, primary_key=True)
+    public_booking_reference = db.Column(db.String(40), unique=True, nullable=False)
+    status = db.Column(db.String(30), nullable=False, default="pending_payment")
     canoe_count = db.Column(db.Integer, nullable=False)
-    participant_names = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), nullable=False, default="pending")
+    total_amount_ore = db.Column(db.Integer, nullable=False)
+    currency = db.Column(db.String(10), nullable=False, default="sek")
+    payer_full_name = db.Column(db.String(120), nullable=True)
+    payer_email = db.Column(db.String(255), nullable=True)
+    payment_provider = db.Column(db.String(50), nullable=False, default="simulated")
+    payment_provider_session_id = db.Column(db.String(255), nullable=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    paid_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=get_current_utc_time,
+        onupdate=get_current_utc_time,
+    )
 
-    def __repr__(self):
-        """Return a readable representation for debugging.
+    booked_canoes = db.relationship(
+        "BookedCanoe",
+        back_populates="booking_order",
+        cascade="all, delete-orphan",
+        order_by="BookedCanoe.id",
+    )
 
-        Returns:
-            str: String containing the row ID and the number of canoes
-                requested, e.g. ``"<PendingBooking 5 – 2 canoe(s)>"``.
-        """
+    def __repr__(self) -> str:
+        """Return a readable representation for debugging."""
 
-        return f"<PendingBooking {self.id} – {self.canoe_count} canoe(s)>"
+        return (
+            f"<BookingOrder id={self.id} ref={self.public_booking_reference} "
+            f"status={self.status} canoe_count={self.canoe_count}>"
+        )
 
 
-# -------------------------------------------------------------------
-# 4) Admin user model for Flask-Login
-# -------------------------------------------------------------------
-class User(db.Model, UserMixin):
-    """
-    ORM model for an administrator account.
+class BookedCanoe(db.Model):
+    """Store one participant name for one canoe booking."""
 
-    Inherits from UserMixin to integrate with Flask-Login.
+    __tablename__ = "booked_canoes"
 
-    Attributes:
-        id        Integer primary key
-        username  Unique login name for the admin
-        pw_hash   Password hash (never store plaintext!)
-    """
-
-    __tablename__ = "users"  # Optional: explicitly set table name
-
-    # Primary key column
     id = db.Column(db.Integer, primary_key=True)
-    # Unique username, required
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    # Hashed password, required
-    pw_hash = db.Column(db.String(128), nullable=False)
+    booking_order_id = db.Column(
+        db.Integer, db.ForeignKey("booking_orders.id"), nullable=False, index=True
+    )
+    participant_first_name = db.Column(db.String(120), nullable=False)
+    participant_last_name = db.Column(db.String(120), nullable=False)
+    status = db.Column(db.String(30), nullable=False, default="reserved")
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
+    )
 
-    def set_password(self, password):
-        """
-        Hashes the provided plaintext password and stores it in pw_hash.
+    booking_order = db.relationship("BookingOrder", back_populates="booked_canoes")
+
+    @property
+    def name(self) -> str:
+        """Return the participant's full name for templates and admin forms."""
+
+        full_name = (
+            f"{self.participant_first_name} {self.participant_last_name}".strip()
+        )
+        return full_name or "Unnamed participant"
+
+    @name.setter
+    def name(self, full_name: str) -> None:
+        """Split a full name string into first and last name fields.
 
         Args:
-            password (str): The plaintext password to hash.
+            full_name: Full name submitted from a simple admin form input.
         """
+
+        cleaned_name = full_name.strip()
+        if not cleaned_name:
+            self.participant_first_name = "Unnamed"
+            self.participant_last_name = "participant"
+            return
+
+        name_parts = cleaned_name.split(maxsplit=1)
+        self.participant_first_name = name_parts[0]
+        self.participant_last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+    def __repr__(self) -> str:
+        """Return a readable representation for debugging."""
+
+        return f"<BookedCanoe id={self.id} name={self.name} status={self.status}>"
+
+
+class User(db.Model, UserMixin):
+    """Store administrator login accounts for the protected admin area."""
+
+    __tablename__ = "admin_users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    pw_hash = db.Column(db.String(255), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
+    )
+
+    def set_password(self, password: str) -> None:
+        """Hash and store an administrator password."""
+
         self.pw_hash = generate_password_hash(password)
 
-    def check_password(self, password):
-        """
-        Verifies a plaintext password against the stored password hash.
+    def check_password(self, password: str) -> bool:
+        """Verify a plaintext password against the stored password hash."""
 
-        Args:
-            password (str): The plaintext password to verify.
-
-        Returns:
-            bool: True if the password matches the hash, False otherwise.
-        """
         return check_password_hash(self.pw_hash, password)

@@ -1,6 +1,6 @@
 # Paddlingen Development Document
 
-Last updated: 2026-03-17
+Last updated: 2026-03-18
 
 ## Purpose
 
@@ -187,6 +187,15 @@ Current note:
 
 These commands are for the first app-container step only.
 
+Beginner-friendly note:
+
+- A Docker image is the built application package.
+- A Docker container is one running instance created from that image.
+- `docker run ...` starts one container directly.
+- `docker compose ...` starts services defined in `compose.yaml`.
+- Compose is useful even for one service because it gives the project a stable
+  name in Docker Desktop and makes it easier to add more services later.
+
 ### Build the Flask app image
 
 ```bash
@@ -197,19 +206,87 @@ Why:
 
 - Builds the current Flask application container from the root `Dockerfile`.
 
-### Run the Flask app container
+Important note:
+
+- After recent cleanup, the container should no longer download Python
+  dependencies at startup.
+- If you change the `Dockerfile`, rebuild the image before running it again.
+
+### Run the Flask app container directly
 
 ```bash
-docker run --rm -p 8080:8080 --env-file .env paddlingen-web
+docker run --rm --name paddlingen-web -p 8080:8080 --env-file .env paddlingen-web
 ```
 
 Why:
 
-- Starts the Flask app container and exposes it on `http://127.0.0.1:8080`.
+- Starts the Flask app container directly with a clear project-specific name.
+- `--rm` removes the container automatically when it stops.
+- This command keeps the container attached to your terminal, so logs appear in
+  the terminal while it is running.
+
+What to expect:
+
+- It is normal that you still see Flask and request logs in the terminal.
+- Docker Desktop shows the same logs because both views are reading the same
+  container output stream.
+- Press `Ctrl+C` to stop the container.
+
+### Run the Flask app container in the background
+
+```bash
+docker run -d --rm --name paddlingen-web -p 8080:8080 --env-file .env paddlingen-web
+```
+
+Why:
+
+- Runs the same container in detached mode so your terminal is free again.
+
+Useful follow-up commands:
+
+```bash
+docker logs -f paddlingen-web
+docker stop paddlingen-web
+```
+
+### Run the app through Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Why:
+
+- Uses the root `compose.yaml` file.
+- Gives the project a stable Compose project name, `paddlingen`.
+- Shows a clearer grouped view in Docker Desktop than a random auto-generated
+  container name.
+
+What to expect:
+
+- In attached mode, logs still appear in the terminal. That is normal.
+- Docker Desktop will show the service under the `paddlingen` project.
+
+### Run Docker Compose in the background
+
+```bash
+docker compose up --build -d
+```
+
+Useful follow-up commands:
+
+```bash
+docker compose logs -f web
+docker compose ps
+docker compose down
+```
 
 Important note:
 
-- This is only the first Docker step.
+- The current `compose.yaml` only contains the Flask app service.
+- Compose stacks are often used for multiple services, but they are still
+  useful for one service when you want stable naming and easier project-level
+  management.
 - The database is planned to be tested through Supabase rather than a local
   PostgreSQL container.
 - Until the Supabase integration step is completed, the app container will
@@ -259,7 +336,15 @@ uv run python init_db.py
 
 Why:
 
-- Initializes the database and seeds the admin user through the helper script.
+- Drops and recreates tables through the helper script, then seeds the admin
+  user.
+
+Important note:
+
+- This is useful for fast local resets.
+- Do not use this as the normal schema-management path for Supabase or other
+  shared databases. Use Alembic there, then run the admin seeding command
+  separately.
 
 ### Create a migration
 
@@ -280,6 +365,38 @@ uv run alembic upgrade head
 Why:
 
 - Applies all pending migrations.
+
+### Reset the Supabase test schema before rerunning the initial migration
+
+Use this only when the Supabase test database already contains an older version
+of the project schema and you intentionally want to replace it.
+
+Run these statements in the Supabase SQL editor:
+
+```sql
+drop table if exists booked_canoes cascade;
+drop table if exists booking_orders cascade;
+drop table if exists admin_users cascade;
+drop table if exists pending_booking cascade;
+drop table if exists rent_form cascade;
+drop table if exists users cascade;
+drop table if exists alembic_version cascade;
+```
+
+Why:
+
+- The initial migration file was replaced with the new normalized booking
+  schema.
+- If the old tables or the old `alembic_version` row remain in Supabase,
+  `alembic upgrade head` will not rebuild the database the way the code now
+  expects.
+
+What to do after the cleanup:
+
+```bash
+uv run alembic upgrade head
+uv run flask --app wsgi seed-admin
+```
 
 ### Roll back the latest migration
 
@@ -329,3 +446,16 @@ Use this section to record notable development workflow changes over time.
 - Added the first Flask app `Dockerfile` and `.dockerignore`.
 - Changed the roadmap direction from a local PostgreSQL container to Supabase
   as the first hosted database to test.
+
+### 2026-03-18
+
+- Replaced the old `RentForm` and `PendingBooking` schema with
+  `booking_orders` and `booked_canoes`.
+- Replaced the old initial Alembic migration with a new initial normalized
+  booking schema.
+- Changed `.env` loading so explicit environment variables win over `.env`
+  values, which keeps tests and scripts from accidentally talking to Supabase.
+- Updated the Docker workflow so the container starts Flask directly instead of
+  running `uv` at container startup.
+- Added a root `compose.yaml` with a stable project name and container name for
+  easier Docker Desktop usage.

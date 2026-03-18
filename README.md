@@ -83,6 +83,14 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```bash
    uv run python init_db.py
    ```
+   This helper drops and recreates tables, then seeds the admin user. It is
+   meant for fresh local setup or quick resets.
+
+   If you already ran Alembic migrations against Supabase, seed the admin user
+   without resetting the schema:
+   ```bash
+   uv run flask --app wsgi seed-admin
+   ```
 
 5. **Start the development server**
    ```bash
@@ -94,6 +102,54 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```bash
    make test   # or: uv run -m pytest
    ```
+
+## Docker
+
+If you want to run the app in Docker, there are now two simple choices.
+
+### Option 1: Run one named container directly
+
+```bash
+docker build -t paddlingen-web .
+docker run --rm --name paddlingen-web -p 8080:8080 --env-file .env paddlingen-web
+```
+
+What to expect:
+
+- The app logs will appear in your terminal because this runs in attached mode.
+- Docker Desktop will show the same logs because it reads the same container
+  output.
+- Press `Ctrl+C` to stop the container.
+
+If you want your terminal back immediately, run it in the background:
+
+```bash
+docker run -d --rm --name paddlingen-web -p 8080:8080 --env-file .env paddlingen-web
+docker logs -f paddlingen-web
+docker stop paddlingen-web
+```
+
+### Option 2: Run through Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Why this exists:
+
+- The root `compose.yaml` gives the project a stable Docker Desktop grouping
+  named `paddlingen`.
+- This is useful even though there is only one service right now.
+- Compose becomes more helpful later if the project adds more services.
+
+Useful follow-up commands:
+
+```bash
+docker compose up --build -d
+docker compose logs -f web
+docker compose ps
+docker compose down
+```
 
 ## Database migrations
 

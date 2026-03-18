@@ -1,6 +1,6 @@
 # Paddlingen Roadmap
 
-Last updated: 2026-03-17
+Last updated: 2026-03-18
 
 ## Goal
 
@@ -114,7 +114,7 @@ Current note:
 - This step only containerizes the Flask app.
 - Supabase database wiring still belongs to the next roadmap steps.
 
-### Step 2. Create a Supabase test project and collect the required credentials
+### Step 2. Create a Supabase test project and collect the required credentials (Completed 2026-03-17)
 
 What to do:
 
@@ -136,7 +136,7 @@ How to test:
 - Confirm you can view the project details in the Supabase dashboard and locate
   the connection information and API keys.
 
-### Step 3. Choose the correct Supabase database connection method
+### Step 3. Choose the correct Supabase database connection method (Completed 2026-03-18)
 
 What to do:
 
@@ -154,7 +154,13 @@ How to test:
 
 - Write down which connection string will be used and why.
 
-### Step 4. Add Supabase environment variables to the app configuration
+Completed work:
+
+- Selected the Supavisor session pooler connection for the current setup.
+- Confirmed this is the safer choice for the WSL-based development environment
+  after the direct IPv6 connection failed.
+
+### Step 4. Add Supabase environment variables to the app configuration (Completed 2026-03-17)
 
 What to do:
 
@@ -177,7 +183,7 @@ How to test:
 - Start the app with the new variables present and confirm configuration loads
   correctly.
 
-### Step 5. Connect the current SQLAlchemy app to Supabase Postgres
+### Step 5. Connect the current SQLAlchemy app to Supabase Postgres (Completed 2026-03-17)
 
 What to do:
 
@@ -193,7 +199,7 @@ How to test:
 - Start the app and confirm it can read and write data in the Supabase-hosted
   database.
 
-### Step 6. Run Alembic migrations against Supabase Postgres
+### Step 6. Run Alembic migrations against Supabase Postgres (Completed 2026-03-17)
 
 What to do:
 
@@ -209,7 +215,17 @@ How to test:
 - Run migrations successfully and confirm the expected tables appear in
   Supabase.
 
-### Step 7. Test the current booking and admin flows against Supabase
+Current note:
+
+- The schema now uses `booking_orders`, `booked_canoes`, and `admin_users`.
+- The payment flow is still simulated, so the order/payment columns are only
+  partly populated until Stripe is implemented.
+- If an older Supabase test database already contains the previous
+  `rent_form`, `pending_booking`, and `users` tables, those old tables and the
+  `alembic_version` table must be removed before rerunning the new initial
+  migration.
+
+### Step 7. Test the current booking and admin flows against Supabase (Completed 2026-03-18)
 
 What to do:
 
@@ -226,7 +242,15 @@ How to test:
 - Create a test booking, confirm it appears in the database and admin view, and
   verify the admin can still log in and edit data.
 
-### Step 8. Update the README for the Docker + Supabase workflow
+Completed work:
+
+- Tested the public booking flow against Supabase.
+- Confirmed new bookings are written to the `booking_orders` and
+  `booked_canoes` tables.
+- Tested the current admin CRUD flow and confirmed add, edit, and delete
+  actions update the database correctly.
+
+### Step 8. Update the README for the Docker + Supabase workflow (Completed 2026-03-18)
 
 What to do:
 
@@ -241,7 +265,187 @@ How to test:
 
 - Follow the README from a clean state and confirm it works.
 
-## Phase 3: Test The Docker Plus Supabase Stack Properly
+Completed work:
+
+- Updated the README to match the current Docker plus Supabase workflow.
+- Added clearer notes about Docker usage, Supabase setup, and the migration
+  flow.
+
+## Phase 3: Redesign The Public And Admin Interface
+
+Goal:
+
+- Modernize the visual design so the site feels cleaner, more focused, and more
+  current before deeper payment and deployment work continues.
+
+Why this phase matters:
+
+- The current website works, but the visual structure feels old and too busy.
+- It is better to improve the information hierarchy now before more features
+  are added on top of the current layout.
+- A simpler single-page public layout will make the site easier to understand
+  for visitors and easier to maintain.
+
+### Step 1. Redesign the landing section and current-year hero
+
+What to do:
+
+- Rework the first visible section of the website into one strong landing view.
+- Keep the focus on:
+  - event identity,
+  - event date and location,
+  - availability context,
+  - one clear booking action.
+- Use the current-year section as the main page instead of spreading the first
+  impression across several older sections.
+
+Why:
+
+- The current landing area contains useful information, but the visual
+  presentation does not feel modern or intentional.
+- A stronger hero section gives the website a clearer first impression and
+  makes the booking action easier to find.
+
+Design direction:
+
+- Use one full-width hero section with a strong background image.
+- Add a readable dark or tinted overlay so text stays clear.
+- Keep the main content centered or carefully aligned with strong spacing.
+- Show only the most important information at first glance.
+- Use one clear primary booking button and reduce competing elements.
+
+How to test:
+
+- Open the homepage on desktop and mobile.
+- Confirm the first screen clearly communicates what the event is, when it
+  happens, and where the user should click to book.
+
+### Step 2. Replace the old previous-years navigation with a single image ribbon
+
+What to do:
+
+- Remove the sidebar for previous years.
+- Remove the long stacked previous-years page sections.
+- Replace them with one simpler image area placed below the main booking call
+  to action.
+- Start with a rolling strip, ribbon, or banner style presentation of selected
+  images from previous years.
+
+Why:
+
+- The old structure makes the page feel heavier and less focused.
+- A single curated image area supports the story of the event without taking
+  over the page structure.
+
+How to test:
+
+- Open the homepage and confirm the site now reads as one main page instead of
+  a long multi-section archive.
+- Confirm the image ribbon works on both desktop and mobile.
+
+### Step 3. Simplify the public page structure into one clear flow
+
+What to do:
+
+- Reorder the page so it reads in a simple sequence:
+  - hero,
+  - booking call to action,
+  - short practical event information,
+  - previous-years image ribbon,
+  - footer.
+- Remove sections that no longer support the simplified design direction.
+
+Why:
+
+- The website should guide the visitor through one clear path instead of making
+  them scan many unrelated sections.
+
+How to test:
+
+- Scroll through the full page and confirm the content order feels natural and
+  easy to follow.
+
+### Step 4. Refresh the booking area so it matches the new design
+
+What to do:
+
+- Update the booking button, booking modal, and nearby supporting text so they
+  match the new landing-page style.
+- Keep the booking flow simple and easy to scan.
+
+Why:
+
+- A redesigned hero will feel inconsistent if the booking interface still looks
+  much older than the rest of the page.
+
+How to test:
+
+- Open the booking flow from the redesigned landing page and confirm the visual
+  style feels consistent.
+
+### Step 5. Redesign the admin login page
+
+What to do:
+
+- Replace the current admin login page with a cleaner and more minimal layout.
+- Focus on:
+  - a clear title,
+  - one centered login card or panel,
+  - clear input labels,
+  - obvious submit action,
+  - restrained use of color.
+
+Why:
+
+- The current login page works, but it looks outdated and does not match the
+  direction of the public site.
+
+How to test:
+
+- Open the admin login page and confirm it feels visually cleaner while still
+  being easy to use.
+
+### Step 6. Redesign the admin dashboard for simple booking management
+
+What to do:
+
+- Update the admin page so it feels like a small internal dashboard instead of a
+  basic form page.
+- Focus on:
+  - clearer section spacing,
+  - more readable booking rows,
+  - obvious add, edit, and delete actions,
+  - room for future payment and status fields.
+
+Why:
+
+- The admin page is functional now, but it needs a cleaner layout before more
+  booking and payment information is added.
+
+How to test:
+
+- Log in as admin and confirm the page is easier to read and use for booking
+  changes.
+
+### Step 7. Test the redesigned public and admin views on desktop and mobile
+
+What to do:
+
+- Manually test the new layouts on desktop and phone-sized screens.
+- Use the existing Docker and `ngrok` workflow later when needed for real phone
+  checks.
+
+Why:
+
+- Layout issues are easier to catch immediately after the redesign than after
+  more features have been added.
+
+How to test:
+
+- Check the main page, booking flow, admin login, and admin dashboard on both
+  desktop and mobile sizes.
+
+## Phase 4: Test The Docker Plus Supabase Stack Properly
 
 Goal:
 
@@ -337,7 +541,7 @@ How to test:
 
 - Start from a clean Supabase test state and confirm setup commands work.
 
-## Phase 4: Add ngrok For Real Device And Webhook Testing
+## Phase 5: Add ngrok For Real Device And Webhook Testing
 
 Goal:
 
@@ -391,86 +595,6 @@ Why:
 How to test:
 
 - Confirm the app can receive a test request through the public tunnel.
-
-## Phase 5: Add Previous-Years Image Support
-
-Goal:
-
-- Show previous-years images in a simple way that fits the hosting plan.
-
-Why this phase matters:
-
-- Previous-years images are part of the website goal.
-- It is easier to choose a simple image approach early than to bolt it on late.
-
-### Step 1. Decide where images should live first
-
-What to do:
-
-- Decide between:
-  - storing a small first set of images inside the project as static files,
-  - or using Supabase Storage.
-
-Why:
-
-- This choice affects complexity, deployment, and how much Supabase is used at
-  the start.
-
-Recommended first choice:
-
-- Start with static files if the number of images is small and you want the
-  simplest first version.
-- Move to Supabase Storage later if image management becomes annoying or you
-  want uploads outside the codebase.
-
-How to test:
-
-- Write down the selected image approach and the reason for the choice.
-
-### Step 2. Add the first previous-years images
-
-What to do:
-
-- Add a small set of real images from previous years using the chosen storage
-  approach.
-
-Why:
-
-- We should prove the image plan works with real files, not just a placeholder
-  idea.
-
-How to test:
-
-- Confirm the files are accessible in development.
-
-### Step 3. Display the images on the website
-
-What to do:
-
-- Render the previous-years images in a clear section on the site.
-
-Why:
-
-- The goal is to show the images to visitors, not only store them somewhere.
-
-How to test:
-
-- Open the website and confirm the images render correctly.
-
-### Step 4. Check image performance and maintenance effort
-
-What to do:
-
-- Decide whether the chosen image approach is still simple enough.
-
-Why:
-
-- It is better to evaluate this early before more images are added.
-
-How to test:
-
-- Review the result and decide whether to keep it or switch to Supabase Storage
-  before launch.
 
 ## Phase 6: Replace The Fake Payment Flow With Stripe
 
@@ -722,6 +846,26 @@ How to test:
 - Verify HTTPS works, secrets are not exposed, and admin access behaves as
   expected.
 
+### Step 5. Review Supabase exposure settings and Row Level Security
+
+What to do:
+
+- Review which tables live in the exposed Supabase schema.
+- Enable Row Level Security where it is needed.
+- Document whether tables are only accessed through the Flask backend or also
+  through Supabase APIs later.
+
+Why:
+
+- Supabase can expose tables through its API layer.
+- Even if the current app mainly uses a direct database connection, this should
+  be reviewed before public launch so tables are not accidentally left too open.
+
+How to test:
+
+- Confirm the chosen tables have the intended RLS setting and that access still
+  works the way the app expects.
+
 ## Phase 9: Prepare For Public Launch
 
 Goal:
@@ -804,9 +948,8 @@ How to test:
 
 The next best step is:
 
-1. Create the Supabase test project and collect the connection details and API
-   details.
-2. Add `DATABASE_URL` to the local `.env` file and keep the other Supabase
-   values as optional placeholders for later.
-3. Run the current app against Supabase before considering any SDK-based
-   refactor.
+1. Redesign the main landing section and current-year hero first.
+2. Then replace the old previous-years sidebar and stacked archive sections with
+   one simpler image ribbon below the booking area.
+3. After the public design direction is stable, redesign the admin login page
+   and admin dashboard to match it.

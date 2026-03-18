@@ -1,6 +1,6 @@
 # Paddlingen Technical Overview
 
-Last updated: 2026-03-17
+Last updated: 2026-03-18
 
 ## Purpose
 
@@ -77,12 +77,14 @@ finish.
 1. A visitor opens the booking modal on the homepage.
 2. JavaScript builds the booking form fields in the browser.
 3. The form is submitted to `/create-checkout-session`.
-4. Flask checks the requested canoe count against current availability.
-5. A temporary `PendingBooking` row is stored in the database.
-6. The `pending_booking_id` is stored in the user session.
-7. The user is redirected to `/payment-success`.
-8. The app reads the pending booking from the database and converts it into
-   permanent `RentForm` rows.
+4. Flask checks the requested canoe count against current confirmed
+   availability.
+5. Flask creates one `BookingOrder` row with status `pending_payment`.
+6. Flask creates one `BookedCanoe` row per participant with status `reserved`.
+7. The `pending_booking_order_id` is stored in the user session.
+8. The user is redirected to `/payment-success`.
+9. The app reads the pending order from the database and marks the order as
+   `paid` and the canoe rows as `confirmed`.
 
 Important note:
 
@@ -111,6 +113,10 @@ This is the current role of the main files and folders.
 
 - `Dockerfile`
   First application container definition for running the Flask app in Docker.
+
+- `compose.yaml`
+  Docker Compose definition for the current app container. It gives the project
+  a stable Docker Desktop grouping and a clearer service name.
 
 - `.dockerignore`
   Prevents local caches, docs, tests, and other unnecessary files from being
@@ -217,9 +223,8 @@ This function currently does the following:
    - Flask-WTF CSRF protection
    - Flask-Login
    - Flask-Limiter
-4. Calls `db.create_all()`.
-5. Registers the main blueprint from `app/routes.py`.
-6. Registers CLI commands for database initialization and admin creation.
+4. Registers the main blueprint from `app/routes.py`.
+5. Registers CLI commands for database initialization and admin creation.
 
 ### Why use an application factory?
 
@@ -241,17 +246,14 @@ app instance when needed.
 
 ### Important current limitation
 
-The app factory currently calls `db.create_all()` automatically.
-
-Why that was probably done:
-
-- It makes development easy because tables appear automatically.
+The app no longer creates tables automatically during normal startup.
 
 Why this matters now:
 
-- The project also has Alembic migrations.
-- In a more mature setup, migrations should become the main schema-management
-  path instead of relying on automatic table creation.
+- Alembic is now the intended schema-management path for real environments.
+- The convenience commands still support `drop_all()` and `create_all()` for
+  quick local resets, but normal app startup should not silently create
+  database tables.
 
 ## Configuration And Environment Variables
 
@@ -306,47 +308,58 @@ The current database layer uses Flask-SQLAlchemy and SQLAlchemy models.
 
 There are three main models.
 
-### 1. `RentForm`
+### 1. `BookingOrder`
 
 Purpose:
 
-- Stores confirmed bookings.
+- Stores one booking attempt or simulated checkout session.
 
 Current fields:
 
 - `id`
-- `name`
-- `transaction_id`
+- `public_booking_reference`
+- `status`
+- `canoe_count`
+- `total_amount_ore`
+- `currency`
+- `payer_full_name`
+- `payer_email`
+- `payment_provider`
+- `payment_provider_session_id`
+- `expires_at`
+- `paid_at`
+- `created_at`
+- `updated_at`
 
 What this means in practice:
 
-- The current confirmed-booking model is still quite simple.
-- It does not yet store the richer booking information the roadmap wants, such
-  as email, explicit payment status, or clearer order-level data.
+- The app now has one parent row that represents the whole booking.
+- This makes future Stripe integration much easier because payment-related
+  status belongs to the order, not to each canoe row.
+- Some payment-related columns are currently placeholders until Stripe is
+  implemented properly.
 
-### 2. `PendingBooking`
+### 2. `BookedCanoe`
 
 Purpose:
 
-- Stores temporary booking data before payment is confirmed.
+- Stores one participant name per canoe.
 
 Current fields:
 
 - `id`
-- `canoe_count`
-- `participant_names`
+- `booking_order_id`
+- `participant_first_name`
+- `participant_last_name`
 - `status`
+- `created_at`
 
 Why this model exists:
 
-- Earlier designs often store temporary booking state in browser session data.
-- This app instead stores the important booking details on the server and only
-  keeps a reference ID in the session.
-
-Why this is a good design choice:
-
-- It reduces client-side tampering risk.
-- It gives the server control over booking data before confirmation.
+- One canoe row should represent one participant slot.
+- This keeps the participant names structured instead of hiding them inside a
+  JSON string.
+- It gives the admin view a clearer, more future-proof booking structure.
 
 ### 3. `User`
 
@@ -378,7 +391,8 @@ the file is now growing large enough that it may later need to be split.
   Renders the homepage and passes bookings and image lists to the template.
 
 - `/create-checkout-session`
-  Handles booking submission and creates a temporary pending booking.
+  Handles booking submission and creates a pending booking order plus reserved
+  canoe rows.
 
 - `/payment-success`
   Finalizes a booking after the current simulated payment flow.
@@ -625,15 +639,16 @@ This is important because:
 - Alembic is configured.
 - There is currently one initial migration.
 
-### Current design tension
+### Current design choice
 
-Right now the project has both:
+The project now treats Alembic as the main schema path for real environments.
 
-- automatic table creation with `db.create_all()`, and
-- Alembic migrations.
+Practical note:
 
-This is workable during early development, but eventually one clearer migration
-strategy should become the normal path.
+- The CLI reset helpers still use `drop_all()` and `create_all()` for quick
+  local resets.
+- Supabase and other shared environments should be managed through Alembic
+  migrations instead of ad hoc table creation.
 
 ## Weather Integration
 
@@ -746,8 +761,8 @@ If you are new to the project, focus on these ideas first:
    serves some JSON endpoints.
 2. The public site, booking flow, admin area, and simple APIs all live in the
    same Flask application.
-3. The database currently stores confirmed bookings, pending bookings, and admin
-   users.
+3. The database currently stores booking orders, canoe participant rows, and
+   admin users.
 4. The payment system is not real yet and should be treated as temporary.
 5. The project already has a good foundation, but the roadmap is about making it
    more production-ready step by step.

@@ -1,6 +1,6 @@
 """Tests for public-facing routes and booking flow."""
 
-from app.util.db_models import RentForm, PendingBooking
+from app.util.db_models import BookedCanoe, BookingOrder
 
 
 def test_home_page(client):
@@ -21,7 +21,7 @@ def test_booking_over_limit_shows_error(client):
     This test temporarily lowers ``AVAILABLE_CANOES`` to a very small number to
     simulate a fully booked day. It then posts a form asking for more canoes
     than are available. Flask should respond with a flash error on the home
-    page and refuse to create any :class:`PendingBooking` records.
+    page and refuse to create any booking order records.
     """
     client.application.config["AVAILABLE_CANOES"] = 1
 
@@ -34,16 +34,15 @@ def test_booking_over_limit_shows_error(client):
     assert "Tyvärr, bara 1 kanot(er) kvar" in page
 
     with client.application.app_context():
-        assert PendingBooking.query.count() == 0
+        assert BookingOrder.query.count() == 0
 
 
 def test_successful_booking_creates_records(client):
     """Complete a booking and verify database tables are updated.
 
     The test submits a valid booking for two canoes, then simulates the user
-    returning from payment by calling ``/payment-success``. Two permanent
-    :class:`RentForm` rows should be created and the temporary
-    :class:`PendingBooking` table left empty.
+    returning from payment by calling ``/payment-success``. One order row and
+    two confirmed :class:`BookedCanoe` rows should exist afterwards.
     """
     client.application.config["AVAILABLE_CANOES"] = 3
 
@@ -59,10 +58,11 @@ def test_successful_booking_creates_records(client):
     client.get("/payment-success")
 
     with client.application.app_context():
-        names = [r.name for r in RentForm.query.order_by(RentForm.id)]
+        names = [r.name for r in BookedCanoe.query.order_by(BookedCanoe.id)]
         assert "Alice Andersson" in names
         assert "Bob Berg" in names
-        assert PendingBooking.query.count() == 0
+        assert BookingOrder.query.count() == 1
+        assert BookingOrder.query.first().status == "paid"
 
 
 def test_invalid_form_data_returns_flash_error(client):
@@ -71,7 +71,7 @@ def test_invalid_form_data_returns_flash_error(client):
     The payment route needs a ``canoeCount`` field. This test posts an empty
     form to ``/create-checkout-session`` to simulate a broken or tampered
     submission. Flask should flash an "Ogiltigt antal kanoter." message and
-    redirect back to the home page. No ``PendingBooking`` rows are added.
+    redirect back to the home page. No booking rows are added.
 
     Args:
         client (FlaskClient): Test client used to simulate browser requests.
@@ -86,4 +86,4 @@ def test_invalid_form_data_returns_flash_error(client):
     assert "Ogiltigt antal kanoter." in page
 
     with client.application.app_context():
-        assert PendingBooking.query.count() == 0
+        assert BookingOrder.query.count() == 0

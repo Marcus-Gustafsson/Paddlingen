@@ -1,0 +1,12 @@
+name: paddlingen
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paddlingen-web
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"

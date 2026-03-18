@@ -3,7 +3,7 @@
 
   What it does:
     - Provides a simple, password‐protected admin interface.
-    - Lets you Add, Edit (Save) or Delete bookings (rows in RentForm table).
+    - Lets you Add, Edit (Save) or Delete confirmed canoe bookings.
 
   Why it’s here:
     - So site administrators can manage bookings without touching the database manually
@@ -88,7 +88,8 @@
           <tr>
             <td>{{ b.id }}</td>
 
-            <!-- 1) Name field in its own cell -->
+            <!-- Keep the editable input and the save button in the same form so
+                 the updated name is actually submitted. -->
             <td class="name-cell">
               <form action="{{ url_for('main.admin_update', id=b.id) }}"
                     method="post"
@@ -99,23 +100,10 @@
                         value="{{ csrf_token() }}"
                       >
                 <input type="text" name="name" value="{{ b.name }}" required>
-              </form>
-            </td>
-
-            <!-- 2) Single “actions” cell: both button (Spara and Ta bort) live together -->
-            <td class="actions-cell">
-              <!-- Save button -->
-              <form action="{{ url_for('main.admin_update', id=b.id) }}"
-                    method="post"
-                    class="inline-form save-form">
-                      <input 
-                        type="hidden" 
-                        name="csrf_token" 
-                        value="{{ csrf_token() }}"
-                      >
-                <!-- note: no input here, just the button -->
                 <button type="submit">Spara</button>
               </form>
+            </td>
+            <td class="actions-cell">
               <!-- Delete button -->
               <form action="{{ url_for('main.admin_delete', id=b.id) }}"
                     method="post"

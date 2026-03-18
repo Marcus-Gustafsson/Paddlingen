@@ -5,7 +5,7 @@ successful responses and common error conditions so that the frontend can
 rely on stable and predictable behavior.
 """
 
-from app import db, RentForm
+from app import BookedCanoe, BookingOrder, db
 
 
 def test_booking_count_api_returns_number(client):
@@ -23,7 +23,24 @@ def test_booking_count_api_returns_number(client):
 
     """
     with client.application.app_context():
-        db.session.add(RentForm(name="Test", transaction_id="t1"))
+        booking_order = BookingOrder(
+            public_booking_reference="PAD-2026-00001",
+            status="paid",
+            canoe_count=1,
+            total_amount_ore=25000,
+            currency="sek",
+            payment_provider="simulated",
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=booking_order.id,
+                participant_first_name="Test",
+                participant_last_name="Person",
+                status="confirmed",
+            )
+        )
         db.session.commit()
 
     response = client.get("/api/booking-count")

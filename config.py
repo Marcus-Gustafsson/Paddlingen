@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 # This `.env` file should NOT be shared publicly (e.g., on GitHub).
 # It's where you'll store sensitive information like secret keys and passwords.
 
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 
 # Helper -------------------------------------------------------------
