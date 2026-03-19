@@ -109,10 +109,11 @@ Current homepage note:
 6. Flask checks the requested canoe count against current confirmed
    availability.
 7. Flask creates one `BookingOrder` row with status `pending_payment`.
-8. Flask creates one `BookedCanoe` row per participant with status `reserved`.
-9. The `pending_booking_order_id` is stored in the user session.
-10. The user is redirected to `/payment-success`.
-11. The app reads the pending order from the database and marks the order as
+8. The order is linked to the active `Event` row when one exists.
+9. Flask creates one `BookedCanoe` row per participant with status `reserved`.
+10. The `pending_booking_order_id` is stored in the user session.
+11. The user is redirected to `/payment-success`.
+12. The app reads the pending order from the database and marks the order as
    `paid` and the canoe rows as `confirmed`.
 
 Important note:
@@ -165,13 +166,15 @@ This is the current role of the main files and folders.
   Provides shortcut commands like install, test, lint, and type-check.
 
 - `config.py`
-  Central place for configuration values.
+  Central place for configuration values and fallback defaults used if the
+  active database event row is missing.
 
 - `wsgi.py`
   Production-style entrypoint that exposes the Flask application object.
 
 - `init_db.py`
-  Convenience script for initializing the database and seeding the admin user.
+  Convenience script for initializing the database, seeding the active event,
+  and then seeding the admin user.
 
 ### Application package
 
@@ -183,10 +186,18 @@ This is the current role of the main files and folders.
   endpoints, weather endpoint, and admin interface.
 
 - `app/util/db_models.py`
-  Defines the SQLAlchemy models.
+  Defines the SQLAlchemy models, including `Event`, `EventWeatherCache`,
+  `BookingOrder`, `BookedCanoe`, and `User`.
+
+- `app/util/event_settings.py`
+  Contains shared helper logic for reading the active event, falling back to
+  `config.py`, and seeding the first active event row. It now covers both
+  display fields and yearly operational values such as canoe price, booking
+  limit, forecast window, and weather coordinates.
 
 - `app/util/helper_functions.py`
-  Contains helper logic, currently including image lookup for year folders.
+  Contains helper logic, currently including image lookup for the flattened
+  `static/images/previous_years/` folder.
 
 ### Frontend files
 
@@ -258,6 +269,10 @@ This is the current role of the main files and folders.
 - `migrations/`
   Alembic migration setup.
 
+- `migrations/versions/9f8c4d3b2a11_add_event_settings_tables.py`
+  Adds the `events` table, the `event_weather_cache` table, and the optional
+  `booking_orders.event_id` link used by the new event-backed flow.
+
 - `migrations/versions/`
   Stores migration files that describe schema changes over time.
 
@@ -272,14 +287,15 @@ This is the current role of the main files and folders.
 
 ### Documentation
 
-- `docs/Roadmap.md`
-  Forward-looking implementation plan for the next stages of the project.
+- `docs/roadmaps/`
+  Detailed split roadmaps for backend work, frontend work, and misc or
+  project-maintenance work.
 
 - `docs/TechnicalOverview.md`
   Ground-up explanation of how the current application is built.
 
-- `docs/dev_doc.md`
-  Development reference for commands, setup steps, and workflow updates.
+- `docs/dev/`
+  Split development documents for overview, Docker, database work, and testing.
 
 ## How The Flask App Is Created
 
@@ -334,7 +350,7 @@ Why this matters now:
 
 ### What it currently controls
 
-- event year, date, time, location, canoe count, and price
+- event date, time, location, canoe count, and price
 - `SECRET_KEY`
 - `PAYMENT_API_KEY`
 - `ADMIN_USERNAME`
@@ -393,7 +409,7 @@ Current fields:
 - `public_booking_reference`
 - `status`
 - `canoe_count`
-- `total_amount_ore`
+- `total_amount`
 - `currency`
 - `payer_full_name`
 - `payer_email`
@@ -888,7 +904,8 @@ If you want to understand the codebase from the ground up, this is a good order:
 7. `static/js/weather.js`
 8. `static/js/main.js`
 9. `tests/`
-10. `docs/Roadmap.md`
+10. `docs/roadmaps/backend_roadmap.md`
+11. `docs/dev/dev_overview.md`
 
 ## Summary
 

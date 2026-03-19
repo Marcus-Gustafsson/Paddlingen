@@ -22,10 +22,13 @@ import os
 from .util.db_models import (
     BookedCanoe,
     BookingOrder,
+    Event,
+    EventWeatherCache,
     User,
     db,
     get_current_utc_time,
 )
+from .util.event_settings import create_or_update_active_event_from_config
 
 # Flask extension instances -------------------------------------------------
 csrf_protect = CSRFProtect()
@@ -73,6 +76,7 @@ def create_app() -> Flask:
     # below for detailed usage instructions.
     # ------------------------------------------------------------------
     flask_application.cli.add_command(init_db_command)
+    flask_application.cli.add_command(seed_active_event_command)
     flask_application.cli.add_command(seed_admin_command)
     flask_application.cli.add_command(seed_test_bookings_command)
     flask_application.cli.add_command(clear_test_bookings_command)
@@ -93,7 +97,25 @@ def init_db_command() -> None:
     # builds the schema from the SQLAlchemy models.
     db.drop_all()
     db.create_all()
-    click.echo("Initialized the database.")
+    active_event, backfilled_booking_count = create_or_update_active_event_from_config()
+    db.session.commit()
+    click.echo(
+        "Initialized the database and seeded active event "
+        f"'{active_event.title}'. Backfilled {backfilled_booking_count} booking(s)."
+    )
+
+
+@click.command("seed-active-event")
+def seed_active_event_command() -> None:
+    """Create or refresh the active event row from ``config.py`` defaults."""
+
+    active_event, backfilled_booking_count = create_or_update_active_event_from_config()
+    db.session.commit()
+    click.echo(
+        "Seeded active event "
+        f"'{active_event.title}' for {active_event.event_date.year}. "
+        f"Backfilled {backfilled_booking_count} booking(s)."
+    )
 
 
 @click.command("seed-admin")
@@ -165,12 +187,15 @@ def seed_test_bookings_command(count: int) -> None:
     if deleted_order_count:
         click.echo(f"Removed {deleted_order_count} old seeded booking order(s).")
 
+    active_event, _ = create_or_update_active_event_from_config()
+
     for booking_number in range(1, count + 1):
         booking_order = BookingOrder(
+            event_id=active_event.id,
             public_booking_reference="TEMP",
             status="paid",
             canoe_count=1,
-            total_amount_ore=current_app.config["CANOE_PRICE_SEK"] * 100,
+            total_amount=float(active_event.price_per_canoe_sek),
             currency="sek",
             payment_provider="dev_seed",
             payer_full_name=f"Testbokning {booking_number:03d}",
@@ -220,11 +245,14 @@ __all__ = [
     "db",
     "BookedCanoe",
     "BookingOrder",
+    "Event",
+    "EventWeatherCache",
     "User",
     "csrf_protect",
     "login_manager",
     "rate_limiter",
     "init_db_command",
+    "seed_active_event_command",
     "seed_admin_command",
     "seed_test_bookings_command",
     "clear_test_bookings_command",

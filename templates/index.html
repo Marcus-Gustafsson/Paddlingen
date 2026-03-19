@@ -14,7 +14,7 @@ Why it’s here:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Paddlingen</title>
+  <title>{{ event_settings.title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">
@@ -73,11 +73,11 @@ Why it’s here:
         </header>
 
         <div class="hero-center scroll-animate in-view">
-          <h1 class="main-title no-select">Paddlingen {{ event_settings.year }}</h1>
-          <h2 class="main-subtitle no-select">{{ event_settings.tagline }}</h2>
+          <h1 class="main-title no-select">{{ event_settings.title }}</h1>
+          <h2 class="main-subtitle no-select">{{ event_settings.subtitle }}</h2>
 
           <div class="hero-details no-select">
-            <div class="date-time" id="dateTime">{{ event_settings.date_display }} – {{ event_settings.time_display }}</div>
+            <div class="date-time" id="dateTime">{{ event_settings.full_date_display }} – {{ event_settings.time_display }}</div>
             <div class="location hero-location">
               <span>Samlingsplats:</span>
               <a href="{{ event_settings.location_url }}" target="_blank" rel="noopener">
@@ -196,24 +196,17 @@ Why it’s here:
           <article class="info-card">
             <h3>Bokning</h3>
             <ul class="info-list">
-              <li><strong>Hur många kanoter finns?</strong> Max {{ event_settings.available_canoes_total }} stycken, först till kvarn.</li>
-              <li><strong>Hur många kanoter per bokning?</strong> Du kan boka upp till {{ event_settings.max_canoes_per_booking }} kanoter åt gången.</li>
-              <li><strong>Kan jag boka åt någon annan?</strong> Ja, ange förnamn och efternamn för varje deltagare i bokningen.</li>
-            </ul>
-          </article>
-          <article class="info-card">
-            <h3>Eventdagen</h3>
-            <ul class="info-list">
-              <li><strong>När ses vi?</strong> {{ event_settings.date_display }} – {{ event_settings.time_display }}.</li>
-              <li><strong>Var samlas vi?</strong> Vid {{ event_settings.location_name }}.</li>
-              <li><strong>Vem får delta?</strong> Barn under 12 år behöver vuxet sällskap.</li>
+              {% for info_item in event_settings.faq_booking_items %}
+                <li>{{ info_item }}</li>
+              {% endfor %}
             </ul>
           </article>
           <article class="info-card">
             <h3>Ändringar och frågor</h3>
             <ul class="info-list">
-              <li><strong>Avbokning:</strong> Senast 7 dagar före eventet.</li>
-              <li><strong>Behöver du hjälp?</strong> Använd kontaktfönstret för att hitta e-post, telefon och adress.</li>
+              {% for info_item in event_settings.faq_changes_and_questions_items %}
+                <li>{{ info_item }}</li>
+              {% endfor %}
             </ul>
           </article>
         </div>
@@ -223,25 +216,17 @@ Why it’s here:
           <article class="info-card">
             <h3>På vattnet</h3>
             <ul class="info-list">
-              <li>Var rädd om kanoterna och följ instruktionerna från arrangören.</li>
-              <li>Max två personer per kanot om inget annat meddelas på plats.</li>
-              <li>Håll avstånd till andra kanoter och visa hänsyn vid start och landning.</li>
-            </ul>
-          </article>
-          <article class="info-card">
-            <h3>Säkerhet</h3>
-            <ul class="info-list">
-              <li>Lyssna på genomgången innan start.</li>
-              <li>Barn under 12 år måste paddla tillsammans med en vuxen.</li>
-              <li>Följ eventuella väder- eller säkerhetsbesked från arrangören.</li>
+              {% for info_item in event_settings.rules_on_the_water_items %}
+                <li>{{ info_item }}</li>
+              {% endfor %}
             </ul>
           </article>
           <article class="info-card">
             <h3>Efter paddlingen</h3>
             <ul class="info-list">
-              <li>Lämna tillbaka utrustningen där arrangören visar.</li>
-              <li>Ta med skräp och lämna området i gott skick.</li>
-              <li>Fråga hellre en gång extra än att chansa om något känns oklart.</li>
+              {% for info_item in event_settings.rules_after_paddling_items %}
+                <li>{{ info_item }}</li>
+              {% endfor %}
             </ul>
           </article>
         </div>
@@ -264,14 +249,16 @@ Why it’s here:
         <div class="contact-card-grid">
           <article class="contact-card">
             <span class="contact-card-label">E-post</span>
-            <a class="contact-card-value" href="mailto:info@paddlingen.se">info@paddlingen.se</a>
+            <a class="contact-card-value" href="mailto:{{ event_settings.contact_email }}">{{ event_settings.contact_email }}</a>
             <p class="contact-card-note">Bra för frågor som inte är akuta eller om du vill skriva lite mer.</p>
           </article>
-          <article class="contact-card">
-            <span class="contact-card-label">Telefon</span>
-            <a class="contact-card-value" href="tel:+46123456789">012-345 6789</a>
-            <p class="contact-card-note">Bra om du behöver snabb hjälp nära inpå eventet.</p>
-          </article>
+          {% if event_settings.contact_phone %}
+            <article class="contact-card">
+              <span class="contact-card-label">Telefon</span>
+              <a class="contact-card-value" href="tel:{{ event_settings.contact_phone | replace(' ', '') }}">{{ event_settings.contact_phone }}</a>
+              <p class="contact-card-note">Bra om du behöver snabb hjälp nära inpå eventet.</p>
+            </article>
+          {% endif %}
         </div>
       </div>
     </div>

@@ -83,14 +83,28 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```bash
    uv run python init_db.py
    ```
-   This helper drops and recreates tables, then seeds the admin user. It is
-   meant for fresh local setup or quick resets.
+   This helper drops and recreates tables, seeds the active event row, and
+   then seeds the admin user. It is meant for fresh local setup or quick
+   resets.
 
    If you already ran Alembic migrations against Supabase, seed the admin user
-   without resetting the schema:
+   and the active event without resetting the schema:
    ```bash
+   uv run flask --app wsgi seed-active-event
    uv run flask --app wsgi seed-admin
    ```
+
+   The active event seed currently includes:
+
+   - title and subtitle
+   - event date and time
+   - start and end locations
+   - available canoes
+   - canoe price
+   - max canoes per booking
+   - weather forecast window
+   - weather coordinates
+   - FAQ, rules, and contact values
 
 5. **Start the development server**
    ```bash
@@ -164,6 +178,7 @@ Paddlingen uses [Alembic](https://alembic.sqlalchemy.org/) to keep the database 
 2. **Apply migrations** – run pending migrations to update the database to the latest schema:
    ```bash
    uv run alembic upgrade head
+   uv run flask --app wsgi seed-active-event
    ```
 
 3. **Roll back** – undo the last migration if something went wrong:
@@ -177,8 +192,11 @@ For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en
 ## Project docs
 
 - [docs/TechnicalOverview.md](docs/TechnicalOverview.md) explains how the app is currently built.
-- [docs/Roadmap.md](docs/Roadmap.md) tracks the planned implementation steps.
-- [docs/dev_doc.md](docs/dev_doc.md) is the practical development commands and workflow document.
+- [docs/roadmaps/README.md](docs/roadmaps/README.md) explains which detailed roadmap to read first.
+- [docs/dev/dev_overview.md](docs/dev/dev_overview.md) is the main development overview.
+- [docs/dev/dev_docker.md](docs/dev/dev_docker.md) covers Docker commands and workflow.
+- [docs/dev/dev_database.md](docs/dev/dev_database.md) covers Supabase, migrations, and schema setup.
+- [docs/dev/dev_testing.md](docs/dev/dev_testing.md) covers tests, checks, and development seed commands.
 
 
 

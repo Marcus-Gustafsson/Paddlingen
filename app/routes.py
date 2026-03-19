@@ -9,6 +9,7 @@ import logging
 from datetime import timedelta
 import requests
 from flask import (
+    abort,
     Blueprint,
     current_app,
     flash,
@@ -27,6 +28,15 @@ from flask_login import (  # type: ignore[import-untyped]
     logout_user,
 )
 
+from .util.event_settings import (
+    build_event_settings_with_fallback,
+    get_active_event,
+    get_available_canoes_total_with_fallback,
+    get_event_year_with_fallback,
+    get_max_canoes_per_booking_with_fallback,
+    get_price_per_canoe_with_fallback,
+    get_weather_coordinates_with_fallback,
+)
 from .util.helper_functions import get_previous_year_image_filenames
 from .util.db_models import BookedCanoe, BookingOrder, User, db, get_current_utc_time
 from . import rate_limiter
@@ -47,25 +57,39 @@ main_blueprint = Blueprint("main", __name__)
 
 
 def get_total_available_canoes() -> int:
-    """Return the configured total number of available canoes.
+    """Return the active event's total number of available canoes.
 
     Returns:
-        int: Total number of canoes available for the current event year.
+        int: Total number of canoes available for the active event. When the
+        database has no active event row, the value falls back to ``config.py``.
     """
 
-    return current_app.config.get("AVAILABLE_CANOES", 50)
+    return get_available_canoes_total_with_fallback()
 
 
 def get_max_canoes_per_booking() -> int:
     """Return the maximum number of canoes allowed in one booking."""
 
-    return current_app.config.get("MAX_CANOES_PER_BOOKING", 5)
+    return get_max_canoes_per_booking_with_fallback()
 
 
 def get_confirmed_booked_canoes_query():
-    """Return the query used for canoe rows that count as real bookings."""
+    """Return the query used for canoe rows that count as real bookings.
 
-    return BookedCanoe.query.filter_by(status="confirmed")
+    The query is scoped to the active event when one exists. If the database
+    has not been seeded yet, the application falls back to the older global
+    query so the public page can still render.
+    """
+
+    active_event = get_active_event()
+    confirmed_query = BookedCanoe.query.filter_by(status="confirmed")
+
+    if active_event is None:
+        return confirmed_query
+
+    return confirmed_query.join(BookingOrder).filter(
+        BookingOrder.event_id == active_event.id
+    )
 
 
 def count_confirmed_booked_canoes() -> int:
@@ -74,10 +98,32 @@ def count_confirmed_booked_canoes() -> int:
     return get_confirmed_booked_canoes_query().count()
 
 
+def count_confirmed_booked_canoes_for_event_id(event_id: int | None) -> int:
+    """Return the number of confirmed canoes for one event.
+
+    Args:
+        event_id: Event primary key. When ``None``, the function falls back to
+            the current active-event query.
+
+    Returns:
+        int: Number of confirmed booked canoes tied to the requested event.
+    """
+
+    if event_id is None:
+        return count_confirmed_booked_canoes()
+
+    return (
+        BookedCanoe.query.filter_by(status="confirmed")
+        .join(BookingOrder)
+        .filter(BookingOrder.event_id == event_id)
+        .count()
+    )
+
+
 def build_public_booking_reference(booking_order_id: int) -> str:
     """Create a simple public booking reference for admins and support."""
 
-    event_year = current_app.config["EVENT_YEAR"]
+    event_year = get_event_year_with_fallback()
     return f"PAD-{event_year}-{booking_order_id:05d}"
 
 
@@ -119,26 +165,7 @@ def build_event_settings() -> dict[str, object]:
         by the homepage template and frontend JavaScript.
     """
 
-    event_year = current_app.config["EVENT_YEAR"]
-    total_available_canoes = get_total_available_canoes()
-
-    return {
-        "year": event_year,
-        "section_id": f"year-{event_year}",
-        "date_display": current_app.config["EVENT_DATE_DISPLAY"],
-        "full_date_display": current_app.config["EVENT_FULL_DATE_DISPLAY"],
-        "time_display": current_app.config["EVENT_TIME_DISPLAY"],
-        "datetime_local_iso": current_app.config["EVENT_DATETIME_LOCAL_ISO"],
-        "tagline": current_app.config["EVENT_TAGLINE"],
-        "location_name": current_app.config["EVENT_LOCATION_NAME"],
-        "location_url": current_app.config["EVENT_LOCATION_URL"],
-        "available_canoes_total": total_available_canoes,
-        "max_canoes_per_booking": get_max_canoes_per_booking(),
-        "price_per_canoe_sek": current_app.config["CANOE_PRICE_SEK"],
-        "weather_forecast_days_before_event": current_app.config[
-            "WEATHER_FORECAST_DAYS_BEFORE_EVENT"
-        ],
-    }
+    return build_event_settings_with_fallback()
 
 
 def build_previous_year_gallery_data() -> tuple[list[str], list[str]]:
@@ -167,9 +194,7 @@ def get_event_coordinates() -> tuple[float, float]:
         forecast integration.
     """
 
-    latitude = current_app.config.get("EVENT_LATITUDE", 59.866580523479584)
-    longitude = current_app.config.get("EVENT_LONGITUDE", 14.850996977247622)
-    return latitude, longitude
+    return get_weather_coordinates_with_fallback()
 
 
 @main_blueprint.route("/")
@@ -246,11 +271,19 @@ def payment():
         return redirect(url_for("main.index"))
 
     participant_names = build_participant_names_from_form(requested)
+    active_event = get_active_event()
+    if active_event is None:
+        current_app.logger.warning(
+            "Creating a booking without an active database event. "
+            "Fallback config values were used for the public page."
+        )
+
     pending_order = BookingOrder(
+        event_id=active_event.id if active_event is not None else None,
         public_booking_reference="TEMP",
         status="pending_payment",
         canoe_count=requested,
-        total_amount_ore=requested * current_app.config["CANOE_PRICE_SEK"] * 100,
+        total_amount=requested * get_price_per_canoe_with_fallback(),
         currency="sek",
         payment_provider="simulated",
         expires_at=get_current_utc_time() + timedelta(minutes=15),
@@ -300,8 +333,13 @@ def payment_success():
         return redirect(url_for("main.index"))
 
     requested = pending_order.canoe_count
-    current = count_confirmed_booked_canoes()
-    if current + requested > get_total_available_canoes():
+    current = count_confirmed_booked_canoes_for_event_id(pending_order.event_id)
+    available_canoes_for_event = (
+        pending_order.event.available_canoes
+        if pending_order.event is not None
+        else get_total_available_canoes()
+    )
+    if current + requested > available_canoes_for_event:
         flash("Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.", "error")
         db.session.delete(pending_order)
         db.session.commit()
@@ -322,15 +360,16 @@ def get_booking_count():
     """Return the current number of bookings as JSON.
 
     This route:
-        1. Counts all bookings in the database.
-        2. Returns the count as JSON data.
+        1. Counts confirmed bookings for the active event when one exists.
+        2. Falls back to the older global count if no active event exists yet.
+        3. Returns the count as JSON data.
 
     The JavaScript ``fetch()`` function will call this endpoint.
 
     Returns:
         JSON object with the count: {"count": 25}
     """
-    # Count all rows that represent confirmed canoe bookings.
+    # Count confirmed rows for the active event.
     booking_count = count_confirmed_booked_canoes()
 
     # Return the count as JSON
@@ -492,7 +531,7 @@ def get_forecast():
 def admin_dashboard():
     """Show the admin dashboard page.
 
-    • Queries all confirmed ``BookedCanoe`` rows, ordered by ID.
+    • Queries confirmed `BookedCanoe` rows for the active event when available.
     • Renders ``templates/admin.html``, passing the booking list.
     """
     bookings = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
@@ -510,11 +549,18 @@ def admin_add():
     """
     name = request.form.get("name", "").strip()
     if name:
+        active_event = get_active_event()
+        if active_event is None:
+            current_app.logger.warning(
+                "Admin created a manual booking without an active database event."
+            )
+
         booking_order = BookingOrder(
+            event_id=active_event.id if active_event is not None else None,
             public_booking_reference="TEMP",
             status="paid",
             canoe_count=1,
-            total_amount_ore=current_app.config["CANOE_PRICE_SEK"] * 100,
+            total_amount=get_price_per_canoe_with_fallback(),
             currency="sek",
             payment_provider="admin_manual",
             paid_at=get_current_utc_time(),
@@ -548,7 +594,9 @@ def admin_update(id):
     • If non-empty, updates the record and commits.
     • Redirects back to the dashboard.
     """
-    booking = BookedCanoe.query.get_or_404(id)
+    booking = db.session.get(BookedCanoe, id)
+    if booking is None:
+        abort(404)
     new_name = request.form.get("name", "").strip()
     if new_name:
         booking.name = new_name
@@ -565,7 +613,9 @@ def admin_delete(id):
     • Deletes it, commits the transaction.
     • Redirects back to the dashboard.
     """
-    booking = BookedCanoe.query.get_or_404(id)
+    booking = db.session.get(BookedCanoe, id)
+    if booking is None:
+        abort(404)
     parent_order = booking.booking_order
     db.session.delete(booking)
     db.session.flush()

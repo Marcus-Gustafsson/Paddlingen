@@ -35,11 +35,11 @@ maintain over time.
 
 - Keep documentation in sync with the code.
 - If behavior, architecture, workflow, or tooling changes, update:
-  - `docs/Roadmap.md`
+  - the relevant file in `docs/roadmaps/`
   - `docs/TechnicalOverview.md`
-  - `docs/dev_doc.md`
+  - the relevant file in `docs/dev/`
 - Do not leave newly implemented features undocumented.
-- Prefer short, clear, beginner-friendly explanations over dense technical
+- Prefer clear, beginner-friendly explanations over dense technical
   language.
 
 ## Code Style Expectations

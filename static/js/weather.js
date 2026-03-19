@@ -15,7 +15,7 @@
   const eventSettings = window.PADDLINGEN_EVENT_SETTINGS || {};
 
   const eventDate = new Date(
-    eventSettings.datetime_local_iso || "2026-06-28T10:00:00"
+    eventSettings.datetime_local_iso || new Date().toISOString()
   );
   const forecastDaysBeforeEvent =
     eventSettings.weather_forecast_days_before_event || 7;

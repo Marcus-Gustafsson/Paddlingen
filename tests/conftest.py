@@ -1,9 +1,10 @@
 """Common pytest fixtures for the Paddlingen test suite."""
 
-import os
 import pytest
+import os
 
 from app import create_app, db, User
+from app.util.event_settings import create_or_update_active_event_from_config
 
 # Ensure the instance directory exists so the app's SQLite database can be created
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -35,6 +36,7 @@ def client():
     with flask_application.app_context():
         db.drop_all()
         db.create_all()
+        create_or_update_active_event_from_config()
         admin_user = User(username="admin")
         admin_user.set_password("password")
         db.session.add(admin_user)

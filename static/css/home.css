@@ -9,8 +9,8 @@ What it does:
 
 Why it is separate:
   - These styles only belong to the main public landing page.
-  - Splitting them out leaves `styles.css` with only the older shared or
-    legacy rules that still need to be cleaned up later.
+  - Keeping homepage styling separate makes the public CSS easier to read and
+    change without affecting unrelated features.
 */
 
 body.home-page {

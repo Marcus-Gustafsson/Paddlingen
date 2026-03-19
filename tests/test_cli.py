@@ -1,14 +1,13 @@
 """Tests for custom Flask command line interface commands."""
 
-from app import BookedCanoe, BookingOrder, User, db
+from app import BookedCanoe, BookingOrder, Event, User, db
 
 
 def test_init_db_command_resets_tables(client):
     """Invoke ``flask init-db`` and ensure tables are recreated.
 
-    The application seeds one admin user in the database. After running the
-    ``init-db`` command all tables should be dropped and recreated, leaving the
-    ``User`` table empty. This proves developers can start with a clean slate.
+    The application recreates the schema and also seeds the active event row
+    from the current config defaults. The admin user table should be cleared.
 
     Args:
         client (FlaskClient): Fixture providing a Flask test client.
@@ -23,8 +22,26 @@ def test_init_db_command_resets_tables(client):
     runner = client.application.test_cli_runner()
     with client.application.app_context():
         result = runner.invoke(args=["init-db"])
-        assert "Initialized the database." in result.output
+        assert "Initialized the database and seeded active event" in result.output
         assert User.query.count() == 0
+        assert Event.query.filter_by(is_active=True).count() == 1
+
+
+def test_seed_active_event_command_creates_or_updates_event(client):
+    """Ensure ``seed-active-event`` creates a usable active event row."""
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        Event.query.delete()
+        db.session.commit()
+
+        result = runner.invoke(args=["seed-active-event"])
+
+        assert "Seeded active event" in result.output
+        active_event = Event.query.filter_by(is_active=True).first()
+        assert active_event is not None
+        assert active_event.title == "Paddlingen"
 
 
 def test_seed_admin_command_creates_user(client, monkeypatch):
@@ -103,11 +120,13 @@ def test_clear_test_bookings_command_removes_only_seeded_bookings(client):
     runner = client.application.test_cli_runner()
 
     with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
         real_booking_order = BookingOrder(
+            event_id=active_event.id,
             public_booking_reference="PAD-2026-00001",
             status="paid",
             canoe_count=1,
-            total_amount_ore=120000,
+            total_amount=1200.0,
             currency="sek",
             payment_provider="simulated",
         )

@@ -88,8 +88,8 @@ def _format_swedish_date_display(iso_date: str, include_year: bool = False) -> s
 #
 # Keep the most important event-specific values here so they are easy to find
 # and update before each year's booking period.
-EVENT_YEAR = 2026
 EVENT_DATE_ISO = "2026-03-20"
+EVENT_YEAR = datetime.strptime(EVENT_DATE_ISO, "%Y-%m-%d").year
 EVENT_TIME_24H = "10:00"
 EVENT_DATETIME_LOCAL_ISO = f"{EVENT_DATE_ISO}T{EVENT_TIME_24H}:00"
 EVENT_DATE_DISPLAY = _format_swedish_date_display(EVENT_DATE_ISO)
@@ -97,15 +97,21 @@ EVENT_FULL_DATE_DISPLAY = _format_swedish_date_display(
     EVENT_DATE_ISO, include_year=True
 )
 EVENT_TIME_DISPLAY = f"Kl {EVENT_TIME_24H}"
-EVENT_TAGLINE = '"Bästa dagen på hela året!" - Mathias Axelsson'
-EVENT_LOCATION_NAME = "Havsjömossen"
-EVENT_LOCATION_URL = (
+EVENT_TITLE = "Paddlingen"
+EVENT_SUBTITLE = '"Bästa dagen på hela året!" - Mathias Axelsson'
+EVENT_TAGLINE = EVENT_SUBTITLE
+EVENT_STARTING_LOCATION_NAME = "Havsjömossen"
+EVENT_STARTING_LOCATION_URL = (
     "https://www.google.com/maps/dir/Kopparberg/Havsjomossen,+714+92+Kopparberg/"
     "@59.8803129,14.8725218,12.45z/data=!4m14!4m13!1m5!1m1!"
     "1s0x465da83f08095abd:0x5881b6deffa02146!2m2!1d15.00051!2d59.87549!"
     "1m5!1m1!1s0x465d07135a643b4d:0xd9ffac76e697a6b5!2m2!1d14.8500001!"
     "2d59.8666667!3e0?entry=ttu"
 )
+EVENT_LOCATION_NAME = EVENT_STARTING_LOCATION_NAME
+EVENT_LOCATION_URL = EVENT_STARTING_LOCATION_URL
+EVENT_END_LOCATION_NAME = "Havsjömossen"
+EVENT_END_LOCATION_URL = EVENT_STARTING_LOCATION_URL
 EVENT_LATITUDE = 59.866580523479584
 EVENT_LONGITUDE = 14.850996977247622
 WEATHER_FORECAST_DAYS_BEFORE_EVENT = 7
@@ -115,6 +121,27 @@ WEATHER_FORECAST_DAYS_BEFORE_EVENT = 7
 AVAILABLE_CANOES = 50
 MAX_CANOES_PER_BOOKING = 5
 CANOE_PRICE_SEK = 1200
+CONTACT_EMAIL = "info@paddlingen.se"
+CONTACT_PHONE = "012-345 6789"
+FAQ_BOOKING_TEXT = f"""
+Hur många kanoter finns? Max {AVAILABLE_CANOES} stycken, först till kvarn.
+Hur många kanoter per bokning? Du kan boka upp till {MAX_CANOES_PER_BOOKING} kanoter åt gången.
+Kan jag boka åt någon annan? Ja, ange förnamn och efternamn för varje deltagare i bokningen.
+""".strip()
+FAQ_CHANGES_AND_QUESTIONS_TEXT = """
+Avbokning: Senast 7 dagar före eventet.
+Behöver du hjälp? Använd kontaktfönstret för att hitta e-post och telefon.
+""".strip()
+RULES_ON_THE_WATER_TEXT = """
+Var rädd om kanoterna och följ instruktionerna från arrangören.
+Max två personer per kanot om inget annat meddelas på plats.
+Håll avstånd till andra kanoter och visa hänsyn vid start och landning.
+""".strip()
+RULES_AFTER_PADDLING_TEXT = """
+Lämna tillbaka utrustningen där arrangören visar.
+Ta med skräp och lämna området i gott skick.
+Fråga hellre en gång extra än att chansa om något känns oklart.
+""".strip()
 
 
 # --- Secret Keys & Credentials ---

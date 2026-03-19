@@ -1,6 +1,7 @@
 """Tests for public-facing routes and booking flow."""
 
-from app.util.db_models import BookedCanoe, BookingOrder
+from app import db
+from app.util.db_models import BookedCanoe, BookingOrder, Event
 
 
 def test_home_page(client):
@@ -14,6 +15,8 @@ def test_home_page(client):
     assert "Steg 1 av 2" in page
     assert "Regler och vanliga frågor" in page
     assert "info@paddlingen.se" in page
+    assert "Paddlingen" in page
+    assert "20 mars 2026" in page
 
 
 def test_login_page(client):
@@ -30,7 +33,14 @@ def test_booking_over_limit_shows_error(client):
     than are available. Flask should respond with a flash error on the home
     page and refuse to create any booking order records.
     """
-    client.application.config["AVAILABLE_CANOES"] = 1
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.available_canoes = 1
+        client.application.config["AVAILABLE_CANOES"] = 1
+        client.application.config["CANOE_PRICE_SEK"] = 1200
+        client.application.config["MAX_CANOES_PER_BOOKING"] = 5
+
+        db.session.commit()
 
     response = client.post(
         "/create-checkout-session",
@@ -47,8 +57,13 @@ def test_booking_over_limit_shows_error(client):
 def test_booking_over_per_booking_limit_shows_error(client):
     """Reject bookings larger than the configured per-order limit."""
 
-    client.application.config["AVAILABLE_CANOES"] = 20
-    client.application.config["MAX_CANOES_PER_BOOKING"] = 5
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.available_canoes = 20
+        client.application.config["AVAILABLE_CANOES"] = 20
+        client.application.config["MAX_CANOES_PER_BOOKING"] = 5
+
+        db.session.commit()
 
     response = client.post(
         "/create-checkout-session",
@@ -69,7 +84,12 @@ def test_successful_booking_creates_records(client):
     returning from payment by calling ``/payment-success``. One order row and
     two confirmed :class:`BookedCanoe` rows should exist afterwards.
     """
-    client.application.config["AVAILABLE_CANOES"] = 3
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.available_canoes = 3
+        client.application.config["AVAILABLE_CANOES"] = 3
+
+        db.session.commit()
 
     booking_data = {
         "canoeCount": "2",
@@ -88,6 +108,31 @@ def test_successful_booking_creates_records(client):
         assert "Bob Berg" in names
         assert BookingOrder.query.count() == 1
         assert BookingOrder.query.first().status == "paid"
+        assert BookingOrder.query.first().event_id is not None
+
+
+def test_home_page_uses_database_event_values(client):
+    """Render the homepage using values from the active event row."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.title = "Sjöfärden 2027"
+        active_event.subtitle = "Databasstyrd undertitel"
+        active_event.contact_email = "db@example.com"
+        active_event.available_canoes = 77
+        active_event.price_per_canoe_sek = 1500
+        active_event.max_canoes_per_booking = 4
+        active_event.weather_forecast_days_before_event = 5
+
+        db.session.commit()
+
+    response = client.get("/")
+    page = response.get_data(as_text=True)
+    assert "Sjöfärden 2027" in page
+    assert "Databasstyrd undertitel" in page
+    assert "db@example.com" in page
+    assert "0 / 77 kanoter bokade" in page
+    assert "1500 kr" in page
 
 
 def test_invalid_form_data_returns_flash_error(client):

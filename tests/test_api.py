@@ -5,7 +5,7 @@ successful responses and common error conditions so that the frontend can
 rely on stable and predictable behavior.
 """
 
-from app import BookedCanoe, BookingOrder, db
+from app import BookedCanoe, BookingOrder, Event, db
 
 
 def test_booking_count_api_returns_number(client):
@@ -23,11 +23,13 @@ def test_booking_count_api_returns_number(client):
 
     """
     with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
         booking_order = BookingOrder(
+            event_id=active_event.id,
             public_booking_reference="PAD-2026-00001",
             status="paid",
             canoe_count=1,
-            total_amount_ore=25000,
+            total_amount=250.0,
             currency="sek",
             payment_provider="simulated",
         )

@@ -1,4 +1,4 @@
-"""Database models for bookings and administrator accounts.
+"""Database models for events, bookings, and administrator accounts.
 
 This module keeps the SQLAlchemy model declarations separate from the Flask
 application factory.  That makes the schema easier to reason about and easier
@@ -37,10 +37,16 @@ class BookingOrder(db.Model):
     __tablename__ = "booking_orders"
 
     id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("events.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
     public_booking_reference = db.Column(db.String(40), unique=True, nullable=False)
     status = db.Column(db.String(30), nullable=False, default="pending_payment")
     canoe_count = db.Column(db.Integer, nullable=False)
-    total_amount_ore = db.Column(db.Integer, nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), nullable=False, default="sek")
     payer_full_name = db.Column(db.String(120), nullable=True)
     payer_email = db.Column(db.String(255), nullable=True)
@@ -64,6 +70,7 @@ class BookingOrder(db.Model):
         cascade="all, delete-orphan",
         order_by="BookedCanoe.id",
     )
+    event = db.relationship("Event", back_populates="booking_orders")
 
     def __repr__(self) -> str:
         """Return a readable representation for debugging."""
@@ -71,6 +78,101 @@ class BookingOrder(db.Model):
         return (
             f"<BookingOrder id={self.id} ref={self.public_booking_reference} "
             f"status={self.status} canoe_count={self.canoe_count}>"
+        )
+
+
+class Event(db.Model):
+    """Store the editable configuration for one event date.
+
+    The public homepage and booking flow should read their event metadata from
+    this table instead of relying only on ``config.py``. One row can be marked
+    as active so the application knows which event to show.
+    """
+
+    __tablename__ = "events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    subtitle = db.Column(db.String(255), nullable=False)
+    event_date = db.Column(db.Date, unique=True, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    starting_location_name = db.Column(db.String(255), nullable=False)
+    starting_location_url = db.Column(db.String(500), nullable=False)
+    end_location_name = db.Column(db.String(255), nullable=False)
+    end_location_url = db.Column(db.String(500), nullable=False)
+    available_canoes = db.Column(db.Integer, nullable=False)
+    price_per_canoe_sek = db.Column(db.Integer, nullable=False)
+    max_canoes_per_booking = db.Column(db.Integer, nullable=False)
+    weather_forecast_days_before_event = db.Column(db.Integer, nullable=False)
+    weather_latitude = db.Column(db.Float, nullable=False)
+    weather_longitude = db.Column(db.Float, nullable=False)
+    faq_booking_text = db.Column(db.Text, nullable=False)
+    faq_changes_and_questions_text = db.Column(db.Text, nullable=False)
+    rules_on_the_water_text = db.Column(db.Text, nullable=False)
+    rules_after_paddling_text = db.Column(db.Text, nullable=False)
+    contact_email = db.Column(db.String(255), nullable=False)
+    contact_phone = db.Column(db.String(50), nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=get_current_utc_time,
+        onupdate=get_current_utc_time,
+    )
+
+    weather_cache = db.relationship(
+        "EventWeatherCache",
+        back_populates="event",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    booking_orders = db.relationship("BookingOrder", back_populates="event")
+
+    def __repr__(self) -> str:
+        """Return a readable representation for debugging."""
+
+        return f"<Event id={self.id} event_date={self.event_date} active={self.is_active}>"
+
+
+class EventWeatherCache(db.Model):
+    """Store the latest cached weather forecast for one event.
+
+    Weather data changes over time and should not be mixed into the core event
+    row. Keeping the latest snapshot here gives every container the same shared
+    cache source later when the weather refresh logic is added.
+    """
+
+    __tablename__ = "event_weather_cache"
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    source = db.Column(db.String(50), nullable=False, default="yr")
+    forecast_for_date = db.Column(db.Date, nullable=False)
+    summary = db.Column(db.String(255), nullable=True)
+    temperature_c = db.Column(db.Float, nullable=True)
+    rain_mm = db.Column(db.Float, nullable=True)
+    icon = db.Column(db.String(32), nullable=True)
+    fetched_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
+    )
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    event = db.relationship("Event", back_populates="weather_cache")
+
+    def __repr__(self) -> str:
+        """Return a readable representation for debugging."""
+
+        return (
+            f"<EventWeatherCache event_id={self.event_id} "
+            f"forecast_for_date={self.forecast_for_date}>"
         )
 
 
