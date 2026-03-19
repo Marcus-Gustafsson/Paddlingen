@@ -949,9 +949,9 @@ How to test:
 The next best step is:
 
 1. Continue the temporary frontend refactor checklist in
-   `docs/temp_refactor_checklist.md`, starting with the JavaScript split work.
-2. Continue splitting `static/js/script.js` one feature at a time, with the
-   next safe step being the gallery logic after booking progress, weather, and
-   modal extraction.
-3. After the JavaScript structure is cleaner, continue with the image-folder
-   refactor and then the admin redesign work.
+   `docs/temp_refactor_checklist.md`, moving from the completed JavaScript
+   split into the image-folder refactor.
+2. Flatten the previous-years images into `static/images/previous_years/` and
+   update the backend image lookup.
+3. After the image structure is cleaner, continue with the admin redesign
+   work.

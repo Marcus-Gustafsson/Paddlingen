@@ -27,7 +27,7 @@ from flask_login import (  # type: ignore[import-untyped]
     logout_user,
 )
 
-from .util.helper_functions import get_images_for_year
+from .util.helper_functions import get_previous_year_image_filenames
 from .util.db_models import BookedCanoe, BookingOrder, User, db, get_current_utc_time
 from . import rate_limiter
 
@@ -151,29 +151,12 @@ def build_previous_year_gallery_data() -> tuple[list[str], list[str]]:
         viewer modal. For now both lists contain the same images because the
         ribbon should loop through all available previous-year photos.
     """
-
-    year_folders = [
-        "2025",
-        "2024",
-        "2023",
-        "2022",
-        "2021",
-        "2020",
-        "2019_&_tidigare",
+    image_filenames = get_previous_year_image_filenames()
+    image_urls = [
+        url_for("static", filename=f"images/previous_years/{image_filename}")
+        for image_filename in image_filenames
     ]
-    ribbon_image_urls: list[str] = []
-    gallery_image_urls: list[str] = []
-
-    for year_folder in year_folders:
-        image_filenames = get_images_for_year(year_folder)
-        image_urls = [
-            url_for("static", filename=f"images/{year_folder}/{image_filename}")
-            for image_filename in image_filenames
-        ]
-        gallery_image_urls.extend(image_urls)
-        ribbon_image_urls.extend(image_urls)
-
-    return ribbon_image_urls, gallery_image_urls
+    return image_urls, image_urls
 
 
 def get_event_coordinates() -> tuple[float, float]:

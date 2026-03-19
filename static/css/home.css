@@ -39,7 +39,7 @@ body.home-page {
       rgba(5, 23, 32, 0.1) 40%,
       rgba(5, 23, 32, 0.4) 100%
     ),
-    url("/static/images/2026/nitten.png");
+    url("/static/images/nitten.png");
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;

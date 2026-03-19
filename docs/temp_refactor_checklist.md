@@ -22,7 +22,7 @@ in the normal project documentation.
 
 The main files that are now large enough to justify splitting are:
 
-- `static/js/script.js` at about 633 lines
+- `static/js/main.js` at about 72 lines
 - `docs/Roadmap.md` at about 955 lines
 - `docs/dev_doc.md` at about 589 lines
 - `docs/TechnicalOverview.md` at about 855 lines
@@ -108,18 +108,18 @@ How to test after this phase:
 - FAQ and contact popups still open and look correct.
 - Gallery ribbon and gallery modal still work.
 
-### Phase 3: Split the public JavaScript
+### Phase 3: Split the public JavaScript (DONE)
 
 - [x] Audit `static/js/script.js` and group logic by feature.
 - [x] Decide the new JavaScript file names.
-- [ ] Create one small entry file that initializes the page.
-- [ ] Move booking logic into its own file.
+- [x] Create one small entry file that initializes the page.
+- [x] Move booking logic into its own file.
 - [x] Move modal logic into its own file.
-- [ ] Move gallery logic into its own file.
+- [x] Move gallery logic into its own file.
 - [x] Move weather logic into its own file.
 - [x] Move booking-progress logic into its own file.
 - [x] Update `index.html` to load the scripts in a safe order.
-- [ ] Test all homepage interactions again.
+- [x] Test all homepage interactions again.
 
 Suggested JavaScript structure:
 
@@ -152,7 +152,7 @@ How to test after this phase:
 
 Audit findings:
 
-- `script.js` currently mixes six responsibilities in one file:
+- The old `script.js` used to mix six responsibilities in one file:
   - event settings,
   - booking progress,
   - weather,
@@ -179,10 +179,12 @@ Current progress note:
 - `static/js/weather.js` now handles the weather countdown and forecast widget.
 - `static/js/modals.js` now handles the FAQ, contact, and participant
   overview popup behavior.
-- `static/js/script.js` now contains the remaining homepage logic:
-  - gallery behavior,
-  - booking modal behavior,
-  - scroll animations.
+- `static/js/gallery.js` now handles the previous-years ribbon animation and
+  gallery lightbox behavior.
+- `static/js/booking.js` now handles the two-step booking modal, participant
+  field generation, and booking summary.
+- `static/js/main.js` now contains the final shared page initialization
+  sequence and the scroll animation helper.
 
 ### Architecture Note: Move Event Settings Into The Database
 
@@ -213,8 +215,10 @@ Recommended event columns:
 - `year`
 - `event_date`
 - `start_time`
-- `location_name`
-- `location_url`
+- `starting_location_name`
+- `starting_location_url`
+- `end_location_name` (end_location name and url, as it will be usefull information to have under e.g. FAQ/information, as the end location/where the canoes are picked up is at a different location compared to the starting location, thus having navigation (e.g. google maps link) and location name is good information)
+- `end_location_url`
 - `available_canoes`
 - `rules_text`
 - `faq_text` or structured FAQ fields
@@ -236,19 +240,21 @@ Important note:
 
 ### Phase 4: Flatten previous-years images into one folder
 
-- [ ] Review all image folders currently used by the homepage and gallery.
-- [ ] Confirm which files should move into `static/images/previous_years/`.
-- [ ] Check for duplicate filenames before moving images.
-- [ ] Rename files if needed so no files overwrite each other.
-- [ ] Update image lookup logic in the backend helper functions.
-- [ ] Update any hardcoded image paths still used by the homepage or gallery.
-- [ ] Remove old year-based gallery folder usage once the new folder works.
+- [x] Review all image folders currently used by the homepage and gallery.
+- [x] Confirm which files should move into `static/images/previous_years/`.
+- [x] Check for duplicate filenames before moving images.
+- [x] Rename files if needed so no files overwrite each other.
+- [x] Update image lookup logic in the backend helper functions.
+- [x] Update any hardcoded image paths still used by the homepage or gallery.
+- [x] Remove old year-based gallery folder usage once the new folder works.
 
 Important note:
 
-- Flattening image folders is only safe if filenames are unique.
-- If two old year folders contain the same filename, one would overwrite the
-  other when moved into one shared folder.
+- Duplicate filenames were found across the old year folders.
+- Those files were kept by renaming them with a year prefix inside
+  `static/images/previous_years/` instead of overwriting them.
+- The current homepage background image was kept out of that folder and now
+  lives at `static/images/nitten.png`.
 
 How to test after this phase:
 

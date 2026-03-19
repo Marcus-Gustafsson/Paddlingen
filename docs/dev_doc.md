@@ -205,6 +205,23 @@ Why:
 - This is the safest way to split the large stylesheet one file at a time
   without breaking the site.
 
+## Current Image Structure Note
+
+The homepage image structure has been simplified.
+
+Current state:
+
+- `static/images/nitten.png` is the current homepage background image.
+- `static/images/previous_years/` contains the ribbon and gallery images from
+  earlier years.
+- Duplicate filenames from the old year folders were renamed with year
+  prefixes so files were not overwritten during the flattening step.
+
+Why:
+
+- The gallery and ribbon no longer need to care about year-based folders.
+- The background image stays easy to find in the image root.
+
 ## Current JavaScript Refactor Note
 
 The public JavaScript refactor has started.
@@ -216,12 +233,13 @@ Current state:
 - `static/js/weather.js` now contains the homepage weather-widget logic.
 - `static/js/modals.js` now contains the FAQ, contact, and participant
   overview popup logic.
-- `static/js/script.js` still contains the remaining homepage logic for:
-  - gallery behavior,
-  - booking modal behavior,
-  - scroll animations.
+- `static/js/gallery.js` now contains the previous-years ribbon and gallery
+  lightbox logic.
+- `static/js/booking.js` now contains the two-step booking modal logic.
+- `static/js/main.js` now contains the final shared homepage initialization
+  sequence and the scroll animation helper.
 - The homepage currently loads `booking_progress.js`, `weather.js`,
-  `modals.js`, and then `script.js`.
+  `modals.js`, `gallery.js`, `booking.js`, and then `main.js`.
 
 Why:
 

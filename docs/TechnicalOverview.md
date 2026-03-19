@@ -237,13 +237,21 @@ This is the current role of the main files and folders.
   Small standalone module for the public FAQ, contact, and participant
   overview popups.
 
-- `static/js/script.js`
-  Remaining public-page JavaScript that still contains the gallery logic,
-  booking modal logic, and scroll animations until the rest of the JavaScript
-  refactor is finished.
+- `static/js/gallery.js`
+  Small standalone module for the previous-years ribbon animation and the
+  gallery lightbox.
+
+- `static/js/booking.js`
+  Small standalone module for the two-step public booking modal.
+
+- `static/js/main.js`
+  Small entry file for the public homepage. It initializes the split feature
+  modules and contains the scroll animation helper.
 
 - `static/images/`
-  Current storage location for event images grouped by year.
+  Static image root. The homepage background image now lives directly in this
+  folder as `nitten.png`, while older gallery images live in the flattened
+  `static/images/previous_years/` folder.
 
 ### Database and migrations
 
@@ -558,12 +566,15 @@ The public JavaScript is currently split like this:
   Handles the weather countdown and weather forecast updates.
 - `static/js/modals.js`
   Handles the FAQ, contact, and participant overview popup behavior.
-- `static/js/script.js`
-  Still handles:
+- `static/js/gallery.js`
+  Handles the previous-years ribbon animation and gallery lightbox behavior.
+- `static/js/booking.js`
+  Handles the two-step booking modal, participant field generation, and
+  booking summary updates.
+- `static/js/main.js`
+  Handles:
   - scroll animations,
-  - gallery behavior,
-  - booking modal behavior.
-- booking form field generation and validation.
+  - the page initialization sequence.
 
 Why this matters:
 
@@ -573,19 +584,23 @@ Why this matters:
 
 ## Image Handling
 
-Images are currently stored under `static/images/` in year-specific folders.
+Images are currently stored under `static/images/`, with two main roles:
+
+1. `static/images/nitten.png` is the current homepage background image.
+2. `static/images/previous_years/` contains the flattened gallery and ribbon
+   images from earlier years.
 
 There is a helper function in `app/util/helper_functions.py` that:
 
-1. looks inside a year folder,
+1. reads the flattened `previous_years` folder,
 2. filters valid image file types,
-3. shuffles them,
-4. returns a limited subset.
+3. returns a sorted image list for the ribbon and full gallery.
 
 Why this was likely chosen:
 
 - It is simple.
 - It avoids needing a separate image storage system.
+- It removes the old year-folder dependency from the gallery code.
 - It works well when image uploads are not happening through the website itself.
 
 Why this may change later:
@@ -871,7 +886,7 @@ If you want to understand the codebase from the ground up, this is a good order:
 5. `templates/index.html`
 6. `static/js/booking_progress.js`
 7. `static/js/weather.js`
-8. `static/js/script.js`
+8. `static/js/main.js`
 9. `tests/`
 10. `docs/Roadmap.md`
 

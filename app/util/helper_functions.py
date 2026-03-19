@@ -1,60 +1,38 @@
 """Utility helpers used across the application."""
 
-import os
-import random
+from pathlib import Path
+
 from flask import current_app
 
 
-def get_images_for_year(year: str) -> list[str]:
-    """Return a random subset of image filenames for the given year.
+def get_previous_year_image_filenames() -> list[str]:
+    """Return the flattened previous-years gallery image filenames.
 
-    The function searches inside ``static/images/<year>/`` for image files,
-    shuffles them, and returns at most 27 filenames.  The number of files is
-    capped so the gallery in the template never becomes overwhelming.
+    The homepage ribbon and gallery now read from one shared folder:
+    ``static/images/previous_years/``.
 
-    Args:
-        year: Folder name under ``static/images`` such as ``"2024"`` or
-            ``"2019_&_tidigare"``.
+    Duplicate filenames from the old year-based folders were renamed during the
+    refactor, usually by adding a year prefix, so the flattened folder can be
+    read safely without collisions.
 
     Returns:
-        A list of image filenames (not full paths) ready for
-        ``url_for('static', filename=f'images/{year}/<filename>')``.
+        list[str]: Sorted image filenames ready for
+        ``url_for('static', filename='images/previous_years/<filename>')``.
     """
     static_folder = current_app.static_folder
     if static_folder is None:
         raise RuntimeError("Static folder is not configured")
 
-    image_folder = os.path.join(
-        static_folder,
-        "images",
-        year,
-    )
+    image_folder = Path(static_folder) / "images" / "previous_years"
 
-    # Debug print (only when Flask is in debug mode)
     if current_app.debug:
-        print("DEBUG: Looking for images in:", image_folder)
+        print("DEBUG: Looking for previous-year images in:", image_folder)
 
-    try:
-        all_files = os.listdir(image_folder)
-    except FileNotFoundError:
-        all_files = []
-
-    valid_extensions = (".png", ".jpg", ".jpeg", ".gif", ".webp")
+    valid_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
     image_files = [
-        file_name
-        for file_name in all_files
-        if file_name.lower().endswith(valid_extensions)
+        image_path.name
+        for image_path in image_folder.iterdir()
+        if image_path.is_file() and image_path.suffix.lower() in valid_extensions
     ]
 
-    random.shuffle(image_files)
-
-    total_images = len(image_files)
-    if total_images < 18:
-        maximum_count = 9
-    elif total_images < 27:
-        maximum_count = 18
-    else:
-        maximum_count = 27
-
-    selected_images = image_files[:maximum_count]
-    return selected_images
+    return sorted(image_files)
