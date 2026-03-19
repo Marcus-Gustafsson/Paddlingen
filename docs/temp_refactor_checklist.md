@@ -78,7 +78,8 @@ Recommended decisions:
 - [x] Move the reset/base styles into a shared file.
 - [ ] Move homepage hero and ribbon styles into a public homepage file.
 - [x] Move modal styles into a modal-focused file.
-- [ ] Move booking modal styles into a booking-focused file.
+- [x] Move booking modal styles into a booking-focused file.
+- [x] Move gallery ribbon and gallery modal styles into a gallery-focused file.
 - [ ] Keep admin styles separate in `static/css/admin.css`.
 - [ ] Update the template `<link>` tags to load the new files in the correct
       order.

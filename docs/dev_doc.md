@@ -191,10 +191,12 @@ Current state:
 
 - Shared foundation rules now live in `static/css/base.css`.
 - Shared popup styles now live in `static/css/modals.css`.
+- Booking modal styles now live in `static/css/booking.css`.
+- Gallery ribbon and lightbox styles now live in `static/css/gallery.css`.
 - The remaining public and shared page rules still live in
   `static/css/styles.css`.
 - The public homepage template now loads `base.css`, `styles.css`, and
-  `modals.css` in that order.
+  `modals.css`, then `booking.css`, then `gallery.css`.
 
 Why:
 

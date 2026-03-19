@@ -211,6 +211,14 @@ This is the current role of the main files and folders.
   Shared popup styles for the public site, including the general modal shell,
   FAQ and contact popup styling, and the participant overview popup.
 
+- `static/css/booking.css`
+  Styles for the booking modal, including the two-step layout, quantity
+  selector, participant cards, summary panel, and booking action buttons.
+
+- `static/css/gallery.css`
+  Styles for the previous-years image ribbon and the full-screen gallery
+  lightbox.
+
 - `static/js/script.js`
   Frontend behavior such as modals, booking form logic, progress bar updates,
   image gallery behavior, and weather widget requests.
