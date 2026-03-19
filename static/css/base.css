@@ -26,6 +26,10 @@ body {
   height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Shared flash message styles used on the public and admin-related pages. */
 .flash-container {
   position: fixed;

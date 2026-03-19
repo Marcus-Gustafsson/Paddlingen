@@ -193,10 +193,12 @@ Current state:
 - Shared popup styles now live in `static/css/modals.css`.
 - Booking modal styles now live in `static/css/booking.css`.
 - Gallery ribbon and lightbox styles now live in `static/css/gallery.css`.
-- The remaining public and shared page rules still live in
-  `static/css/styles.css`.
-- The public homepage template now loads `base.css`, `styles.css`, and
-  `modals.css`, then `booking.css`, then `gallery.css`.
+- Public homepage hero and layout styles now live in `static/css/home.css`.
+- The old `static/css/styles.css` file has now been removed.
+- The public homepage template now loads `base.css`, `modals.css`,
+  `booking.css`, `gallery.css`, and `home.css`.
+- The login page now loads only `base.css`.
+- The admin page now loads `base.css` and `admin.css`.
 
 Why:
 

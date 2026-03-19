@@ -218,6 +218,25 @@ Why it is separate:
   text-align: center;
 }
 
+.home-page .overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 0.9rem;
+  color: white;
+}
+
+.home-page .overview-table th {
+  padding: 0.5rem;
+  border-bottom: 2px solid #162938;
+  font-size: 1.1rem;
+}
+
+.home-page .overview-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #ccc;
+}
+
 .home-page .overview-table-modal {
   margin-top: 0.5rem;
 }

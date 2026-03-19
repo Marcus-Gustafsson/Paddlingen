@@ -207,6 +207,11 @@ This is the current role of the main files and folders.
   Shared foundation styles such as the font import, reset rules, flash
   messages, and small utility classes.
 
+- `static/css/home.css`
+  Styles for the public homepage hero and layout, including the weather card,
+  top-right utility buttons, event heading block, progress area, and small
+  homepage-only helpers such as the scroll animation classes.
+
 - `static/css/modals.css`
   Shared popup styles for the public site, including the general modal shell,
   FAQ and contact popup styling, and the participant overview popup.

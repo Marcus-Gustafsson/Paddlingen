@@ -22,7 +22,6 @@ in the normal project documentation.
 
 The main files that are now large enough to justify splitting are:
 
-- `static/css/styles.css` at about 1578 lines
 - `static/js/script.js` at about 711 lines
 - `docs/Roadmap.md` at about 955 lines
 - `docs/dev_doc.md` at about 589 lines
@@ -74,24 +73,26 @@ Recommended decisions:
 ### Phase 2: Split the public CSS
 
 - [x] Audit `static/css/styles.css` and group rules into major sections.
-- [ ] Decide the new CSS file names.
+- [x] Decide the new CSS file names.
 - [x] Move the reset/base styles into a shared file.
-- [ ] Move homepage hero and ribbon styles into a public homepage file.
+- [x] Move homepage hero and ribbon styles into a public homepage file.
 - [x] Move modal styles into a modal-focused file.
 - [x] Move booking modal styles into a booking-focused file.
 - [x] Move gallery ribbon and gallery modal styles into a gallery-focused file.
 - [ ] Keep admin styles separate in `static/css/admin.css`.
-- [ ] Update the template `<link>` tags to load the new files in the correct
+- [x] Remove `static/css/styles.css` after the remaining useful rules were
+      moved elsewhere.
+- [x] Update the template `<link>` tags to load the new files in the correct
       order.
-- [ ] Test desktop, tablet, and mobile again after the split.
+- [x] Test desktop, tablet, and mobile again after the split.
 
 Suggested CSS structure:
 
 - `static/css/base.css`
-- `static/css/public-home.css`
-- `static/css/public-modals.css`
-- `static/css/public-booking.css`
-- `static/css/public-gallery.css`
+- `static/css/home.css`
+- `static/css/modals.css`
+- `static/css/booking.css`
+- `static/css/gallery.css`
 - `static/css/admin.css`
 
 Why this structure:
@@ -109,8 +110,8 @@ How to test after this phase:
 
 ### Phase 3: Split the public JavaScript
 
-- [ ] Audit `static/js/script.js` and group logic by feature.
-- [ ] Decide the new JavaScript file names.
+- [x] Audit `static/js/script.js` and group logic by feature.
+- [x] Decide the new JavaScript file names.
 - [ ] Create one small entry file that initializes the page.
 - [ ] Move booking logic into its own file.
 - [ ] Move modal logic into its own file.
@@ -123,11 +124,11 @@ How to test after this phase:
 Suggested JavaScript structure:
 
 - `static/js/main.js`
-- `static/js/booking.js`
+- `static/js/booking_progress.js`
+- `static/js/weather.js`
 - `static/js/modals.js`
 - `static/js/gallery.js`
-- `static/js/weather.js`
-- `static/js/booking_progress.js`
+- `static/js/booking.js`
 
 Why this structure:
 
@@ -148,6 +149,28 @@ How to test after this phase:
 - Booking modal still works end to end.
 - FAQ/contact popups still work.
 - Previous-years gallery still works.
+
+Audit findings:
+
+- `script.js` currently mixes six responsibilities in one file:
+  - event settings,
+  - booking progress,
+  - weather,
+  - FAQ/contact/overview modal behavior,
+  - gallery ribbon and lightbox,
+  - booking modal logic.
+- The booking modal block is the largest and most stateful part of the file.
+- `updateBookingProgress()` currently uses `innerHTML`, which is workable but
+  should be treated carefully and kept scoped to known text-only markup.
+- Multiple features attach separate global `keydown` listeners. This works, but
+  splitting the file will make those listeners easier to reason about.
+- The safest split order is:
+  1. `booking_progress.js`
+  2. `weather.js`
+  3. `modals.js`
+  4. `gallery.js`
+  5. `booking.js`
+  6. `main.js`
 
 ### Phase 4: Flatten previous-years images into one folder
 

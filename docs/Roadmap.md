@@ -949,8 +949,8 @@ How to test:
 The next best step is:
 
 1. Continue the temporary frontend refactor checklist in
-   `docs/temp_refactor_checklist.md`, starting with the CSS split work.
-2. Split the remaining public stylesheet into `home.css`, `modals.css`,
-   `booking.css`, and `gallery.css` one safe step at a time.
-3. After the CSS and JavaScript structure is cleaner, continue with the admin
-   login and admin dashboard redesign.
+   `docs/temp_refactor_checklist.md`, starting with the JavaScript split work.
+2. Split `static/js/script.js` one feature at a time, beginning with the
+   smallest and safest pieces before the booking modal logic.
+3. After the JavaScript structure is cleaner, continue with the image-folder
+   refactor and then the admin redesign work.
