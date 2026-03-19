@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from flask import Flask, current_app
+from flask import Flask
 from flask_wtf import CSRFProtect  # type: ignore[import-untyped]
 from flask_login import LoginManager  # type: ignore[import-untyped]
 from flask_limiter import Limiter

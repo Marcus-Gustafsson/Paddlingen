@@ -27,15 +27,18 @@ Why it’s here:
 </head>
 <body class="home-page">
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash-container">
+    {% set flash_state = namespace(has_home_errors=false) %}
+    {% for category, msg in messages %}
+      {% if category == "error" %}
+        {% set flash_state.has_home_errors = true %}
+      {% endif %}
+    {% endfor %}
+    {% if flash_state.has_home_errors %}
+      <div class="home-toast-stack" aria-live="polite">
         {% for category, msg in messages %}
-          <div class="flash flash-{{ category }}">
-            {{ msg }}
-            <button class="flash-close" onclick="this.parentElement.style.display='none'">
-              ×
-            </button>
-          </div>
+          {% if category == "error" %}
+            <div class="home-toast home-toast-{{ category }}">{{ msg }}</div>
+          {% endif %}
         {% endfor %}
       </div>
     {% endif %}

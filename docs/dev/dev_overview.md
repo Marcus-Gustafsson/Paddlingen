@@ -24,6 +24,7 @@ The project is developed on:
 
 Assume:
 
+- Python 3.13 is used for this project.
 - commands are run from the project root,
 - Docker Desktop is installed on Windows,
 - WSL integration is enabled for the distro you use.

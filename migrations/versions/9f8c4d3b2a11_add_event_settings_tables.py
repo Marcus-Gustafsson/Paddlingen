@@ -10,7 +10,6 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "9f8c4d3b2a11"
 down_revision = "63bd06093753"
 branch_labels = None
@@ -78,7 +77,9 @@ def downgrade() -> None:
     """Remove the event-setting tables and the booking event link."""
 
     with op.batch_alter_table("booking_orders", schema=None) as batch_op:
-        batch_op.drop_constraint("fk_booking_orders_event_id_events", type_="foreignkey")
+        batch_op.drop_constraint(
+            "fk_booking_orders_event_id_events", type_="foreignkey"
+        )
         batch_op.drop_index("ix_booking_orders_event_id")
         batch_op.drop_column("event_id")
 

@@ -115,6 +115,14 @@ Avoid:
 - Run the most relevant checks after code changes.
 - At minimum, run targeted tests for the area changed when practical.
 - If a change affects core behavior, run the broader test suite if possible.
+- After each meaningful implementation step, prefer running:
+  - `make all-basic`
+- Before a larger handoff, release step, or dependency-related change, prefer
+  running:
+  - `make all-advanced`
+- If `make all-basic` fails on formatting, run:
+  - `make format`
+  - then rerun `make all-basic`
 
 Current useful commands:
 
@@ -123,6 +131,8 @@ make test
 make lint
 make format-check
 make type-check
+make all-basic
+make all-advanced
 uv run -m pytest
 ```
 

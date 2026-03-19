@@ -53,7 +53,7 @@ def test_admin_crud_flow(client):
     booking = BookedCanoe.query.filter_by(participant_first_name="Alice").first()
     assert booking is not None
     assert BookingOrder.query.count() == 1
-    assert response.get_data(as_text=True).count(f'/admin/update/{booking.id}') == 1
+    assert response.get_data(as_text=True).count(f"/admin/update/{booking.id}") == 1
 
     # Update the booking
     response = client.post(

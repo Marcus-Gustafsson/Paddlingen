@@ -461,14 +461,7 @@ def get_forecast():
 
     try:
         # A short timeout prevents the API call from hanging indefinitely
-        try:
-            response = requests.get(
-                MET_API_URL, headers=headers, params=params, timeout=5
-            )
-        except TypeError:
-            # Test doubles may not accept the timeout keyword; retry without it
-            response = requests.get(MET_API_URL, headers=headers, params=params)
-
+        response = requests.get(MET_API_URL, headers=headers, params=params, timeout=5)
         response.raise_for_status()
         data = response.json()
 
@@ -619,9 +612,10 @@ def admin_delete(id):
     parent_order = booking.booking_order
     db.session.delete(booking)
     db.session.flush()
-    if parent_order and not BookedCanoe.query.filter_by(
-        booking_order_id=parent_order.id
-    ).count():
+    if (
+        parent_order
+        and not BookedCanoe.query.filter_by(booking_order_id=parent_order.id).count()
+    ):
         db.session.delete(parent_order)
     db.session.commit()
     return redirect(url_for("main.admin_dashboard"))

@@ -1,5 +1,5 @@
 # -------- Settings you can tweak --------
-PATH_TO_MAIN_PY := .               # your source folder (e.g., ".", "my_app", or "src/my_app")
+SECURITY_CODE_PATHS := app migrations config.py wsgi.py
 
 # Use bash for recipes
 SHELL := /usr/bin/env bash
@@ -34,14 +34,15 @@ type-check:
 	uv run -m mypy .
 
 # -------- Security: source code (Bandit) --------
-# Change $(PATH_TO_MAIN_PY) to your code path: ".", "my_app", or "src/my_app".
+# Scan only this project's Python code, not the whole repo root or .venv.
 security-code:
-	uv run -m bandit -q -r $(PATH_TO_MAIN_PY)
+	uv run python -m bandit -q -r $(SECURITY_CODE_PATHS)
 
 # -------- Security: dependencies (pip-audit) --------
-# Checks installed packages for known vulnerabilities (requires network).
+# Audit the project's locked dependencies, not unrelated tools in the whole venv.
 security-deps:
-	uv run -m pip-audit
+	uv export --frozen --all-groups --format requirements.txt --no-hashes --no-header --no-annotate --no-emit-project > /tmp/paddling-pip-audit-requirements.txt
+	uv run python -m pip_audit -r /tmp/paddling-pip-audit-requirements.txt
 
 # -------- Aggregate security --------
 security: security-code security-deps
@@ -61,7 +62,7 @@ help:
 	@echo "make format         # format with black"
 	@echo "make format-check   # verify formatting"
 	@echo "make type-check     # type check source code"
-	@echo "make security-code  # Bandit scan of source code"
+	@echo "make security-code  # Bandit scan of project Python code"
 	@echo "make security-deps  # pip-audit dependency vulnerabilities"
 	@echo "make security       # both security checks"
 	@echo "make all-basic      # install -> lint -> format-check -> type-check -> test"

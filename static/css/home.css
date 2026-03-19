@@ -18,6 +18,43 @@ body.home-page {
   color: #f4f1ea;
 }
 
+.home-toast-stack {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 220;
+  width: min(calc(100% - 2rem), 460px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transform: translateX(-50%);
+}
+
+.home-toast {
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  background: rgba(10, 28, 35, 0.88);
+  box-shadow: 0 18px 40px rgba(4, 12, 16, 0.24);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.home-toast-error {
+  border-color: rgba(220, 98, 109, 0.4);
+  color: #ffd9dd;
+}
+
+.home-toast-success {
+  border-color: rgba(113, 184, 144, 0.32);
+  color: #e2ffe8;
+}
+
+.home-toast-info {
+  border-color: rgba(113, 186, 211, 0.32);
+  color: #def6ff;
+}
+
 .home-page main {
   min-height: 100vh;
 }
@@ -338,6 +375,11 @@ body.home-page {
 }
 
 @media (max-width: 720px) {
+  .home-toast-stack {
+    top: 0.75rem;
+    width: min(calc(100% - 1rem), 460px);
+  }
+
   .home-page .hero-shell {
     padding: 0.75rem 0.8rem 1rem;
   }

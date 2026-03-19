@@ -134,7 +134,9 @@ class Event(db.Model):
     def __repr__(self) -> str:
         """Return a readable representation for debugging."""
 
-        return f"<Event id={self.id} event_date={self.event_date} active={self.is_active}>"
+        return (
+            f"<Event id={self.id} event_date={self.event_date} active={self.is_active}>"
+        )
 
 
 class EventWeatherCache(db.Model):

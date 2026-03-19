@@ -4,7 +4,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 
 ## Prerequisites
 
-- Python 3.10 or newer
+- Python 3.13
 - `git` for cloning the repository
 
 ## Development
@@ -23,7 +23,6 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    make install   # or: uv sync
    ```
 
-   Legacy `pip` requirement files are available under `pip_files/` for reference.
 
 3. **Configure environment variables**
 

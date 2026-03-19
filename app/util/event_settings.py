@@ -15,9 +15,7 @@ from flask import current_app
 from .db_models import BookingOrder, Event, db
 
 
-def format_swedish_date_display(
-    event_date: date, include_year: bool = False
-) -> str:
+def format_swedish_date_display(event_date: date, include_year: bool = False) -> str:
     """Return a simple Swedish date string for a Python ``date`` value.
 
     Args:
@@ -130,7 +128,9 @@ def get_active_event() -> Event | None:
         newest one is used and a warning is logged.
     """
 
-    active_events = Event.query.filter_by(is_active=True).order_by(Event.id.desc()).all()
+    active_events = (
+        Event.query.filter_by(is_active=True).order_by(Event.id.desc()).all()
+    )
     if not active_events:
         return None
 
@@ -241,9 +241,7 @@ def build_event_settings_with_fallback() -> dict[str, Any]:
         "faq_changes_and_questions_items": split_info_text_into_items(
             faq_changes_and_questions_text
         ),
-        "rules_on_the_water_items": split_info_text_into_items(
-            rules_on_the_water_text
-        ),
+        "rules_on_the_water_items": split_info_text_into_items(rules_on_the_water_text),
         "rules_after_paddling_items": split_info_text_into_items(
             rules_after_paddling_text
         ),
@@ -324,7 +322,9 @@ def get_weather_coordinates_with_fallback() -> tuple[float, float]:
         and active_event.weather_latitude is not None
         and active_event.weather_longitude is not None
     ):
-        return float(active_event.weather_latitude), float(active_event.weather_longitude)
+        return float(active_event.weather_latitude), float(
+            active_event.weather_longitude
+        )
 
     if active_event is None:
         current_app.logger.warning(
@@ -359,7 +359,9 @@ def get_event_year_with_fallback() -> int:
             "Active event is missing 'event_date'. Using config.py fallback value instead."
         )
 
-    return datetime.strptime(current_app.config["EVENT_DATE_ISO"], "%Y-%m-%d").date().year
+    return (
+        datetime.strptime(current_app.config["EVENT_DATE_ISO"], "%Y-%m-%d").date().year
+    )
 
 
 def create_or_update_active_event_from_config() -> tuple[Event, int]:

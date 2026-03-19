@@ -84,7 +84,7 @@ def test_forecast_api_returns_data(client, monkeypatch):
         }
     }
 
-    def fake_get(url, headers=None, params=None):
+    def fake_get(url, headers=None, params=None, timeout=None):
         class FakeResponse:
             def raise_for_status(self):
                 return None
@@ -142,7 +142,7 @@ def test_forecast_api_no_data(client, monkeypatch):
         "properties": {"timeseries": [{"time": "2024-07-01T09:00:00Z", "data": {}}]}
     }
 
-    def fake_get(url, headers=None, params=None):
+    def fake_get(url, headers=None, params=None, timeout=None):
         class FakeResponse:
             def raise_for_status(self):
                 return None

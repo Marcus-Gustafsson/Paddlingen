@@ -1,324 +1,462 @@
 /* =============================================================================
    File: static/css/admin.css
 
-   Modern tweaks & mobile‐friendly styles for your admin page.
-   Detailed comments explain how to adjust each part.
+   What it styles:
+   - the admin login page,
+   - the current admin dashboard,
+   - shared admin surfaces such as cards, tables, and forms.
+
+   Why it exists:
+   - to keep admin-specific styling separate from the public homepage styles,
+   - while still reusing the same overall background direction as the public UI.
    ============================================================================= */
 
 /* -----------------------------------------------------------------------------
-   1) PAGE CONTAINER
-   ----------------------------------------------------------------------------– */
-.admin-container {
-  max-width: 800px;       /* Limit width on large screens */
-  margin: 2rem auto;      /* Center-page with vertical spacing */
-  padding: 0 1rem;        /* Horizontal padding on both sides */
+   1) SHARED ADMIN PAGE BACKGROUND
+   -----------------------------------------------------------------------------
+   The login page and admin dashboard use the same layered background so moving
+   between the views feels like the same product, not a different site.
+   --------------------------------------------------------------------------- */
+.admin-login-page,
+.admin-page {
+  min-height: 100vh;
+  margin: 0;
+  color: #f5f2eb;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(4, 11, 16, 0.22) 0%,
+      rgba(5, 16, 24, 0.42) 46%,
+      rgba(6, 17, 25, 0.66) 100%
+    ),
+    linear-gradient(
+      120deg,
+      rgba(5, 23, 32, 0.34) 0%,
+      rgba(5, 23, 32, 0.12) 40%,
+      rgba(5, 23, 32, 0.4) 100%
+    ),
+    url("/static/images/nitten.png");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
 /* -----------------------------------------------------------------------------
-   2) HEADER: CENTERED TITLE + BACK LINK
-   ----------------------------------------------------------------------------– */
+   2) ADMIN LOGIN PAGE
+   --------------------------------------------------------------------------- */
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.login-card-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.login-card {
+  width: min(100%, 420px);
+  padding: 1.8rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 28, 35, 0.82);
+  box-shadow: 0 24px 64px rgba(4, 12, 16, 0.26);
+}
+
+.login-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.login-step-label {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(232, 243, 243, 0.72);
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.login-card-copy {
+  margin: 0;
+  color: rgba(241, 244, 241, 0.82);
+  line-height: 1.55;
+}
+
+.login-toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.login-toast {
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.login-toast-error {
+  background: rgba(142, 35, 44, 0.3);
+  border-color: rgba(220, 98, 109, 0.4);
+  color: #ffd9dd;
+}
+
+.login-toast-success {
+  background: rgba(41, 93, 63, 0.28);
+  border-color: rgba(113, 184, 144, 0.32);
+  color: #e2ffe8;
+}
+
+.login-toast-info {
+  background: rgba(35, 81, 99, 0.28);
+  border-color: rgba(113, 186, 211, 0.32);
+  color: #def6ff;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.login-field span {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(241, 244, 241, 0.84);
+}
+
+.login-field input {
+  width: 100%;
+  padding: 0.88rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(8, 20, 26, 0.68);
+  color: #f5f2eb;
+  font-size: 1rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.login-field input:focus {
+  outline: none;
+  border-color: rgba(244, 240, 226, 0.5);
+  box-shadow: 0 0 0 4px rgba(242, 235, 219, 0.08);
+  background: rgba(8, 20, 26, 0.78);
+}
+
+.login-submit {
+  margin-top: 0.35rem;
+  padding: 0.95rem 1.15rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f5f2eb, #dfe9e6);
+  color: #10252d;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.login-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(6, 18, 24, 0.22);
+}
+
+.login-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.95rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f2eb;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.login-home-link:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.login-submit:focus-visible,
+.login-home-link:focus-visible,
+.admin-header nav a:focus-visible,
+.admin-add button:focus-visible,
+.inline-form button:focus-visible,
+.admin-add input[type="text"]:focus-visible,
+.inline-form input[type="text"]:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+}
+
+/* -----------------------------------------------------------------------------
+   3) ADMIN DASHBOARD LAYOUT
+   --------------------------------------------------------------------------- */
+.admin-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .admin-header {
-  background: #333;       /* Dark background */
-  color: #fff;            /* White text */
-  padding: 2rem;          /* Inner space */
-  position: relative;     /* For centering the title absolutely */
+  width: min(100% - 2rem, 1080px);
+  margin: 1.5rem auto 0;
+  padding: 1.25rem 1.35rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 28, 35, 0.82);
+  box-shadow: 0 24px 64px rgba(4, 12, 16, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .admin-header h1 {
-  /* center horizontally */
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-
-  /* center vertically (50% of header height) */
-  top: 50%;
-
-  /* translateY to truly center */
-  transform: translate(-50%, -50%);
-
-  /* bump up the font size */
-  font-size: 2rem;
   margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
 }
-
-/* ============================================================================
-   1) MOVE “← Till hemsidan” TO TOP‐RIGHT
-   ——————————————————————————————————————————————————————————————— */
-.admin-header nav {
-  /* remove left positioning */
-  left: auto;
-
-  /* pin to the right edge */
-  right: 1rem;
-
-  /* keep it vertically centered in the header */
-  top: 50%;
-  transform: translateY(-50%);
-}
-
 
 .admin-header nav a {
-  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.78rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f2eb;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 600;
 }
 
-/* -----------------------------------------------------------------------------
-   3) “ADD NEW BOOKING” SECTION
-   ----------------------------------------------------------------------------– */
-.admin-add {
-  padding-top: 2rem;      /* Push the form down from the header */
-  margin-bottom: 2rem;
+.admin-container {
+  width: min(100% - 2rem, 1080px);
+  margin: 1.35rem auto 0;
+  padding: 0 0 2rem;
+  display: grid;
+  gap: 1.35rem;
 }
+
+.admin-add,
+.admin-list {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 28, 35, 0.82);
+  box-shadow: 0 24px 64px rgba(4, 12, 16, 0.18);
+  padding: 1.4rem;
+}
+
+.admin-add h2,
+.admin-list h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-weight: 600;
+  color: #f5f2eb;
+}
+
 .admin-add form {
   display: flex;
   align-items: center;
-  gap: 0.5rem;            /* Space between input & button */
+  gap: 0.75rem;
 }
 
-/* Text input styling */
+.admin-add input[type="text"],
+.inline-form input[type="text"] {
+  min-height: 46px;
+  padding: 0.78rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(8, 20, 26, 0.68);
+  color: #f5f2eb;
+  font-size: 0.98rem;
+}
+
 .admin-add input[type="text"] {
-  flex: 1;                        /* Fill remaining space */
-  padding: 0.5rem 0.75rem;        /* Comfortable click/tap area */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
+  flex: 1;
 }
 
-/* “Lägg till” button styling */
-.admin-add button {
-  padding: 0.6rem 1.2rem;
-  background: #28a745;            /* Bootstrap-like green */
-  color: #fff;
+.admin-add button,
+.inline-form button {
+  min-height: 46px;
+  padding: 0.78rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 16px;
+  font-size: 0.94rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
-}
-.admin-add button:hover {
-  background: #218838;            /* Darker on hover */
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
-/* -----------------------------------------------------------------------------
-   4) “ALL BOOKINGS” TABLE SECTION
-   Dark, semi-transparent background & rounded corners
-   ----------------------------------------------------------------------------– */
+.admin-add button,
+.edit-form button {
+  background: linear-gradient(135deg, #f5f2eb, #dfe9e6);
+  color: #10252d;
+}
+
+.delete-form button {
+  background: rgba(153, 38, 49, 0.9);
+  color: #fff2f3;
+}
+
+.admin-add button:hover,
+.inline-form button:hover,
+.admin-header nav a:hover {
+  transform: translateY(-1px);
+}
+
 .admin-list {
-  margin-bottom: 2rem;
-  background: rgba(0, 0, 0, 0.3); /* Light gray overlay */
-  padding: 1rem;
-  border-radius: 6px;
+  overflow: hidden;
 }
 
-.admin-list h2 {
-  /* center horizontally */
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  /* bump up the font size */
-  font-size: 2rem;
-  margin: 0;
-  color: white
-}
-
-/* Table fills the area and scrolls on mobile */
 .overview-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
 }
 
-/* Header row: slightly darker */
 .overview-table thead {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
+
 .overview-table th,
 .overview-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.95rem 1rem;
   text-align: left;
   font-size: 0.95rem;
+  color: #f5f2eb;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
 }
 
-/* 1) Target the 2nd column’s <th> (the “Namn” header) */
-.overview-table th:nth-child(2) {
-  /* Left-align the header text (default is center) */
-  text-align: left;
-
-  /* Add a bit of left padding so it sits above the input field */
-  /* Adjust the 1rem value up or down until it visually lines up */
-  padding-left: 5rem;
+.overview-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-/* make the entire 3rd column right‐aligned */
-.overview-table th:nth-child(3),
-.overview-table td:nth-child(3) {
-  text-align: right;
-  /* Add a bit of right padding so it sits above the Spara/Ta bort buttons */
-  /* Tweak the 1rem value until it visually aligns under the buttons */
-  padding-right: 1rem;
-}
-
-/* 2) Target the 3rd column’s <th> (the “Åtgärd” header) */
-.overview-table th:nth-child(3) {
-  /* Right-align the header text to match buttons below */
-  text-align: right;
-
-  /* Add a bit of right padding so it sits above the Spara/Ta bort buttons */
-  /* Tweak the 1rem value until it visually aligns under the buttons */
-  padding-right: 3rem;
-}
-
-/* ensure the inline‐forms in that 3rd column push their buttons right */
-.overview-table td:nth-child(3) .inline-form {
-  display: inline-flex;       /* keep inputs/buttons in one row */
-  justify-content: flex-end;  /* push them to the right edge */
-  gap: 0.5rem;                /* space between Spara & Ta bort */
-}
-
-/* Alternate row shading */
 .overview-table tbody tr:nth-child(even) {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(255, 255, 255, 0.025);
 }
 
-/* -----------------------------------------------------------------------------
-   5) INLINE FORMS (Edit + Delete buttons)
-   Center the buttons on the right side
-   ----------------------------------------------------------------------------– */
-/* Make each form a flex container */
+.name-cell,
+.actions-cell {
+  width: 1%;
+}
+
 .inline-form {
   display: flex;
   align-items: center;
-  gap: 0.5rem;         /* Space between input and buttons */
+  gap: 0.65rem;
 }
 
-/* Input in the table row (edit) */
-.inline-form input[type="text"] {
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  width: 250px;           /* tweak this to your longest names */
-  max-width: 100%;        /* never overflow its cell on narrow screens */
+.edit-form input[type="text"] {
+  width: min(100%, 280px);
 }
 
-/* All inline buttons share this base */
-.inline-form button {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
+.actions-cell .inline-form {
+  justify-content: flex-end;
 }
-
-/* “Spara” (edit) button */
-.inline-form button[type="submit"] {
-  background: #007bff;         /* Bootstrap-like blue */
-  color: #fff;
-}
-.inline-form button[type="submit"]:hover {
-  background: #0069d9;
-}
-
-/* “Ta bort” (delete) button inside onsubmit form */
-.inline-form[onsubmit] button {
-  background: #dc3545;         /* Bootstrap-like red */
-  color: #fff;
-}
-.inline-form[onsubmit] button:hover {
-  background: #c82333;
-}
-
-/* Align the action-cell’s flex items to the right */
-.overview-table td:nth-child(3) .inline-form {
-  justify-content: flex-end;   /* Push buttons to the right */
-}
-
-
-
 
 /* -----------------------------------------------------------------------------
-   6) MOBILE RESPONSIVENESS
-   Adjust form layouts & table scrolling for small screens
-   ----------------------------------------------------------------------------– */
-@media (max-width: 600px) {
-  /* Stack add‐form vertically */
-  .admin-add form {
+   4) RESPONSIVE ADJUSTMENTS
+   --------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .admin-header,
+  .admin-container {
+    width: min(100% - 1.5rem, 1080px);
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-login-page,
+  .admin-page {
+    background-attachment: scroll;
+  }
+
+  .login-shell {
+    padding: 1rem;
+  }
+
+  .login-card {
+    width: min(100%, 390px);
+    padding: 1.45rem;
+    border-radius: 24px;
+  }
+
+  .admin-header,
+  .admin-container {
+    width: min(100% - 1rem, 1080px);
+  }
+
+  .admin-header {
+    margin-top: 1rem;
+    padding: 1rem;
     flex-direction: column;
     align-items: stretch;
   }
-  .admin-add input,
-  .admin-add button {
-    width: 100%;
-    margin: 0 0 0.75rem 0;
+
+  .admin-add,
+  .admin-list {
+    padding: 1rem;
+    border-radius: 22px;
   }
 
-  /* Stack inline forms vertically */
+  .admin-add form,
   .inline-form {
     flex-direction: column;
     align-items: stretch;
   }
-  .inline-form input,
-  .inline-form button {
+
+  .admin-add button,
+  .inline-form button,
+  .edit-form input[type="text"] {
     width: 100%;
-    margin: 0 0 0.5rem 0;
   }
 
-  /* Make table horizontally scrollable */
   .overview-table {
     display: block;
-    width: 100%;
     overflow-x: auto;
-  }
-  .overview-table th,
-  .overview-table td {
-    white-space: nowrap;  /* Prevent text wrap */
+    white-space: nowrap;
   }
 
-    /* --------------------------------------------------------------
-     A) Shrink & reflow the main header title on mobile
-     -------------------------------------------------------------- */
-  .admin-header {
-    /* less vertical padding to fit smaller screens */
-    padding: 1rem;
+  .actions-cell .inline-form {
+    justify-content: stretch;
   }
-  .admin-header h1 {
-    position: static;          /* remove absolute so it sits in the flow */
-    transform: none;           /* clear previous translate */
-    font-size: 1.25rem;        /* smaller font for mobile */
-    text-align: center;        /* keep it centered */
-    margin: 0 0 0.5rem;        /* small bottom margin */
-  }
-  .admin-header nav {
-    /* push the back-link down to sit under the title */
-    position: static;
-    transform: none;
-    margin-bottom: 0.5rem;
-    text-align: right;         /* keep link on the right */
-  }
-
-  /* --------------------------------------------------------------
-     B) Shrink & reflow the “Alla bokningar” sub-heading
-     -------------------------------------------------------------- */
-  .admin-list h2 {
-    position: static;          /* remove absolute */
-    transform: none;           /* clear centering transform */
-    font-size: 1.25rem;        /* mobile-friendly size */
-    text-align: center;        /* center text */
-    margin: 0 0 1rem;          /* put space below the heading */
-    color: #fff;               /* keep white if you like */
-  }
-
-  /* --------------------------------------------------------------
-     C) Tweak the table header paddings on mobile
-     (if you find your “Namn”/“Åtgärd” headers still misaligned)
-     -------------------------------------------------------------- */
-  .overview-table th:nth-child(2) { /* “Namn” */
-    padding-left: 0.5rem;      /* less padding to fit narrow screens */
-  }
-  .overview-table th:nth-child(3) { /* “Åtgärd” */
-    padding-right: 0.5rem;
-  }
-
-
 }

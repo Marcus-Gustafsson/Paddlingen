@@ -10,7 +10,6 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "c4e9b0d4f1a2"
 down_revision = "9f8c4d3b2a11"
 branch_labels = None
@@ -40,7 +39,9 @@ def downgrade() -> None:
     with op.batch_alter_table("booking_orders", schema=None) as batch_op:
         batch_op.add_column(sa.Column("total_amount_ore", sa.Integer(), nullable=True))
 
-    op.execute("UPDATE booking_orders SET total_amount_ore = CAST(total_amount * 100 AS INTEGER)")
+    op.execute(
+        "UPDATE booking_orders SET total_amount_ore = CAST(total_amount * 100 AS INTEGER)"
+    )
 
     with op.batch_alter_table("booking_orders", schema=None) as batch_op:
         batch_op.alter_column(

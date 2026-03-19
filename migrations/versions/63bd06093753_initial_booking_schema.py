@@ -10,7 +10,6 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "63bd06093753"
 down_revision = None
 branch_labels = None
@@ -24,7 +23,10 @@ def upgrade() -> None:
         "booking_orders",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column(
-            "public_booking_reference", sa.String(length=40), nullable=False, unique=True
+            "public_booking_reference",
+            sa.String(length=40),
+            nullable=False,
+            unique=True,
         ),
         sa.Column("status", sa.String(length=30), nullable=False),
         sa.Column("canoe_count", sa.Integer(), nullable=False),
