@@ -12,7 +12,7 @@ Why it is separate:
   - Keeping them in their own file makes later feature-specific splits safer.
 */
 
-@import url("https://fonts.googleapis.com/css2?family=Poppins:…&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 * {
   margin: 0;

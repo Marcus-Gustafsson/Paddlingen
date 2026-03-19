@@ -950,7 +950,8 @@ The next best step is:
 
 1. Continue the temporary frontend refactor checklist in
    `docs/temp_refactor_checklist.md`, starting with the JavaScript split work.
-2. Split `static/js/script.js` one feature at a time, beginning with the
-   smallest and safest pieces before the booking modal logic.
+2. Continue splitting `static/js/script.js` one feature at a time, with the
+   next safe step being the gallery logic after booking progress, weather, and
+   modal extraction.
 3. After the JavaScript structure is cleaner, continue with the image-folder
    refactor and then the admin redesign work.

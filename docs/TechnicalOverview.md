@@ -1,6 +1,6 @@
 # Paddlingen Technical Overview
 
-Last updated: 2026-03-18
+Last updated: 2026-03-19
 
 ## Purpose
 
@@ -224,9 +224,23 @@ This is the current role of the main files and folders.
   Styles for the previous-years image ribbon and the full-screen gallery
   lightbox.
 
+- `static/js/booking_progress.js`
+  Small standalone module for fetching the confirmed booking count and
+  rendering the homepage booking progress bar.
+
+- `static/js/weather.js`
+  Small standalone module for the homepage weather widget. It either shows the
+  countdown until the forecast becomes available or fetches the forecast from
+  the backend.
+
+- `static/js/modals.js`
+  Small standalone module for the public FAQ, contact, and participant
+  overview popups.
+
 - `static/js/script.js`
-  Frontend behavior such as modals, booking form logic, progress bar updates,
-  image gallery behavior, and weather widget requests.
+  Remaining public-page JavaScript that still contains the gallery logic,
+  booking modal logic, and scroll animations until the rest of the JavaScript
+  refactor is finished.
 
 - `static/images/`
   Current storage location for event images grouped by year.
@@ -536,15 +550,19 @@ Why this matters:
 
 ### Frontend JavaScript
 
-`static/js/script.js` currently handles:
+The public JavaScript is currently split like this:
 
-- booking progress bar,
-- booking count API calls,
-- weather widget updates,
-- sidebar behavior,
-- scroll animations,
-- modal open/close logic,
-- gallery behavior,
+- `static/js/booking_progress.js`
+  Handles the booking count API calls and homepage booking progress bar.
+- `static/js/weather.js`
+  Handles the weather countdown and weather forecast updates.
+- `static/js/modals.js`
+  Handles the FAQ, contact, and participant overview popup behavior.
+- `static/js/script.js`
+  Still handles:
+  - scroll animations,
+  - gallery behavior,
+  - booking modal behavior.
 - booking form field generation and validation.
 
 Why this matters:
@@ -851,9 +869,11 @@ If you want to understand the codebase from the ground up, this is a good order:
 3. `app/util/db_models.py`
 4. `app/routes.py`
 5. `templates/index.html`
-6. `static/js/script.js`
-7. `tests/`
-8. `docs/Roadmap.md`
+6. `static/js/booking_progress.js`
+7. `static/js/weather.js`
+8. `static/js/script.js`
+9. `tests/`
+10. `docs/Roadmap.md`
 
 ## Summary
 

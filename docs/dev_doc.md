@@ -1,6 +1,6 @@
 # Paddlingen Development Document
 
-Last updated: 2026-03-18
+Last updated: 2026-03-19
 
 ## Purpose
 
@@ -204,6 +204,29 @@ Why:
 
 - This is the safest way to split the large stylesheet one file at a time
   without breaking the site.
+
+## Current JavaScript Refactor Note
+
+The public JavaScript refactor has started.
+
+Current state:
+
+- `static/js/booking_progress.js` now contains the homepage booking-progress
+  logic.
+- `static/js/weather.js` now contains the homepage weather-widget logic.
+- `static/js/modals.js` now contains the FAQ, contact, and participant
+  overview popup logic.
+- `static/js/script.js` still contains the remaining homepage logic for:
+  - gallery behavior,
+  - booking modal behavior,
+  - scroll animations.
+- The homepage currently loads `booking_progress.js`, `weather.js`,
+  `modals.js`, and then `script.js`.
+
+Why:
+
+- The public JavaScript is being split one isolated feature at a time so the
+  homepage can still be tested safely after each step.
 
 ### Test the current landing-page redesign locally
 

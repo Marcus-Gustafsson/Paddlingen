@@ -13,267 +13,7 @@
 const eventSettings = window.PADDLINGEN_EVENT_SETTINGS || {};
 const previousYearGalleryImages = window.PADDLINGEN_PREVIOUS_YEAR_IMAGES || [];
 
-const totalCanoesCurrentYear = eventSettings.available_canoes_total || 50;
-const currentYearEventDate = new Date(
-  eventSettings.datetime_local_iso || "2026-06-28T10:00:00"
-);
 const pricePerCanoeSek = eventSettings.price_per_canoe_sek || 1200;
-const weatherForecastDaysBeforeEvent =
-  eventSettings.weather_forecast_days_before_event || 7;
-
-/**
- * Update the progress bar and its helper text.
- *
- * Args:
- *   booked: Number of currently confirmed canoe bookings.
- *   total: Total number of canoes available.
- */
-function updateBookingProgress(booked, total) {
-  const percent = Math.min(100, Math.max(0, (booked / total) * 100));
-  const startHue = 120;
-  const endHue = 0;
-  const hue = startHue + (endHue - startHue) * (percent / 100);
-  const color = `hsl(${hue}, 100%, 50%)`;
-
-  const progressBar = document.getElementById("progressBar");
-  const progressText = document.getElementById("progressText");
-  const bookButton = document.getElementById("bookBtn");
-
-  if (!progressBar || !progressText || !bookButton) {
-    return;
-  }
-
-  progressBar.style.width = `${percent}%`;
-  progressBar.style.backgroundColor = color;
-  progressText.innerHTML = `
-    <span class="progress-text-main">${booked} / ${total} kanoter bokade</span>
-    <span class="progress-text-hint">Tryck för att se deltagare</span>
-  `;
-
-  if (booked >= total) {
-    bookButton.disabled = true;
-    bookButton.innerText = "Fullbokat";
-    bookButton.setAttribute("aria-disabled", "true");
-  } else {
-    bookButton.disabled = false;
-    bookButton.innerText = "Boka kanot";
-    bookButton.setAttribute("aria-disabled", "false");
-  }
-}
-
-/**
- * Fetch the current number of confirmed bookings from the backend.
- *
- * Returns:
- *   Promise<number>: Booking count, or 0 if the request fails.
- */
-async function fetchBookingCount() {
-  try {
-    const response = await fetch("/api/booking-count");
-    const data = await response.json();
-    return data.count;
-  } catch (error) {
-    console.error("Failed to fetch booking count:", error);
-    return 0;
-  }
-}
-
-/**
- * Refresh the booking progress using live database data.
- */
-async function updateProgressFromDatabase() {
-  const currentBookings = await fetchBookingCount();
-  updateBookingProgress(currentBookings, totalCanoesCurrentYear);
-}
-
-/**
- * Show a countdown or fetch the forecast when it becomes available.
- */
-function fetchWeatherIfAvailable(eventDate) {
-  const weatherStatus = document.getElementById("weatherStatus");
-  const widgetForecast = document.getElementById("widgetForecast");
-
-  if (!weatherStatus || !widgetForecast) {
-    return;
-  }
-
-  const today = new Date();
-  const millisecondsPerDay = 1000 * 60 * 60 * 24;
-  const diffMilliseconds = eventDate - today;
-  const diffDays = Math.ceil(diffMilliseconds / millisecondsPerDay);
-
-  if (diffDays > weatherForecastDaysBeforeEvent) {
-    const daysUntil = diffDays - weatherForecastDaysBeforeEvent;
-    weatherStatus.innerHTML = `
-      Prognos kommer vara tillgänglig om
-      <span id="daysUntil">${daysUntil}</span> dagar
-    `;
-    widgetForecast.style.display = "none";
-    return;
-  }
-
-  const formattedDate = eventDate.toISOString().split("T")[0];
-
-  fetch(`/api/forecast?date=${formattedDate}`)
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      updateWeather(eventDate, data);
-    })
-    .catch((error) => {
-      weatherStatus.innerText =
-        `Tillgänglig ${weatherForecastDaysBeforeEvent} dagar innan`;
-      console.error("Forecast error:", error);
-    });
-}
-
-/**
- * Write forecast data into the weather widget.
- *
- * Args:
- *   eventDate: Date of the event.
- *   forecast: Forecast data returned by the backend.
- */
-function updateWeather(eventDate, forecast) {
-  const eventDateText = document.getElementById("eventDateText");
-  const weatherStatus = document.getElementById("weatherStatus");
-  const widgetForecast = document.getElementById("widgetForecast");
-  const weatherIcon = document.getElementById("weatherIcon");
-  const temperature = document.getElementById("temperature");
-  const rainChance = document.getElementById("rainChance");
-
-  if (
-    !eventDateText ||
-    !weatherStatus ||
-    !widgetForecast ||
-    !weatherIcon ||
-    !temperature ||
-    !rainChance
-  ) {
-    return;
-  }
-
-  eventDateText.innerText = eventDate.toLocaleDateString("sv-SE", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
-  weatherStatus.style.display = "none";
-  widgetForecast.style.display = "block";
-  weatherIcon.innerText = forecast.icon;
-  temperature.innerText = forecast.temperature;
-  rainChance.innerText = forecast.rainChance;
-}
-
-/**
- * Open and close the shared modal components used on the homepage.
- */
-function registerBasicModalTriggers() {
-  const faqButton = document.getElementById("faqBtn");
-  const contactButton = document.getElementById("contactBtn");
-  const overviewTrigger = document.getElementById("overviewTrigger");
-  const faqModal = document.getElementById("faqModal");
-  const contactModal = document.getElementById("contactModal");
-  const overviewModal = document.getElementById("overviewModal");
-  const closeButtons = document.querySelectorAll(".modal-close");
-
-  function openModal(modalElement) {
-    if (modalElement) {
-      modalElement.style.display = "flex";
-    }
-  }
-
-  function closeModal(modalElement) {
-    if (modalElement) {
-      modalElement.style.display = "none";
-    }
-  }
-
-  if (faqButton && faqModal) {
-    faqButton.addEventListener("click", () => openModal(faqModal));
-  }
-
-  if (contactButton && contactModal) {
-    contactButton.addEventListener("click", () => openModal(contactModal));
-  }
-
-  if (overviewTrigger && overviewModal) {
-    overviewTrigger.addEventListener("click", () => openModal(overviewModal));
-    overviewTrigger.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openModal(overviewModal);
-      }
-    });
-  }
-
-  closeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      closeModal(button.closest(".modal"));
-    });
-  });
-
-  [faqModal, contactModal, overviewModal].forEach((modalElement) => {
-    if (!modalElement) {
-      return;
-    }
-
-    modalElement.addEventListener("click", (event) => {
-      if (event.target === modalElement) {
-        closeModal(modalElement);
-      }
-    });
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      [faqModal, contactModal, overviewModal].forEach(closeModal);
-    }
-  });
-
-  if (faqModal) {
-    const tabButtons = faqModal.querySelectorAll(".modal-tab");
-    const tabPanels = faqModal.querySelectorAll(".modal-body");
-
-    tabButtons.forEach((button) => {
-      const targetPanelId = button.getAttribute("data-tab");
-      const targetPanel = targetPanelId
-        ? faqModal.querySelector(`#${targetPanelId}`)
-        : null;
-
-      if (targetPanel) {
-        button.setAttribute("aria-controls", targetPanel.id);
-      }
-    });
-
-    tabButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const target = button.getAttribute("data-tab");
-
-        tabButtons.forEach((tabButton) => {
-          tabButton.classList.remove("modal-tab--active");
-          tabButton.setAttribute("aria-selected", "false");
-        });
-        tabPanels.forEach((panel) => {
-          panel.classList.add("modal-body--hidden");
-          panel.hidden = true;
-        });
-
-        button.classList.add("modal-tab--active");
-        button.setAttribute("aria-selected", "true");
-
-        const activePanel = faqModal.querySelector(`#${target}`);
-        if (activePanel) {
-          activePanel.classList.remove("modal-body--hidden");
-          activePanel.hidden = false;
-        }
-      });
-    });
-  }
-}
 
 /**
  * Register the previous-years gallery modal and its controls.
@@ -701,9 +441,21 @@ function registerScrollAnimations() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await updateProgressFromDatabase();
-  fetchWeatherIfAvailable(currentYearEventDate);
-  registerBasicModalTriggers();
+  const bookingProgressModule = window.PaddlingenBookingProgress;
+  if (bookingProgressModule) {
+    await bookingProgressModule.updateProgressFromDatabase();
+  }
+
+  const weatherModule = window.PaddlingenWeather;
+  if (weatherModule) {
+    await weatherModule.initializeWeatherWidget();
+  }
+
+  const modalModule = window.PaddlingenModals;
+  if (modalModule) {
+    modalModule.registerPublicModals();
+  }
+
   registerGalleryModal();
   initializeGalleryRibbonMarquee();
   registerBookingModal();

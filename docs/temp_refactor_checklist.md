@@ -22,7 +22,7 @@ in the normal project documentation.
 
 The main files that are now large enough to justify splitting are:
 
-- `static/js/script.js` at about 711 lines
+- `static/js/script.js` at about 633 lines
 - `docs/Roadmap.md` at about 955 lines
 - `docs/dev_doc.md` at about 589 lines
 - `docs/TechnicalOverview.md` at about 855 lines
@@ -70,7 +70,7 @@ Recommended decisions:
   page.
 - Keep `templates/` as the Flask-standard folder name.
 
-### Phase 2: Split the public CSS
+### Phase 2: Split the public CSS (DONE)
 
 - [x] Audit `static/css/styles.css` and group rules into major sections.
 - [x] Decide the new CSS file names.
@@ -114,11 +114,11 @@ How to test after this phase:
 - [x] Decide the new JavaScript file names.
 - [ ] Create one small entry file that initializes the page.
 - [ ] Move booking logic into its own file.
-- [ ] Move modal logic into its own file.
+- [x] Move modal logic into its own file.
 - [ ] Move gallery logic into its own file.
-- [ ] Move weather logic into its own file.
-- [ ] Move booking-progress logic into its own file.
-- [ ] Update `index.html` to load the scripts in a safe order.
+- [x] Move weather logic into its own file.
+- [x] Move booking-progress logic into its own file.
+- [x] Update `index.html` to load the scripts in a safe order.
 - [ ] Test all homepage interactions again.
 
 Suggested JavaScript structure:
@@ -171,6 +171,68 @@ Audit findings:
   4. `gallery.js`
   5. `booking.js`
   6. `main.js`
+
+Current progress note:
+
+- `static/js/booking_progress.js` now handles the homepage booking-progress
+  updates.
+- `static/js/weather.js` now handles the weather countdown and forecast widget.
+- `static/js/modals.js` now handles the FAQ, contact, and participant
+  overview popup behavior.
+- `static/js/script.js` now contains the remaining homepage logic:
+  - gallery behavior,
+  - booking modal behavior,
+  - scroll animations.
+
+### Architecture Note: Move Event Settings Into The Database
+
+- [ ] Add an `events` table so the current event can be edited from the admin
+      panel instead of from `config.py`.
+- [ ] Add an `is_active` flag or another clear way to mark which event is the
+      current live event.
+- [ ] Move editable values such as year, date, start time, location, location
+      URL, available canoes, rules text, FAQ text, contact email, and contact
+      phone into that table.
+- [ ] Decide whether weather cache fields should live in the `events` table or
+      in a separate weather-cache table.
+- [ ] Add an admin form for updating the active event settings safely.
+
+Recommended setup:
+
+- Use one `events` table with one row per event year or event instance.
+- Keep booking rows linked to the relevant event row instead of assuming there
+  is only one global event forever.
+- Store admin-editable content in normal columns so non-technical admins do
+  not need to change source code.
+- For weather, use cached data rather than calling the weather API on every
+  page load.
+
+Recommended event columns:
+
+- `id`
+- `year`
+- `event_date`
+- `start_time`
+- `location_name`
+- `location_url`
+- `available_canoes`
+- `rules_text`
+- `faq_text` or structured FAQ fields
+- `contact_email`
+- `contact_phone`
+- `is_active`
+- `weather_cached_summary`
+- `weather_cached_temperature`
+- `weather_cached_rain_mm`
+- `weather_cached_icon`
+- `weather_cached_at`
+
+Important note:
+
+- Once event settings move into the database, the weather widget can handle
+  past events more cleanly by showing either:
+  - a saved weather snapshot from event day,
+  - or a simple message that the event has already passed.
 
 ### Phase 4: Flatten previous-years images into one folder
 
