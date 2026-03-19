@@ -137,6 +137,23 @@ Important note:
 
 - Update this workflow later if the admin setup path changes.
 
+Current admin dashboard behavior:
+
+- `/login` opens the admin login page.
+- `/admin` opens a dashboard with two main actions:
+  - booking management,
+  - event management.
+- Booking management currently supports:
+  - adding one manual booking,
+  - choosing the manual payment method,
+  - editing participant names,
+  - deleting bookings.
+- Event management currently supports:
+  - selecting an existing event,
+  - editing the selected event,
+  - creating a new event by copying an existing one,
+  - activating the selected event.
+
 ## Current Known Workflow Gaps
 
 These areas are still planned work:

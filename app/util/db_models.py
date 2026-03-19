@@ -80,6 +80,30 @@ class BookingOrder(db.Model):
             f"status={self.status} canoe_count={self.canoe_count}>"
         )
 
+    @property
+    def is_manual_entry(self) -> bool:
+        """Return whether this booking was added manually by an admin."""
+
+        return self.payment_provider.startswith("admin_manual")
+
+    @property
+    def payment_method_label(self) -> str:
+        """Return a beginner-friendly label for the stored payment source."""
+
+        payment_labels = {
+            "simulated": "Simulerad betalning",
+            "dev_seed": "Testdata",
+            "admin_manual_cash": "Manuell: Kontant",
+            "admin_manual_bank_transfer": "Manuell: Banköverföring",
+            "admin_manual_swish": "Manuell: Swish",
+            "admin_manual_other": "Manuell: Annat",
+            "admin_manual": "Manuell",
+        }
+        return payment_labels.get(
+            self.payment_provider,
+            self.payment_provider.replace("_", " ").capitalize(),
+        )
+
 
 class Event(db.Model):
     """Store the editable configuration for one event date.

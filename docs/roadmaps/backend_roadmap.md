@@ -228,7 +228,30 @@ How to test:
 - Update event values in the admin page.
 - Confirm the homepage reflects the saved values.
 
-### Step 8. Add small cleanup jobs for stale event and weather data
+### Step 8. Add manual-booking metadata and an admin audit log
+
+What to do:
+
+- Record more detail for manual admin changes, including:
+  - which payment method was used for a manual booking,
+  - which admin user created or changed the record,
+  - what type of admin action happened.
+- Store this in a clear audit-friendly structure instead of relying only on
+  free-form notes.
+
+Why:
+
+- Once multiple admins use the dashboard, the project needs a reliable way to
+  answer who changed what and when.
+- This also makes manual bookings easier to review later.
+
+How to test:
+
+- Add a manual booking and confirm the chosen manual payment method is saved.
+- Update or delete a booking and confirm an audit row is written with the
+  acting admin user and timestamp.
+
+### Step 9. Add small cleanup jobs for stale event and weather data
 
 What to do:
 

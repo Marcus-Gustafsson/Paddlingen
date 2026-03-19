@@ -25,7 +25,7 @@ At a high level, the application does five things:
 1. Shows a public event website.
 2. Lets visitors start a canoe booking.
 3. Stores booking data in a database.
-4. Lets an admin log in and manage bookings.
+4. Lets an admin log in, manage bookings, and edit event settings.
 5. Shows photos and event-related information from current and previous years.
 
 ## The Main Building Blocks
@@ -128,8 +128,13 @@ Important note:
 2. Flask validates the username and password against the `User` table.
 3. Flask-Login stores the authenticated user in the session.
 4. The admin can visit `/admin`.
-5. The admin page loads current bookings.
-6. The admin can add, update, or delete bookings through form submissions.
+5. The dashboard shows two main actions:
+   - booking management,
+   - event management.
+6. The booking panel lets admins add manual bookings, edit names, and remove
+   bookings for the active event.
+7. The event panel lets admins select an event, update its settings, create a
+   new event by copying an existing one, and switch which event is active.
 
 ## Project Structure
 
@@ -209,14 +214,15 @@ This is the current role of the main files and folders.
   Admin login page.
 
 - `templates/admin.html`
-  Admin dashboard page.
+  Admin dashboard page. It now groups admin work into one booking panel and one
+  event panel.
 
 - `static/css/`
   Stylesheets for the public site and admin area.
 
 - `static/css/base.css`
-  Shared foundation styles such as the font import, reset rules, flash
-  messages, and small utility classes.
+  Shared foundation styles such as the font import, reset rules, and small
+  utility classes.
 
 - `static/css/home.css`
   Styles for the public homepage hero and layout, including the weather card,
@@ -243,6 +249,10 @@ This is the current role of the main files and folders.
   Small standalone module for the homepage weather widget. It either shows the
   countdown until the forecast becomes available or fetches the forecast from
   the backend.
+
+- `static/js/admin_dashboard.js`
+  Small standalone module for opening and closing the admin booking and event
+  panels.
 
 - `static/js/modals.js`
   Small standalone module for the public FAQ, contact, and participant

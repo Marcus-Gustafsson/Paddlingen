@@ -3,19 +3,16 @@
 
    What it styles:
    - the admin login page,
-   - the current admin dashboard,
-   - shared admin surfaces such as cards, tables, and forms.
+   - the admin dashboard,
+   - modal-like admin panels for bookings and events.
 
    Why it exists:
-   - to keep admin-specific styling separate from the public homepage styles,
-   - while still reusing the same overall background direction as the public UI.
+   - the admin area should feel visually connected to the public site,
+   - but still keep its own layout and controls easy to understand.
    ============================================================================= */
 
 /* -----------------------------------------------------------------------------
-   1) SHARED ADMIN PAGE BACKGROUND
-   -----------------------------------------------------------------------------
-   The login page and admin dashboard use the same layered background so moving
-   between the views feels like the same product, not a different site.
+   1) SHARED ADMIN BACKGROUND
    --------------------------------------------------------------------------- */
 .admin-login-page,
 .admin-page {
@@ -39,11 +36,10 @@
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
-  background-attachment: fixed;
 }
 
 /* -----------------------------------------------------------------------------
-   2) ADMIN LOGIN PAGE
+   2) LOGIN PAGE
    --------------------------------------------------------------------------- */
 .login-shell {
   min-height: 100vh;
@@ -65,7 +61,7 @@
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(10, 28, 35, 0.82);
-  box-shadow: 0 24px 64px rgba(4, 12, 16, 0.26);
+  box-shadow: 0 18px 44px rgba(4, 12, 16, 0.22);
 }
 
 .login-card-header {
@@ -75,7 +71,10 @@
   margin-bottom: 1rem;
 }
 
-.login-step-label {
+.login-step-label,
+.admin-step-label,
+.admin-panel-kicker,
+.admin-action-kicker {
   margin: 0;
   font-size: 0.76rem;
   letter-spacing: 0.22em;
@@ -83,72 +82,53 @@
   color: rgba(232, 243, 243, 0.72);
 }
 
-.login-card h1 {
+.login-card h1,
+.admin-header h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 2.7rem);
   font-weight: 600;
   letter-spacing: -0.04em;
 }
 
-.login-card-copy {
+.login-card h1 {
+  font-size: clamp(2rem, 4vw, 2.7rem);
+}
+
+.login-card-copy,
+.admin-panel-copy,
+.admin-subcard-copy {
   margin: 0;
   color: rgba(241, 244, 241, 0.82);
   line-height: 1.55;
 }
 
-.login-toast-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-bottom: 1rem;
-}
-
-.login-toast {
-  padding: 0.8rem 0.95rem;
-  border-radius: 16px;
-  border: 1px solid transparent;
-  font-size: 0.94rem;
-  line-height: 1.45;
-}
-
-.login-toast-error {
-  background: rgba(142, 35, 44, 0.3);
-  border-color: rgba(220, 98, 109, 0.4);
-  color: #ffd9dd;
-}
-
-.login-toast-success {
-  background: rgba(41, 93, 63, 0.28);
-  border-color: rgba(113, 184, 144, 0.32);
-  color: #e2ffe8;
-}
-
-.login-toast-info {
-  background: rgba(35, 81, 99, 0.28);
-  border-color: rgba(113, 186, 211, 0.32);
-  color: #def6ff;
-}
-
-.login-form {
+.login-form,
+.admin-form {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
 }
 
-.login-field {
+.login-field,
+.admin-form-field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.login-field span {
+.login-field span,
+.admin-form-field span {
   font-size: 0.92rem;
   font-weight: 600;
   color: rgba(241, 244, 241, 0.84);
 }
 
-.login-field input {
+.login-field input,
+.admin-form-field input,
+.admin-form-field select,
+.admin-form-field textarea,
+.inline-form input[type="text"] {
   width: 100%;
+  min-height: 46px;
   padding: 0.88rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
@@ -161,176 +141,86 @@
     background-color 0.2s ease;
 }
 
-.login-field input:focus {
+.admin-form-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.admin-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.login-field input:focus,
+.admin-form-field input:focus,
+.admin-form-field select:focus,
+.admin-form-field textarea:focus,
+.inline-form input[type="text"]:focus {
   outline: none;
   border-color: rgba(244, 240, 226, 0.5);
   box-shadow: 0 0 0 4px rgba(242, 235, 219, 0.08);
   background: rgba(8, 20, 26, 0.78);
 }
 
-.login-submit {
-  margin-top: 0.35rem;
-  padding: 0.95rem 1.15rem;
+.login-submit,
+.admin-primary-button,
+.admin-secondary-button,
+.admin-add button,
+.inline-form button,
+.admin-action-card,
+.login-home-link,
+.admin-header nav a {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #f5f2eb, #dfe9e6);
-  color: #10252d;
-  font-size: 1rem;
   font-weight: 700;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.login-submit:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 36px rgba(6, 18, 24, 0.22);
-}
-
-.login-home-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin-top: 0.95rem;
-  padding: 0.85rem 1.1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f2eb;
-  font-weight: 600;
   text-decoration: none;
   transition:
     transform 0.2s ease,
+    box-shadow 0.2s ease,
     background-color 0.2s ease,
     border-color 0.2s ease;
 }
 
-.login-home-link:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.24);
-}
-
-.login-submit:focus-visible,
-.login-home-link:focus-visible,
-.admin-header nav a:focus-visible,
-.admin-add button:focus-visible,
-.inline-form button:focus-visible,
-.admin-add input[type="text"]:focus-visible,
-.inline-form input[type="text"]:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.9);
-  outline-offset: 3px;
-}
-
-/* -----------------------------------------------------------------------------
-   3) ADMIN DASHBOARD LAYOUT
-   --------------------------------------------------------------------------- */
-.admin-page {
-  display: flex;
-  flex-direction: column;
-}
-
-.admin-header {
-  width: min(100% - 2rem, 1080px);
-  margin: 1.5rem auto 0;
-  padding: 1.25rem 1.35rem;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(10, 28, 35, 0.82);
-  box-shadow: 0 24px 64px rgba(4, 12, 16, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.admin-header h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-}
-
-.admin-header nav a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.78rem 1.05rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f2eb;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.admin-container {
-  width: min(100% - 2rem, 1080px);
-  margin: 1.35rem auto 0;
-  padding: 0 0 2rem;
-  display: grid;
-  gap: 1.35rem;
-}
-
-.admin-add,
-.admin-list {
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(10, 28, 35, 0.82);
-  box-shadow: 0 24px 64px rgba(4, 12, 16, 0.18);
-  padding: 1.4rem;
-}
-
-.admin-add h2,
-.admin-list h2 {
-  margin: 0 0 1rem;
-  font-size: clamp(1.25rem, 2vw, 1.7rem);
-  font-weight: 600;
-  color: #f5f2eb;
-}
-
-.admin-add form {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.admin-add input[type="text"],
-.inline-form input[type="text"] {
-  min-height: 46px;
-  padding: 0.78rem 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  background: rgba(8, 20, 26, 0.68);
-  color: #f5f2eb;
-  font-size: 0.98rem;
-}
-
-.admin-add input[type="text"] {
-  flex: 1;
-}
-
-.admin-add button,
-.inline-form button {
-  min-height: 46px;
-  padding: 0.78rem 1rem;
-  border: none;
-  border-radius: 16px;
-  font-size: 0.94rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.admin-add button,
+.login-submit,
+.admin-primary-button,
 .edit-form button {
   background: linear-gradient(135deg, #f5f2eb, #dfe9e6);
   color: #10252d;
+}
+
+.login-submit {
+  margin-top: 0.35rem;
+  padding: 0.95rem 1.15rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.login-home-link,
+.admin-header nav a,
+.admin-secondary-button,
+.admin-session-link,
+.admin-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.82rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f2eb;
+}
+
+.login-home-link {
+  width: 100%;
+  margin-top: 0.95rem;
+}
+
+.admin-session-link {
+  width: fit-content;
+  margin: 0.15rem auto 0;
+  padding: 0.55rem 0.9rem;
+  border-radius: 16px;
+  font-size: 0.88rem;
 }
 
 .delete-form button {
@@ -338,14 +228,416 @@
   color: #fff2f3;
 }
 
-.admin-add button:hover,
+.login-submit:hover,
+.login-home-link:hover,
+.admin-primary-button:hover,
+.admin-secondary-button:hover,
+.admin-session-link:hover,
+.admin-header nav a:hover,
 .inline-form button:hover,
-.admin-header nav a:hover {
+.admin-action-card:hover {
   transform: translateY(-1px);
 }
 
-.admin-list {
-  overflow: hidden;
+.login-submit:focus-visible,
+.login-home-link:focus-visible,
+.admin-header nav a:focus-visible,
+.admin-session-link:focus-visible,
+.admin-form-field input:focus-visible,
+.admin-form-field select:focus-visible,
+.admin-form-field textarea:focus-visible,
+.admin-primary-button:focus-visible,
+.admin-secondary-button:focus-visible,
+.admin-action-card:focus-visible,
+.inline-form button:focus-visible,
+.inline-form input[type="text"]:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+}
+
+/* -----------------------------------------------------------------------------
+   3) SHARED ADMIN TOASTS
+   --------------------------------------------------------------------------- */
+.login-toast-stack,
+.admin-toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.login-toast-stack {
+  margin-bottom: 1rem;
+}
+
+.admin-toast-stack {
+  width: min(100% - 2rem, 1080px);
+  margin: 1rem auto 0;
+}
+
+.login-toast,
+.admin-toast {
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.login-toast-error,
+.admin-toast-error {
+  background: rgba(142, 35, 44, 0.3);
+  border-color: rgba(220, 98, 109, 0.4);
+  color: #ffd9dd;
+}
+
+.login-toast-success,
+.admin-toast-success {
+  background: rgba(41, 93, 63, 0.28);
+  border-color: rgba(113, 184, 144, 0.32);
+  color: #e2ffe8;
+}
+
+.login-toast-info,
+.admin-toast-info {
+  background: rgba(35, 81, 99, 0.28);
+  border-color: rgba(113, 186, 211, 0.32);
+  color: #def6ff;
+}
+
+/* -----------------------------------------------------------------------------
+   4) DASHBOARD SHELL
+   --------------------------------------------------------------------------- */
+.admin-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-top-row,
+.admin-header,
+.admin-container {
+  width: min(100% - 2rem, 1080px);
+}
+
+.admin-top-row {
+  margin: 1rem auto 0;
+  display: grid;
+  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(170px, 210px);
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.admin-header {
+  width: 100%;
+  margin: 0;
+  padding: 1.35rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 28, 35, 0.82);
+  box-shadow: 0 18px 44px rgba(4, 12, 16, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.admin-session-card {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-session-card strong {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f5f2eb;
+  text-align: center;
+}
+
+.admin-header-copy {
+  flex: 1;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+  text-align: center;
+}
+
+.admin-header h1 {
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+}
+
+.admin-home-link {
+  width: 100%;
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.admin-home-link {
+  white-space: nowrap;
+}
+
+.admin-container {
+  margin: 1.35rem auto 0;
+  padding: 0 0 2rem;
+  display: grid;
+  gap: 1.35rem;
+}
+
+.admin-action-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-action-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-action-card,
+.admin-subcard {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 28, 35, 0.82);
+  box-shadow: 0 18px 44px rgba(4, 12, 16, 0.16);
+}
+
+.admin-summary-label {
+  color: rgba(241, 244, 241, 0.78);
+}
+
+.admin-summary-label {
+  margin: 0;
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.admin-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.admin-header-meta-item {
+  min-width: 150px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.2rem;
+}
+
+.admin-header-meta-item strong {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f5f2eb;
+}
+
+.admin-action-card {
+  padding: 1.4rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  background: rgba(10, 28, 35, 0.84);
+  color: #f5f2eb;
+}
+
+.admin-action-card strong {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.admin-action-card span:last-child {
+  line-height: 1.55;
+  color: rgba(241, 244, 241, 0.82);
+}
+
+/* -----------------------------------------------------------------------------
+   5) MODAL-LIKE ADMIN PANELS
+   --------------------------------------------------------------------------- */
+.admin-panel-overlay[hidden] {
+  display: none !important;
+}
+
+.admin-panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(4, 11, 16, 0.72);
+}
+
+.admin-panel {
+  position: relative;
+  width: min(100%, 1120px);
+  max-height: calc(100vh - 2.5rem);
+  overflow: auto;
+  padding: 1.5rem;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 28, 35, 0.92);
+  box-shadow: 0 20px 52px rgba(4, 12, 16, 0.26);
+}
+
+.admin-panel--wide {
+  width: min(100%, 1220px);
+}
+
+.admin-panel-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.8rem;
+  height: 2.8rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f2eb;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.admin-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-panel-header h2,
+.admin-subcard h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 600;
+}
+
+.admin-panel-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-panel-grid--bookings {
+  grid-template-columns: 1fr;
+}
+
+.admin-panel-grid--events {
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.admin-subcard {
+  padding: 1.25rem;
+}
+
+.admin-subcard--sidebar,
+.admin-subcard--form {
+  height: fit-content;
+}
+
+.admin-subcard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-divider {
+  height: 1px;
+  margin: 1.15rem 0;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-event-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f2eb;
+  text-decoration: none;
+}
+
+.admin-event-list-item--selected {
+  border-color: rgba(245, 242, 235, 0.34);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-event-list-date {
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(241, 244, 241, 0.72);
+}
+
+.admin-event-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.24rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(238, 229, 195, 0.16);
+  color: #fff3b6;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-activate-form {
+  margin-top: 0.9rem;
+}
+
+.admin-form--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-form-field--full,
+.admin-form-actions {
+  grid-column: 1 / -1;
+}
+
+.admin-form-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-primary-button,
+.admin-secondary-button,
+.admin-add button,
+.inline-form button {
+  min-height: 46px;
+  padding: 0.82rem 1.05rem;
+  cursor: pointer;
+}
+
+.admin-secondary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-table-shell {
+  overflow-x: auto;
 }
 
 .overview-table {
@@ -375,41 +667,47 @@
   background: rgba(255, 255, 255, 0.025);
 }
 
-.name-cell,
-.actions-cell {
-  width: 1%;
-}
-
 .inline-form {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
 
+.name-cell .inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
 .edit-form input[type="text"] {
-  width: min(100%, 280px);
+  width: 100%;
 }
 
 .actions-cell .inline-form {
   justify-content: flex-end;
 }
 
+.admin-empty-state {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(241, 244, 241, 0.82);
+  line-height: 1.55;
+}
+
 /* -----------------------------------------------------------------------------
-   4) RESPONSIVE ADJUSTMENTS
+   6) RESPONSIVE ADJUSTMENTS
    --------------------------------------------------------------------------- */
-@media (max-width: 900px) {
-  .admin-header,
-  .admin-container {
-    width: min(100% - 1.5rem, 1080px);
+@media (max-width: 1000px) {
+  .admin-panel-grid--bookings,
+  .admin-panel-grid--events {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 720px) {
-  .admin-login-page,
-  .admin-page {
-    background-attachment: scroll;
-  }
-
   .login-shell {
     padding: 1rem;
   }
@@ -421,32 +719,66 @@
   }
 
   .admin-header,
-  .admin-container {
+  .admin-top-row,
+  .admin-container,
+  .admin-toast-stack {
     width: min(100% - 1rem, 1080px);
   }
 
-  .admin-header {
+  .admin-top-row {
     margin-top: 1rem;
-    padding: 1rem;
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 
-  .admin-add,
-  .admin-list {
+  .admin-top-row {
+    gap: 0.75rem;
+  }
+
+  .admin-header {
+    padding: 1rem;
+  }
+
+  .admin-action-grid,
+  .admin-form--grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header-meta {
+    flex-direction: column;
+  }
+
+  .admin-inline-fields,
+  .name-cell .inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel-overlay {
+    padding: 0.5rem;
+  }
+
+  .admin-panel {
+    max-height: calc(100vh - 1rem);
     padding: 1rem;
     border-radius: 22px;
   }
 
-  .admin-add form,
-  .inline-form {
+  .admin-panel-close {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .inline-form,
+  .admin-form-actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .admin-add button,
-  .inline-form button,
-  .edit-form input[type="text"] {
+  .edit-form input[type="text"],
+  .actions-cell .inline-form,
+  .admin-primary-button,
+  .admin-secondary-button,
+  .inline-form button {
     width: 100%;
   }
 
@@ -454,9 +786,5 @@
     display: block;
     overflow-x: auto;
     white-space: nowrap;
-  }
-
-  .actions-cell .inline-form {
-    justify-content: stretch;
   }
 }

@@ -6,7 +6,8 @@ registered by the application factory.
 """
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 import requests
 from flask import (
     abort,
@@ -36,9 +37,17 @@ from .util.event_settings import (
     get_max_canoes_per_booking_with_fallback,
     get_price_per_canoe_with_fallback,
     get_weather_coordinates_with_fallback,
+    normalize_money_decimal,
 )
 from .util.helper_functions import get_previous_year_image_filenames
-from .util.db_models import BookedCanoe, BookingOrder, User, db, get_current_utc_time
+from .util.db_models import (
+    BookedCanoe,
+    BookingOrder,
+    Event,
+    User,
+    db,
+    get_current_utc_time,
+)
 from . import rate_limiter
 
 # -----------------------------------------------------------------------------
@@ -195,6 +204,175 @@ def get_event_coordinates() -> tuple[float, float]:
     """
 
     return get_weather_coordinates_with_fallback()
+
+
+def get_selected_admin_event(selected_event_id: int | None) -> Event | None:
+    """Return the event row selected in the admin dashboard.
+
+    Args:
+        selected_event_id: Event primary key from the query string.
+
+    Returns:
+        Event | None: The requested event when it exists, otherwise the active
+        event, and finally the newest event row as a safe fallback.
+    """
+
+    if selected_event_id is not None:
+        selected_event = db.session.get(Event, selected_event_id)
+        if selected_event is not None:
+            return selected_event
+
+    active_event = get_active_event()
+    if active_event is not None:
+        return active_event
+
+    return Event.query.order_by(Event.event_date.desc()).first()
+
+
+def build_admin_event_copy_defaults(source_event: Event | None) -> dict[str, str]:
+    """Return starter values for the admin 'create new event' form.
+
+    Args:
+        source_event: Event used as the template for the next event.
+
+    Returns:
+        dict[str, str]: Simple string values that work directly in form inputs.
+    """
+
+    if source_event is None:
+        return {
+            "new_event_date": "",
+            "title": "",
+            "subtitle": "",
+        }
+
+    return {
+        "new_event_date": "",
+        "title": source_event.title,
+        "subtitle": source_event.subtitle,
+    }
+
+
+def get_manual_payment_provider_from_form() -> str:
+    """Return the stored payment-provider value for a manual admin booking."""
+
+    payment_method = request.form.get("manual_payment_method", "cash").strip()
+    allowed_methods = {"cash", "bank_transfer", "swish", "stripe", "other"}
+    if payment_method not in allowed_methods:
+        payment_method = "other"
+    return f"admin_manual_{payment_method}"
+
+
+def get_admin_participant_name_parts() -> tuple[str, str]:
+    """Read and validate first and last name fields from the admin forms."""
+
+    first_name = request.form.get("participant_first_name", "").strip()
+    last_name = request.form.get("participant_last_name", "").strip()
+
+    if not first_name or not last_name:
+        raise ValueError("Både förnamn och efternamn måste fyllas i.")
+
+    return first_name, last_name
+
+
+def parse_admin_event_form_values() -> dict[str, object]:
+    """Validate and convert the admin event form into Python values.
+
+    Returns:
+        dict[str, object]: Clean values ready to assign to an :class:`Event`.
+
+    Raises:
+        ValueError: If one or more fields are missing or invalid.
+    """
+
+    title = request.form.get("title", "").strip()
+    subtitle = request.form.get("subtitle", "").strip()
+    starting_location_name = request.form.get("starting_location_name", "").strip()
+    starting_location_url = request.form.get("starting_location_url", "").strip()
+    end_location_name = request.form.get("end_location_name", "").strip()
+    end_location_url = request.form.get("end_location_url", "").strip()
+    contact_email = request.form.get("contact_email", "").strip()
+    contact_phone = request.form.get("contact_phone", "").strip() or None
+    faq_booking_text = request.form.get("faq_booking_text", "").strip()
+    faq_changes_and_questions_text = request.form.get(
+        "faq_changes_and_questions_text", ""
+    ).strip()
+    rules_on_the_water_text = request.form.get("rules_on_the_water_text", "").strip()
+    rules_after_paddling_text = request.form.get(
+        "rules_after_paddling_text", ""
+    ).strip()
+
+    if not all(
+        [
+            title,
+            subtitle,
+            starting_location_name,
+            starting_location_url,
+            end_location_name,
+            end_location_url,
+            contact_email,
+            faq_booking_text,
+            faq_changes_and_questions_text,
+            rules_on_the_water_text,
+            rules_after_paddling_text,
+        ]
+    ):
+        raise ValueError("Alla obligatoriska eventfält måste fyllas i.")
+
+    try:
+        event_date = datetime.strptime(
+            request.form.get("event_date", "").strip(), "%Y-%m-%d"
+        ).date()
+        start_time = datetime.strptime(
+            request.form.get("start_time", "").strip(), "%H:%M"
+        ).time()
+        available_canoes = int(request.form.get("available_canoes", "0"))
+        max_canoes_per_booking = int(request.form.get("max_canoes_per_booking", "0"))
+        weather_forecast_days_before_event = int(
+            request.form.get("weather_forecast_days_before_event", "0")
+        )
+        weather_latitude = float(request.form.get("weather_latitude", "0"))
+        weather_longitude = float(request.form.get("weather_longitude", "0"))
+        price_per_canoe_sek = normalize_money_decimal(
+            request.form.get("price_per_canoe_sek", "0")
+        )
+    except (TypeError, ValueError, InvalidOperation) as error:
+        raise ValueError("Kunde inte läsa in eventets formulärvärden.") from error
+
+    if available_canoes < 1:
+        raise ValueError("Antal kanoter måste vara minst 1.")
+
+    if max_canoes_per_booking < 1:
+        raise ValueError("Max antal kanoter per bokning måste vara minst 1.")
+
+    if weather_forecast_days_before_event < 0:
+        raise ValueError("Väderfönstret kan inte vara negativt.")
+
+    if price_per_canoe_sek <= Decimal("0.00"):
+        raise ValueError("Pris per kanot måste vara större än 0.")
+
+    return {
+        "title": title,
+        "subtitle": subtitle,
+        "event_date": event_date,
+        "start_time": start_time,
+        "starting_location_name": starting_location_name,
+        "starting_location_url": starting_location_url,
+        "end_location_name": end_location_name,
+        "end_location_url": end_location_url,
+        "available_canoes": available_canoes,
+        "price_per_canoe_sek": price_per_canoe_sek,
+        "max_canoes_per_booking": max_canoes_per_booking,
+        "weather_forecast_days_before_event": weather_forecast_days_before_event,
+        "weather_latitude": weather_latitude,
+        "weather_longitude": weather_longitude,
+        "faq_booking_text": faq_booking_text,
+        "faq_changes_and_questions_text": faq_changes_and_questions_text,
+        "rules_on_the_water_text": rules_on_the_water_text,
+        "rules_after_paddling_text": rules_after_paddling_text,
+        "contact_email": contact_email,
+        "contact_phone": contact_phone,
+    }
 
 
 @main_blueprint.route("/")
@@ -524,11 +702,31 @@ def get_forecast():
 def admin_dashboard():
     """Show the admin dashboard page.
 
-    • Queries confirmed `BookedCanoe` rows for the active event when available.
-    • Renders ``templates/admin.html``, passing the booking list.
+    The page is organized around two primary admin actions: booking management
+    and event management. The current active event is used for the summary
+    cards and for the booking list.
     """
     bookings = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
-    return render_template("admin.html", bookings=bookings)
+    events = Event.query.order_by(Event.event_date.desc()).all()
+    active_event = get_active_event()
+    selected_event = get_selected_admin_event(request.args.get("event_id", type=int))
+    confirmed_booking_count = len(bookings)
+    available_canoes_total = (
+        active_event.available_canoes if active_event is not None else 0
+    )
+    remaining_canoes = max(0, available_canoes_total - confirmed_booking_count)
+
+    return render_template(
+        "admin.html",
+        bookings=bookings,
+        events=events,
+        active_event=active_event,
+        selected_event=selected_event,
+        confirmed_booking_count=confirmed_booking_count,
+        remaining_canoes=remaining_canoes,
+        create_event_defaults=build_admin_event_copy_defaults(selected_event),
+        open_admin_panel=request.args.get("panel", ""),
+    )
 
 
 @main_blueprint.route("/admin/add", methods=["POST"])
@@ -536,45 +734,48 @@ def admin_dashboard():
 def admin_add():
     """Handle the "Add new booking" form submission.
 
-    • Reads ``name`` from form data, strips whitespace.
+    • Reads first and last name from form data.
     • If non-empty, creates a one-canoe manual booking order and canoe row.
     • Redirects back to the dashboard.
     """
-    name = request.form.get("name", "").strip()
-    if name:
-        active_event = get_active_event()
-        if active_event is None:
-            current_app.logger.warning(
-                "Admin created a manual booking without an active database event."
-            )
+    try:
+        first_name, last_name = get_admin_participant_name_parts()
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("main.admin_dashboard", panel="bookings"))
 
-        booking_order = BookingOrder(
-            event_id=active_event.id if active_event is not None else None,
-            public_booking_reference="TEMP",
-            status="paid",
-            canoe_count=1,
-            total_amount=get_price_per_canoe_with_fallback(),
-            currency="sek",
-            payment_provider="admin_manual",
-            paid_at=get_current_utc_time(),
-        )
-        db.session.add(booking_order)
-        db.session.flush()
-        booking_order.public_booking_reference = build_public_booking_reference(
-            booking_order.id
+    active_event = get_active_event()
+    if active_event is None:
+        current_app.logger.warning(
+            "Admin created a manual booking without an active database event."
         )
 
-        booked_canoe = BookedCanoe(
-            booking_order_id=booking_order.id,
-            participant_first_name="",
-            participant_last_name="",
-            status="confirmed",
-        )
-        booked_canoe.name = name
-        db.session.add(booked_canoe)
-        db.session.commit()
+    booking_order = BookingOrder(
+        event_id=active_event.id if active_event is not None else None,
+        public_booking_reference="TEMP",
+        status="paid",
+        canoe_count=1,
+        total_amount=get_price_per_canoe_with_fallback(),
+        currency="sek",
+        payment_provider=get_manual_payment_provider_from_form(),
+        paid_at=get_current_utc_time(),
+    )
+    db.session.add(booking_order)
+    db.session.flush()
+    booking_order.public_booking_reference = build_public_booking_reference(
+        booking_order.id
+    )
 
-    return redirect(url_for("main.admin_dashboard"))
+    booked_canoe = BookedCanoe(
+        booking_order_id=booking_order.id,
+        participant_first_name=first_name,
+        participant_last_name=last_name,
+        status="confirmed",
+    )
+    db.session.add(booked_canoe)
+    db.session.commit()
+
+    return redirect(url_for("main.admin_dashboard", panel="bookings"))
 
 
 @main_blueprint.route("/admin/update/<int:id>", methods=["POST"])
@@ -583,18 +784,24 @@ def admin_update(id):
     """Handle editing an existing booking's name.
 
     • Fetches the ``BookedCanoe`` record by ``id`` or 404s.
-    • Reads the new ``name``, strips whitespace.
-    • If non-empty, updates the record and commits.
+    • Reads the new first and last name values.
+    • If valid, updates the record and commits.
     • Redirects back to the dashboard.
     """
     booking = db.session.get(BookedCanoe, id)
     if booking is None:
         abort(404)
-    new_name = request.form.get("name", "").strip()
-    if new_name:
-        booking.name = new_name
-        db.session.commit()
-    return redirect(url_for("main.admin_dashboard"))
+
+    try:
+        first_name, last_name = get_admin_participant_name_parts()
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("main.admin_dashboard", panel="bookings"))
+
+    booking.participant_first_name = first_name
+    booking.participant_last_name = last_name
+    db.session.commit()
+    return redirect(url_for("main.admin_dashboard", panel="bookings"))
 
 
 @main_blueprint.route("/admin/delete/<int:id>", methods=["POST"])
@@ -618,7 +825,136 @@ def admin_delete(id):
     ):
         db.session.delete(parent_order)
     db.session.commit()
-    return redirect(url_for("main.admin_dashboard"))
+    return redirect(url_for("main.admin_dashboard", panel="bookings"))
+
+
+@main_blueprint.route("/admin/events/create", methods=["POST"])
+@login_required
+def admin_create_event():
+    """Create a new event by copying the currently selected event."""
+
+    source_event = get_selected_admin_event(
+        request.form.get("source_event_id", type=int)
+    )
+    if source_event is None:
+        flash("Det gick inte att hitta ett event att kopiera från.", "error")
+        return redirect(url_for("main.admin_dashboard", panel="events"))
+
+    new_event_date_raw = request.form.get("new_event_date", "").strip()
+    try:
+        new_event_date = datetime.strptime(new_event_date_raw, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Ange ett giltigt datum för det nya eventet.", "error")
+        return redirect(
+            url_for(
+                "main.admin_dashboard",
+                panel="events",
+                event_id=source_event.id,
+            )
+        )
+
+    if Event.query.filter_by(event_date=new_event_date).first() is not None:
+        flash("Det finns redan ett event med det datumet.", "error")
+        return redirect(
+            url_for(
+                "main.admin_dashboard",
+                panel="events",
+                event_id=source_event.id,
+            )
+        )
+
+    created_event = Event(
+        title=request.form.get("new_title", "").strip() or source_event.title,
+        subtitle=request.form.get("new_subtitle", "").strip() or source_event.subtitle,
+        event_date=new_event_date,
+        start_time=source_event.start_time,
+        starting_location_name=source_event.starting_location_name,
+        starting_location_url=source_event.starting_location_url,
+        end_location_name=source_event.end_location_name,
+        end_location_url=source_event.end_location_url,
+        available_canoes=source_event.available_canoes,
+        price_per_canoe_sek=source_event.price_per_canoe_sek,
+        max_canoes_per_booking=source_event.max_canoes_per_booking,
+        weather_forecast_days_before_event=source_event.weather_forecast_days_before_event,
+        weather_latitude=source_event.weather_latitude,
+        weather_longitude=source_event.weather_longitude,
+        faq_booking_text=source_event.faq_booking_text,
+        faq_changes_and_questions_text=source_event.faq_changes_and_questions_text,
+        rules_on_the_water_text=source_event.rules_on_the_water_text,
+        rules_after_paddling_text=source_event.rules_after_paddling_text,
+        contact_email=source_event.contact_email,
+        contact_phone=source_event.contact_phone,
+        is_active=False,
+    )
+    db.session.add(created_event)
+    db.session.commit()
+
+    flash("Nytt event skapades från den valda mallen.", "success")
+    return redirect(
+        url_for(
+            "main.admin_dashboard",
+            panel="events",
+            event_id=created_event.id,
+        )
+    )
+
+
+@main_blueprint.route("/admin/events/update/<int:event_id>", methods=["POST"])
+@login_required
+def admin_update_event(event_id: int):
+    """Update one existing event from the admin dashboard form."""
+
+    event = db.session.get(Event, event_id)
+    if event is None:
+        abort(404)
+
+    try:
+        cleaned_values = parse_admin_event_form_values()
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(
+            url_for("main.admin_dashboard", panel="events", event_id=event.id)
+        )
+
+    event_with_same_date = Event.query.filter(
+        Event.event_date == cleaned_values["event_date"],
+        Event.id != event.id,
+    ).first()
+    if event_with_same_date is not None:
+        flash("Det finns redan ett event med det datumet.", "error")
+        return redirect(
+            url_for("main.admin_dashboard", panel="events", event_id=event.id)
+        )
+
+    for field_name, field_value in cleaned_values.items():
+        setattr(event, field_name, field_value)
+
+    db.session.commit()
+    flash("Eventet uppdaterades.", "success")
+    return redirect(url_for("main.admin_dashboard", panel="events", event_id=event.id))
+
+
+@main_blueprint.route("/admin/events/activate/<int:event_id>", methods=["POST"])
+@login_required
+def admin_activate_event(event_id: int):
+    """Mark one event as the active event shown on the public site."""
+
+    event_to_activate = db.session.get(Event, event_id)
+    if event_to_activate is None:
+        abort(404)
+
+    for existing_event in Event.query.all():
+        existing_event.is_active = existing_event.id == event_to_activate.id
+
+    db.session.commit()
+    flash("Det valda eventet är nu aktivt på hemsidan.", "success")
+    return redirect(
+        url_for(
+            "main.admin_dashboard",
+            panel="events",
+            event_id=event_to_activate.id,
+        )
+    )
 
 
 @main_blueprint.app_errorhandler(429)

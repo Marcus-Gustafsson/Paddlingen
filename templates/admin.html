@@ -2,127 +2,469 @@
   File: templates/admin.html
 
   What it does:
-    - Provides a simple, password‐protected admin interface.
-    - Lets you Add, Edit (Save) or Delete confirmed canoe bookings.
+    - Renders the protected admin dashboard.
+    - Groups admin actions into booking management and event management.
 
-  Why it’s here:
-    - So site administrators can manage bookings without touching the database manually
-    - No server downtime required
+  Why it is here:
+    - Non-technical admins should be able to understand the page without
+      knowing the underlying database structure.
 -->
 <!DOCTYPE html>
-<html lang="sv"> <!-- "sv" tells browsers & assistive tech this page is Swedish -->
+<html lang="sv">
 <head>
-  <!-- 1. Character encoding so special characters (ÅÄÖ) display correctly -->
   <meta charset="UTF-8">
-
-  <!-- 2. Responsive viewport: ensures the page scales on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- 3. Page title shown in browser tab -->
   <title>Admin – Paddlingen</title>
-
-  <!-- 4. Shared base CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-
-  <!-- 5. Admin‐specific CSS (overrides / extra layout rules) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
-<body class="admin-page">
+<body class="admin-page" data-open-admin-panel="{{ open_admin_panel }}">
+  <div class="admin-top-row" aria-label="Adminöversikt">
+    <div class="admin-session-card">
+      <span class="admin-summary-label">Inloggad som</span>
+      <strong>{{ current_user.username }}</strong>
+      <a class="admin-session-link" href="{{ url_for('main.logout') }}">Logga ut</a>
+    </div>
 
-  <!-- ===== HEADER ===== -->
-  <header class="admin-header">
-    <!-- Main heading for the admin dashboard -->
-    <h1>Admin Dashboard</h1>
-    <!-- Navigation link back to the public homepage -->
-    <nav>
-      <a href="{{ url_for('main.index') }}">← Till hemsidan</a>
-    </nav>
-  </header>
+    <header class="admin-header">
+      <div class="admin-header-copy">
+        <p class="admin-step-label">Administrationspanel</p>
+        <h1>Hantera bokningar och event</h1>
+        <div class="admin-header-meta" aria-label="Översikt">
+          <div class="admin-header-meta-item">
+            <span class="admin-summary-label">Aktivt event</span>
+            <strong>
+              {% if active_event %}
+                {{ active_event.event_date.strftime('%Y-%m-%d') }}
+              {% else %}
+                Inget aktivt event
+              {% endif %}
+            </strong>
+          </div>
+          <div class="admin-header-meta-item">
+            <span class="admin-summary-label">Bekräftade kanoter</span>
+            <strong>{{ confirmed_booking_count }}</strong>
+          </div>
+          <div class="admin-header-meta-item">
+            <span class="admin-summary-label">Lediga kanoter</span>
+            <strong>{{ remaining_canoes }}</strong>
+          </div>
+        </div>
+      </div>
+    </header>
 
-  <!-- ===== MAIN CONTENT AREA ===== -->
+    <a class="admin-home-link" href="{{ url_for('main.index') }}">← Till hemsidan</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="admin-toast-stack" aria-live="polite">
+        {% for category, msg in messages %}
+          <div class="admin-toast admin-toast-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
   <main class="admin-container">
-    
-    <!-- ===== SECTION: Add New Booking ===== -->
-    <section class="admin-add">
-      <!-- Section title -->
-      <h2>Lägg till ny bokning (för- och efternamn)</h2>
-      <!-- 
-        Form to create a new booking.
-        - action="{{ url_for('main.admin_add') }}" points to the /admin/add route
-        - method="post" because we’re sending data to the server
-      -->
-      <form action="{{ url_for('main.admin_add') }}" method="post">
-        <!-- Text input for the new person's name -->
-        <input 
-          type="hidden" 
-          name="csrf_token" 
-          value="{{ csrf_token() }}"
-        >
-        <input
-          type="text"
-          name="name"
-          placeholder="Namn"
-          required
-        >
-        <!-- Submit button to send the form -->
-        <button type="submit">Lägg till</button>
-      </form>
-    </section>
+    <section class="admin-action-grid" aria-label="Huvudåtgärder">
+      <button
+        class="admin-action-card"
+        type="button"
+        data-open-admin-panel="bookingsPanel"
+      >
+        <strong>Hantera bokningar</strong>
+        <span>
+          Lägg till manuella bokningar, justera namn och ta bort felaktiga
+          poster från ett och samma ställe.
+        </span>
+      </button>
 
-    <!-- ===== SECTION: List & Manage Existing Bookings ===== -->
-    <section class="admin-list">
-      <!-- Section title -->
-      <h2>Alla bokningar</h2>
-      <!-- Table of bookings, with inline forms for Edit and Delete -->
-      <table class="overview-table">
-        <thead>
-          <tr>
-            <th>ID</th>    <!-- Booking ID (primary key) -->
-            <th>Namn</th>  <!-- Person’s name -->
-            <th>Åtgärd</th> <!-- Actions column (Edit / Delete) -->
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Loop over all booking records passed in from main.py -->
-          {% for b in bookings %}
-          <tr>
-            <td>{{ b.id }}</td>
-
-            <!-- Keep the editable input and the save button in the same form so
-                 the updated name is actually submitted. -->
-            <td class="name-cell">
-              <form action="{{ url_for('main.admin_update', id=b.id) }}"
-                    method="post"
-                    class="inline-form edit-form">
-                      <input 
-                        type="hidden" 
-                        name="csrf_token" 
-                        value="{{ csrf_token() }}"
-                      >
-                <input type="text" name="name" value="{{ b.name }}" required>
-                <button type="submit">Spara</button>
-              </form>
-            </td>
-            <td class="actions-cell">
-              <!-- Delete button -->
-              <form action="{{ url_for('main.admin_delete', id=b.id) }}"
-                    method="post"
-                    onsubmit="return confirm('Ta bort bokning #{{ b.id }}?');"
-                    class="inline-form delete-form">
-                      <input 
-                        type="hidden" 
-                        name="csrf_token" 
-                        value="{{ csrf_token() }}"
-                      >
-                <button type="submit">Ta bort</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <button
+        class="admin-action-card"
+        type="button"
+        data-open-admin-panel="eventsPanel"
+      >
+        <strong>Hantera event</strong>
+        <span>
+          Redigera det aktiva eventet, skapa nästa års event och välj vilket
+          event som ska visas på hemsidan.
+        </span>
+      </button>
     </section>
   </main>
 
+  <div id="bookingsPanel" class="admin-panel-overlay" hidden>
+    <section
+      class="admin-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bookingsPanelTitle"
+    >
+      <button
+        class="admin-panel-close"
+        type="button"
+        data-close-admin-panel
+        aria-label="Stäng bokningspanelen"
+      >
+        ×
+      </button>
+
+      <div class="admin-panel-header">
+        <p class="admin-panel-kicker">Hantera bokningar</p>
+        <h2 id="bookingsPanelTitle">Manuella bokningar och deltagarlista</h2>
+        <p class="admin-panel-copy">
+          Använd detta läge när någon ska läggas till manuellt eller när ett
+          deltagarnamn behöver rättas.
+        </p>
+      </div>
+
+      <div class="admin-panel-grid admin-panel-grid--bookings">
+        <section class="admin-subcard">
+          <h3>Lägg till manuell bokning</h3>
+          <p class="admin-subcard-copy">
+            Lägg till en deltagare här om betalningen kom in utanför webbens
+            vanliga bokningsflöde.
+          </p>
+
+          <form action="{{ url_for('main.admin_add') }}" method="post" class="admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="admin-inline-fields">
+              <label class="admin-form-field">
+                <span>Förnamn</span>
+                <input
+                  type="text"
+                  name="participant_first_name"
+                  placeholder="Förnamn"
+                  required
+                >
+              </label>
+
+              <label class="admin-form-field">
+                <span>Efternamn</span>
+                <input
+                  type="text"
+                  name="participant_last_name"
+                  placeholder="Efternamn"
+                  required
+                >
+              </label>
+            </div>
+
+            <label class="admin-form-field">
+              <span>Betalsätt</span>
+              <select name="manual_payment_method">
+                <option value="cash">Kontant</option>
+                <option value="bank_transfer">Banköverföring</option>
+                <option value="swish">Swish</option>
+                <option value="stripe">Stripe</option>
+                <option value="other">Annat</option>
+              </select>
+            </label>
+
+            <button type="submit" class="admin-primary-button">Lägg till bokning</button>
+          </form>
+        </section>
+
+        <section class="admin-subcard">
+          <div class="admin-subcard-header">
+            <div>
+              <h3>Nuvarande bokningar</h3>
+              <p class="admin-subcard-copy">
+                Tabellen visar bokningar för det aktiva eventet. Ändra namnet i
+                raden och tryck på spara för att uppdatera.
+              </p>
+            </div>
+          </div>
+
+          {% if bookings %}
+            <div class="admin-table-shell">
+              <table class="overview-table admin-bookings-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Deltagare</th>
+                    <th>Betalsätt</th>
+                    <th>Åtgärd</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for booking in bookings %}
+                    <tr>
+                      <td>{{ booking.id }}</td>
+                      <td class="name-cell">
+                        <form
+                          action="{{ url_for('main.admin_update', id=booking.id) }}"
+                          method="post"
+                          class="inline-form edit-form"
+                        >
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <input
+                            type="text"
+                            name="participant_first_name"
+                            value="{{ booking.participant_first_name }}"
+                            placeholder="Förnamn"
+                            required
+                          >
+                          <input
+                            type="text"
+                            name="participant_last_name"
+                            value="{{ booking.participant_last_name }}"
+                            placeholder="Efternamn"
+                            required
+                          >
+                          <button type="submit">Spara</button>
+                        </form>
+                      </td>
+                      <td>{{ booking.booking_order.payment_method_label }}</td>
+                      <td class="actions-cell">
+                        <form
+                          action="{{ url_for('main.admin_delete', id=booking.id) }}"
+                          method="post"
+                          onsubmit="return confirm('Ta bort bokning #{{ booking.id }}?');"
+                          class="inline-form delete-form"
+                        >
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit">Ta bort</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="admin-empty-state">
+              Det finns inga bekräftade bokningar för det aktiva eventet ännu.
+            </p>
+          {% endif %}
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div id="eventsPanel" class="admin-panel-overlay" hidden>
+    <section
+      class="admin-panel admin-panel--wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="eventsPanelTitle"
+    >
+      <button
+        class="admin-panel-close"
+        type="button"
+        data-close-admin-panel
+        aria-label="Stäng eventpanelen"
+      >
+        ×
+      </button>
+
+      <div class="admin-panel-header">
+        <p class="admin-panel-kicker">Hantera event</p>
+        <h2 id="eventsPanelTitle">Eventinställningar och framtida år</h2>
+        <p class="admin-panel-copy">
+          Välj ett event till vänster, redigera innehållet och spara. Om du
+          vill lägga upp nästa år kan du först skapa en kopia och sedan justera
+          detaljerna.
+        </p>
+      </div>
+
+      <div class="admin-panel-grid admin-panel-grid--events">
+        <aside class="admin-subcard admin-subcard--sidebar">
+          <h3>Välj event</h3>
+          <div class="admin-event-list">
+            {% for event in events %}
+              <a
+                href="{{ url_for('main.admin_dashboard', panel='events', event_id=event.id) }}"
+                class="admin-event-list-item{% if selected_event and event.id == selected_event.id %} admin-event-list-item--selected{% endif %}"
+              >
+                <span class="admin-event-list-date">{{ event.event_date.strftime('%Y-%m-%d') }}</span>
+                <strong>{{ event.title }}</strong>
+                {% if event.is_active %}
+                  <span class="admin-event-badge">Aktivt</span>
+                {% endif %}
+              </a>
+            {% endfor %}
+          </div>
+
+          {% if selected_event %}
+            <form
+              action="{{ url_for('main.admin_activate_event', event_id=selected_event.id) }}"
+              method="post"
+              class="admin-activate-form"
+            >
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="admin-secondary-button" {% if selected_event.is_active %}disabled{% endif %}>
+                {% if selected_event.is_active %}
+                  Eventet är redan aktivt
+                {% else %}
+                  Gör valt event aktivt
+                {% endif %}
+              </button>
+            </form>
+          {% endif %}
+
+          <div class="admin-divider"></div>
+
+          <h3>Skapa nytt event</h3>
+          <p class="admin-subcard-copy">
+            Skapa nästa års event genom att kopiera det valda eventet. Därefter
+            kan du justera alla fält i formuläret till höger.
+          </p>
+
+          <form action="{{ url_for('main.admin_create_event') }}" method="post" class="admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="source_event_id" value="{{ selected_event.id if selected_event else '' }}">
+
+            <label class="admin-form-field">
+              <span>Nytt datum</span>
+              <input
+                type="date"
+                name="new_event_date"
+                value="{{ create_event_defaults.new_event_date }}"
+                required
+              >
+            </label>
+
+            <label class="admin-form-field">
+              <span>Titel för det nya eventet</span>
+              <input type="text" name="new_title" value="{{ create_event_defaults.title }}">
+            </label>
+
+            <label class="admin-form-field">
+              <span>Undertitel för det nya eventet</span>
+              <input type="text" name="new_subtitle" value="{{ create_event_defaults.subtitle }}">
+            </label>
+
+            <button type="submit" class="admin-primary-button">Skapa ny kopia</button>
+          </form>
+        </aside>
+
+        <section class="admin-subcard admin-subcard--form">
+          {% if selected_event %}
+            <h3>Redigera valt event</h3>
+            <form
+              action="{{ url_for('main.admin_update_event', event_id=selected_event.id) }}"
+              method="post"
+              class="admin-form admin-form--grid"
+            >
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+              <label class="admin-form-field">
+                <span>Titel</span>
+                <input type="text" name="title" value="{{ selected_event.title }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Undertitel</span>
+                <input type="text" name="subtitle" value="{{ selected_event.subtitle }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Eventdatum</span>
+                <input type="date" name="event_date" value="{{ selected_event.event_date.strftime('%Y-%m-%d') }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Starttid</span>
+                <input type="time" name="start_time" value="{{ selected_event.start_time.strftime('%H:%M') }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Startplats</span>
+                <input type="text" name="starting_location_name" value="{{ selected_event.starting_location_name }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Länk till startplats</span>
+                <input type="url" name="starting_location_url" value="{{ selected_event.starting_location_url }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Slutplats</span>
+                <input type="text" name="end_location_name" value="{{ selected_event.end_location_name }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Länk till slutplats</span>
+                <input type="url" name="end_location_url" value="{{ selected_event.end_location_url }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Antal kanoter</span>
+                <input type="number" min="1" name="available_canoes" value="{{ selected_event.available_canoes }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Pris per kanot (SEK)</span>
+                <input type="number" step="0.01" min="0.01" name="price_per_canoe_sek" value="{{ selected_event.price_per_canoe_sek }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Max antal per bokning</span>
+                <input type="number" min="1" name="max_canoes_per_booking" value="{{ selected_event.max_canoes_per_booking }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Väderfönster i dagar</span>
+                <input type="number" min="0" name="weather_forecast_days_before_event" value="{{ selected_event.weather_forecast_days_before_event }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Väderlatitud</span>
+                <input type="number" step="0.000001" name="weather_latitude" value="{{ selected_event.weather_latitude }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Väderlongitud</span>
+                <input type="number" step="0.000001" name="weather_longitude" value="{{ selected_event.weather_longitude }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Kontaktmejl</span>
+                <input type="email" name="contact_email" value="{{ selected_event.contact_email }}" required>
+              </label>
+
+              <label class="admin-form-field">
+                <span>Kontakttelefon</span>
+                <input type="text" name="contact_phone" value="{{ selected_event.contact_phone or '' }}">
+              </label>
+
+              <label class="admin-form-field admin-form-field--full">
+                <span>FAQ: Bokning</span>
+                <textarea name="faq_booking_text" rows="5" required>{{ selected_event.faq_booking_text }}</textarea>
+              </label>
+
+              <label class="admin-form-field admin-form-field--full">
+                <span>FAQ: Ändringar och frågor</span>
+                <textarea name="faq_changes_and_questions_text" rows="5" required>{{ selected_event.faq_changes_and_questions_text }}</textarea>
+              </label>
+
+              <label class="admin-form-field admin-form-field--full">
+                <span>Regler: På vattnet</span>
+                <textarea name="rules_on_the_water_text" rows="5" required>{{ selected_event.rules_on_the_water_text }}</textarea>
+              </label>
+
+              <label class="admin-form-field admin-form-field--full">
+                <span>Regler: Efter paddlingen</span>
+                <textarea name="rules_after_paddling_text" rows="5" required>{{ selected_event.rules_after_paddling_text }}</textarea>
+              </label>
+
+              <div class="admin-form-actions admin-form-field--full">
+                <button type="submit" class="admin-primary-button">Spara eventändringar</button>
+              </div>
+            </form>
+          {% else %}
+            <p class="admin-empty-state">
+              Det finns inga event ännu. Skapa ett nytt event i sidopanelen.
+            </p>
+          {% endif %}
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
 </body>
 </html>

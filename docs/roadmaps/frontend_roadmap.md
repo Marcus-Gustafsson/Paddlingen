@@ -96,6 +96,11 @@ Goal:
 
 ### Step 1. Redesign the dashboard around two primary admin actions
 
+Status:
+
+- Initial draft implemented on 2026-03-19.
+- Further visual refinement is still expected after manual review.
+
 What to do:
 
 - Replace the current plain page with a clearer dashboard layout.
@@ -116,6 +121,15 @@ How to test:
   and easy to understand without technical context.
 
 ### Step 2. Add a booking-management modal or panel
+
+Status:
+
+- Initial draft implemented on 2026-03-19.
+- The panel now supports:
+  - manual booking creation,
+  - booking name edits,
+  - booking deletion,
+  - manual payment-method selection for admin-added bookings.
 
 What to do:
 
@@ -141,6 +155,15 @@ How to test:
   place.
 
 ### Step 3. Add an event-settings modal or panel
+
+Status:
+
+- Initial draft implemented on 2026-03-19.
+- The panel now supports:
+  - selecting an existing event,
+  - editing event fields,
+  - creating a new event by copying an existing one,
+  - activating the selected event.
 
 What to do:
 

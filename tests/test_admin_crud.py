@@ -1,6 +1,8 @@
 """Tests for CRUD operations in the admin interface."""
 
-from app import BookedCanoe, BookingOrder, db
+from datetime import date
+
+from app import BookedCanoe, BookingOrder, Event, db
 
 
 def login(client):
@@ -47,25 +49,117 @@ def test_admin_crud_flow(client):
     login(client)
 
     # Add a booking
-    response = client.post("/admin/add", data={"name": "Alice"}, follow_redirects=True)
+    response = client.post(
+        "/admin/add",
+        data={
+            "participant_first_name": "Alice",
+            "participant_last_name": "Andersson",
+            "manual_payment_method": "stripe",
+        },
+        follow_redirects=True,
+    )
     assert response.status_code == 200
     assert b"Alice" in response.data
+    assert "Hantera bokningar" in response.get_data(as_text=True)
     booking = BookedCanoe.query.filter_by(participant_first_name="Alice").first()
     assert booking is not None
     assert BookingOrder.query.count() == 1
+    assert booking.booking_order.payment_provider == "admin_manual_stripe"
     assert response.get_data(as_text=True).count(f"/admin/update/{booking.id}") == 1
 
     # Update the booking
     response = client.post(
-        f"/admin/update/{booking.id}", data={"name": "Bob"}, follow_redirects=True
+        f"/admin/update/{booking.id}",
+        data={
+            "participant_first_name": "Bob",
+            "participant_last_name": "Berg",
+        },
+        follow_redirects=True,
     )
     assert response.status_code == 200
     assert b"Bob" in response.data
     booking = db.session.get(BookedCanoe, booking.id)
-    assert booking.name == "Bob"
+    assert booking.participant_first_name == "Bob"
+    assert booking.participant_last_name == "Berg"
 
     # Delete the booking
     response = client.post(f"/admin/delete/{booking.id}", follow_redirects=True)
     assert response.status_code == 200
     assert db.session.get(BookedCanoe, booking.id) is None
     assert BookingOrder.query.count() == 0
+
+
+def test_admin_can_create_update_and_activate_events(client):
+    """Verify that the event-management routes work from the admin dashboard."""
+
+    login(client)
+
+    active_event = Event.query.filter_by(is_active=True).first()
+    assert active_event is not None
+
+    create_response = client.post(
+        "/admin/events/create",
+        data={
+            "source_event_id": active_event.id,
+            "new_event_date": "2027-03-19",
+            "new_title": "Paddlingen 2027",
+            "new_subtitle": "Nästa års paddling",
+        },
+        follow_redirects=True,
+    )
+    assert create_response.status_code == 200
+    assert "Nytt event skapades från den valda mallen." in create_response.get_data(
+        as_text=True
+    )
+
+    created_event = Event.query.filter_by(event_date=date(2027, 3, 19)).first()
+    assert created_event is not None
+    assert created_event.is_active is False
+
+    update_response = client.post(
+        f"/admin/events/update/{created_event.id}",
+        data={
+            "title": "Paddlingen 2027 Uppdaterad",
+            "subtitle": "Uppdaterad undertitel",
+            "event_date": "2027-03-19",
+            "start_time": "11:30",
+            "starting_location_name": "Ny startplats",
+            "starting_location_url": "https://example.com/start",
+            "end_location_name": "Ny slutplats",
+            "end_location_url": "https://example.com/end",
+            "available_canoes": "48",
+            "price_per_canoe_sek": "1350.00",
+            "max_canoes_per_booking": "4",
+            "weather_forecast_days_before_event": "6",
+            "weather_latitude": "59.8044",
+            "weather_longitude": "15.1901",
+            "faq_booking_text": "Första raden\nAndra raden",
+            "faq_changes_and_questions_text": "Fråga ett\nFråga två",
+            "rules_on_the_water_text": "Regel ett\nRegel två",
+            "rules_after_paddling_text": "Efter ett\nEfter två",
+            "contact_email": "admin@example.com",
+            "contact_phone": "070-123 45 67",
+        },
+        follow_redirects=True,
+    )
+    assert update_response.status_code == 200
+    assert "Eventet uppdaterades." in update_response.get_data(as_text=True)
+
+    updated_event = db.session.get(Event, created_event.id)
+    assert updated_event.title == "Paddlingen 2027 Uppdaterad"
+    assert updated_event.available_canoes == 48
+    assert str(updated_event.price_per_canoe_sek) == "1350.00"
+
+    activate_response = client.post(
+        f"/admin/events/activate/{created_event.id}",
+        follow_redirects=True,
+    )
+    assert activate_response.status_code == 200
+    assert "Det valda eventet är nu aktivt på hemsidan." in activate_response.get_data(
+        as_text=True
+    )
+
+    refreshed_original_event = db.session.get(Event, active_event.id)
+    refreshed_updated_event = db.session.get(Event, created_event.id)
+    assert refreshed_updated_event.is_active is True
+    assert refreshed_original_event.is_active is False
