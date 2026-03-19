@@ -6,6 +6,7 @@ pages, CLI commands, and tests can all use the same behavior.
 
 from __future__ import annotations
 
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, datetime
 from typing import Any
 
@@ -73,7 +74,9 @@ def build_config_fallback_event_values(configuration: Any) -> dict[str, Any]:
         "end_location_name": configuration["EVENT_END_LOCATION_NAME"],
         "end_location_url": configuration["EVENT_END_LOCATION_URL"],
         "available_canoes": configuration["AVAILABLE_CANOES"],
-        "price_per_canoe_sek": configuration["CANOE_PRICE_SEK"],
+        "price_per_canoe_sek": normalize_money_decimal(
+            configuration["CANOE_PRICE_SEK"]
+        ),
         "max_canoes_per_booking": configuration["MAX_CANOES_PER_BOOKING"],
         "weather_forecast_days_before_event": configuration[
             "WEATHER_FORECAST_DAYS_BEFORE_EVENT"
@@ -102,6 +105,21 @@ def split_info_text_into_items(info_text: str) -> list[str]:
     """
 
     return [line.strip() for line in info_text.splitlines() if line.strip()]
+
+
+def normalize_money_decimal(value: Any) -> Decimal:
+    """Return a fixed-point money value rounded to two decimals."""
+
+    return Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def serialize_money_value(value: Any) -> int | float:
+    """Return a template- and JSON-friendly money value."""
+
+    normalized_value = normalize_money_decimal(value)
+    if normalized_value == normalized_value.to_integral_value():
+        return int(normalized_value)
+    return float(normalized_value)
 
 
 def get_active_event() -> Event | None:
@@ -176,7 +194,7 @@ def build_event_settings_with_fallback() -> dict[str, Any]:
     end_location_name = choose_value("end_location_name")
     end_location_url = choose_value("end_location_url")
     available_canoes = choose_value("available_canoes")
-    price_per_canoe_sek = choose_value("price_per_canoe_sek")
+    price_per_canoe_sek = serialize_money_value(choose_value("price_per_canoe_sek"))
     max_canoes_per_booking = choose_value("max_canoes_per_booking")
     weather_forecast_days_before_event = choose_value(
         "weather_forecast_days_before_event"
@@ -255,12 +273,12 @@ def get_available_canoes_total_with_fallback() -> int:
     return int(current_app.config["AVAILABLE_CANOES"])
 
 
-def get_price_per_canoe_with_fallback() -> int:
+def get_price_per_canoe_with_fallback() -> Decimal:
     """Return the current event price per canoe with a config fallback."""
 
     active_event = get_active_event()
     if active_event is not None and active_event.price_per_canoe_sek is not None:
-        return active_event.price_per_canoe_sek
+        return normalize_money_decimal(active_event.price_per_canoe_sek)
 
     if active_event is None:
         current_app.logger.warning(
@@ -273,7 +291,7 @@ def get_price_per_canoe_with_fallback() -> int:
             "fallback value instead."
         )
 
-    return int(current_app.config["CANOE_PRICE_SEK"])
+    return normalize_money_decimal(current_app.config["CANOE_PRICE_SEK"])
 
 
 def get_max_canoes_per_booking_with_fallback() -> int:

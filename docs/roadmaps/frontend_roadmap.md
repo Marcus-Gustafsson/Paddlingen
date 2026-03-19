@@ -92,39 +92,96 @@ How to test:
 
 Goal:
 
-- Make the admin page easier to read and safer to use for booking changes.
+- Make the admin page easier to read and safe for non-technical admins to use.
 
-### Step 1. Redesign the booking list layout
+### Step 1. Redesign the dashboard around two primary admin actions
 
 What to do:
 
-- Replace the current plain layout with clearer rows or cards.
-- Improve spacing, headings, and scanability.
+- Replace the current plain page with a clearer dashboard layout.
+- Add two obvious primary action buttons or cards:
+  - `Hantera bokningar`
+  - `Hantera event`
+- Make these the first things an admin sees after logging in.
 
 Why:
 
-- The admin dashboard should feel like a small internal tool, not a rough form
+- Most admins should not need to understand the whole page structure before
+  making a simple change.
+- Clear top-level actions reduce mistakes and make the page easier to learn.
+
+How to test:
+
+- Log in as admin and confirm the two primary actions are immediately obvious
+  and easy to understand without technical context.
+
+### Step 2. Add a booking-management modal or panel
+
+What to do:
+
+- Add one focused booking-management modal or panel that opens from
+  `Hantera bokningar`.
+- Let admins:
+  - add canoe bookings
+  - edit existing bookings
+  - delete bookings
+- Keep the booking controls grouped together instead of scattered across the
   page.
-
-How to test:
-
-- Log in as admin and confirm the booking list is easier to read.
-
-### Step 2. Make add, edit, and delete actions visually clearer
-
-What to do:
-
-- Improve the placement and visual distinction of the CRUD actions.
+- Keep the workflow simple enough that a new admin can make a change without
+  understanding the database tables behind it.
 
 Why:
 
-- Admin actions should be obvious and hard to confuse.
+- Booking edits are the most common admin action right now.
+- A focused booking-management view should be faster and less confusing.
 
 How to test:
 
-- Add, edit, and delete a booking and confirm the actions are easy to follow.
+- Add, edit, and delete a booking and confirm the workflow feels clear from one
+  place.
 
-### Step 3. Add room for future booking metadata
+### Step 3. Add an event-settings modal or panel
+
+What to do:
+
+- Add one focused event-management modal or panel that opens from
+  `Hantera event`.
+- Let admins:
+  - select an existing event row
+  - update all editable event fields for that row
+  - create a new event for an upcoming year
+  - switch which event is active
+- Make the editable fields cover the event data now stored in the database,
+  including:
+  - title
+  - subtitle
+  - event date
+  - start time
+  - start and end locations
+  - available canoes
+  - price per canoe
+  - max canoes per booking
+  - weather settings
+  - FAQ card content
+  - rules card content
+  - contact details
+
+Why:
+
+- Event changes should not require source-code edits.
+- Some future admins will not have programming experience, so the event changes
+  must feel like editing content, not editing configuration.
+
+How to test:
+
+- Create a new event row.
+- Switch the active event.
+- Update one visible field and confirm the public homepage reflects the saved
+  value.
+- Confirm a non-technical admin can understand which values affect the public
+  page without needing developer help.
+
+### Step 4. Add room for future booking metadata
 
 What to do:
 
@@ -184,6 +241,9 @@ How to test:
 
 The next frontend step is:
 
-1. Wait until the backend event-settings work is started.
-2. Then redesign the admin login page.
-3. After that, redesign the admin dashboard.
+1. Redesign the admin login page so it matches the newer public-site styling.
+2. Then redesign the admin dashboard around two primary actions:
+   - `Hantera bokningar`
+   - `Hantera event`
+3. After that, implement the event-management modal so admins can edit active
+   event values and create upcoming event rows without changing source code.
