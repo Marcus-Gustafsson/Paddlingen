@@ -15,7 +15,9 @@ Why it’s here:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Paddlingen</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
   <script>
     window.PADDLINGEN_EVENT_SETTINGS = {{ event_settings | tojson }};
     window.PADDLINGEN_PREVIOUS_YEAR_IMAGES = {{ previous_year_gallery_image_urls | tojson }};

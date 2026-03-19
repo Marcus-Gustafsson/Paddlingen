@@ -203,6 +203,14 @@ This is the current role of the main files and folders.
 - `static/css/`
   Stylesheets for the public site and admin area.
 
+- `static/css/base.css`
+  Shared foundation styles such as the font import, reset rules, flash
+  messages, and small utility classes.
+
+- `static/css/modals.css`
+  Shared popup styles for the public site, including the general modal shell,
+  FAQ and contact popup styling, and the participant overview popup.
+
 - `static/js/script.js`
   Frontend behavior such as modals, booking form logic, progress bar updates,
   image gallery behavior, and weather widget requests.

@@ -948,8 +948,9 @@ How to test:
 
 The next best step is:
 
-1. Redesign the main landing section and current-year hero first.
-2. Then replace the old previous-years sidebar and stacked archive sections with
-   one simpler image ribbon below the booking area.
-3. After the public design direction is stable, redesign the admin login page
-   and admin dashboard to match it.
+1. Continue the temporary frontend refactor checklist in
+   `docs/temp_refactor_checklist.md`, starting with the CSS split work.
+2. Split the remaining public stylesheet into `home.css`, `modals.css`,
+   `booking.css`, and `gallery.css` one safe step at a time.
+3. After the CSS and JavaScript structure is cleaner, continue with the admin
+   login and admin dashboard redesign.

@@ -183,6 +183,24 @@ Current note:
   and Supabase for the first real hosted database tests.
 - When that happens, this section must be updated.
 
+## Current CSS Refactor Note
+
+The public CSS refactor has started.
+
+Current state:
+
+- Shared foundation rules now live in `static/css/base.css`.
+- Shared popup styles now live in `static/css/modals.css`.
+- The remaining public and shared page rules still live in
+  `static/css/styles.css`.
+- The public homepage template now loads `base.css`, `styles.css`, and
+  `modals.css` in that order.
+
+Why:
+
+- This is the safest way to split the large stylesheet one file at a time
+  without breaking the site.
+
 ### Test the current landing-page redesign locally
 
 ```bash

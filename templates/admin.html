@@ -21,10 +21,13 @@
   <!-- 3. Page title shown in browser tab -->
   <title>Admin – Paddlingen</title>
 
-  <!-- 4. Main site CSS (for shared styling) -->
+  <!-- 4. Shared base CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+
+  <!-- 5. Main site CSS (for shared public styling still used here) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
-  <!-- 5. Admin‐specific CSS (overrides / extra layout rules) -->
+  <!-- 6. Admin‐specific CSS (overrides / extra layout rules) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
