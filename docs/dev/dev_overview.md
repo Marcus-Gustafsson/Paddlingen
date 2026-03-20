@@ -1,6 +1,6 @@
 # Development Overview
 
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 ## Purpose
 
@@ -37,9 +37,12 @@ Use the document that matches the task:
    Read this first for the general workflow.
 2. `docs/dev/dev_docker.md`
    Read this when working with Docker and containers.
-3. `docs/dev/dev_database.md`
+3. `docs/dev/dev_ngrok.md`
+   Read this when exposing the local site through ngrok for testers or real
+   phones.
+4. `docs/dev/dev_database.md`
    Read this when working with Supabase, migrations, or schema setup.
-4. `docs/dev/dev_testing.md`
+5. `docs/dev/dev_testing.md`
    Read this when running tests, linting, formatting, or using development seed
    commands.
 
@@ -169,5 +172,4 @@ Current admin dashboard behavior:
 These areas are still planned work:
 
 - Stripe is not yet integrated,
-- ngrok is not yet documented in detail,
 - monitoring and alerts are not yet configured.

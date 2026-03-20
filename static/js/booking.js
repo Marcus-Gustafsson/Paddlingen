@@ -127,6 +127,7 @@
         firstNameInput.id = `canoe${canoeNumber}_fname`;
         firstNameInput.name = `canoe${canoeNumber}_fname`;
         firstNameInput.placeholder = "Förnamn";
+        firstNameInput.maxLength = 15;
         firstNameInput.required = true;
 
         const lastNameInput = document.createElement("input");
@@ -134,6 +135,7 @@
         lastNameInput.id = `canoe${canoeNumber}_lname`;
         lastNameInput.name = `canoe${canoeNumber}_lname`;
         lastNameInput.placeholder = "Efternamn";
+        lastNameInput.maxLength = 18;
         lastNameInput.required = true;
 
         inputsContainer.appendChild(firstNameInput);

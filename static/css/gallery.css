@@ -25,38 +25,47 @@ Why it is separate:
 }
 
 .gallery-content {
-  max-width: 90vw;
+  max-width: min(92vw, 720px);
   max-height: 90vh;
-  width: min(600px, 90vw);
-  height: min(600px, 90vh);
+  width: min(640px, 92vw);
+  height: min(640px, 84vh);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
+  padding: 1rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 27, 34, 0.94);
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.34);
+  overflow: hidden;
 }
 
 .gallery-image {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border-radius: 0.85rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
 }
 
 .gallery-close {
   position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
-  background: #fff;
-  color: #333;
-  border: none;
-  font-size: 1.5rem;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbdbdb;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 1.35rem;
   line-height: 1;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
+  border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  appearance: none;
 }
 
 .gallery-prev,
@@ -64,40 +73,61 @@ Why it is separate:
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
-  border: none;
-  font-size: 2rem;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbdbdb;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 1.8rem;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 999px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  appearance: none;
 }
 
 .gallery-prev {
-  left: 0.5rem;
+  left: 0.7rem;
 }
 
 .gallery-next {
-  right: 0.5rem;
+  right: 0.7rem;
+}
+
+.gallery-close:hover,
+.gallery-prev:hover,
+.gallery-next:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.gallery-close:hover {
+  transform: translateY(-1px);
+}
+
+.gallery-close:focus-visible,
+.gallery-prev:focus-visible,
+.gallery-next:focus-visible {
+  outline: 2px solid #fff3b6;
+  outline-offset: 3px;
 }
 
 .gallery-caption {
   position: absolute;
-  bottom: 0.5rem;
+  bottom: 0.8rem;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .gallery-counter {
-  background: rgba(0, 0, 0, 0.6);
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.25rem;
+  background: rgba(7, 19, 25, 0.76);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
 }
 
 .home-page .gallery-ribbon {
@@ -195,16 +225,24 @@ Why it is separate:
 }
 
 @media (max-width: 1050px) {
+  .gallery-content {
+    width: min(560px, 92vw);
+    height: min(560px, 80vh);
+    padding: 0.9rem;
+  }
+
   .gallery-prev,
   .gallery-next {
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.5rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1.55rem;
   }
 
   .gallery-close {
-    width: 1.5rem;
-    height: 1.5rem;
+    top: 0.65rem;
+    right: 0.65rem;
+    width: 2.1rem;
+    height: 2.1rem;
     font-size: 1.2rem;
   }
 }
@@ -222,6 +260,33 @@ Why it is separate:
 }
 
 @media (max-width: 720px) {
+  .gallery-content {
+    width: min(360px, 90vw);
+    height: min(420px, 68vh);
+    padding: 0.75rem;
+    border-radius: 1.15rem;
+  }
+
+  .gallery-prev,
+  .gallery-next {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.4rem;
+  }
+
+  .gallery-close {
+    top: 0.55rem;
+    right: 0.55rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.05rem;
+  }
+
+  .gallery-caption {
+    bottom: 0.6rem;
+    font-size: 0.78rem;
+  }
+
   .home-page .gallery-ribbon {
     height: 120px;
     margin-top: 3.5rem;

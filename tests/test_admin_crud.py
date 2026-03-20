@@ -90,6 +90,26 @@ def test_admin_crud_flow(client):
     assert BookingOrder.query.count() == 0
 
 
+def test_admin_rejects_too_long_participant_names(client):
+    """Reject manual admin bookings whose first or last name is too long."""
+
+    login(client)
+
+    response = client.post(
+        "/admin/add",
+        data={
+            "participant_first_name": "A" * 21,
+            "participant_last_name": "Andersson",
+            "manual_payment_method": "cash",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Förnamn får vara högst 20 tecken långt." in response.get_data(as_text=True)
+    assert BookingOrder.query.count() == 0
+
+
 def test_admin_can_create_update_and_activate_events(client):
     """Verify that the event-management routes work from the admin dashboard."""
 

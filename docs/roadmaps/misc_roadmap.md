@@ -1,6 +1,6 @@
 # Misc Roadmap
 
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 ## Goal
 
@@ -49,11 +49,17 @@ Goal:
 - Make local development easier to test from a phone and with external
   services.
 
-### Step 1. Add an ngrok development guide
+### Step 1. Add an ngrok development guide (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
-- Document the basic ngrok workflow for local testing.
+- Added `docs/dev/dev_ngrok.md`.
+- Documented the WSL workflow for:
+  - running the local app first,
+  - verifying the local port,
+  - starting ngrok on the matching port,
+  - sharing the public URL with testers.
+- Updated the development overview so the ngrok guide is easy to find.
 
 Why:
 

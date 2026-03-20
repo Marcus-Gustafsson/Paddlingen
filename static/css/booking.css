@@ -13,13 +13,13 @@ Why it is separate:
 */
 
 .modal-content.booking-modal-content {
-  max-width: 860px;
-  padding: 2rem;
+  max-width: 780px;
+  padding: 1.6rem;
   background: rgba(18, 27, 34, 0.98);
 }
 
 .booking-modal-header {
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.15rem;
   text-align: center;
 }
 
@@ -50,7 +50,7 @@ Why it is separate:
 .booking-step-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.9fr);
-  gap: 1.2rem;
+  gap: 1rem;
   align-items: start;
 }
 
@@ -59,7 +59,7 @@ Why it is separate:
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1.15rem;
   background: rgba(255, 255, 255, 0.04);
-  padding: 1.2rem;
+  padding: 1rem;
 }
 
 .booking-step-heading {
@@ -78,14 +78,15 @@ Why it is separate:
 .booking-step-heading h3,
 .booking-summary-card h3 {
   color: #f5f4ef;
-  font-size: 1.3rem;
+  font-size: 1.18rem;
   font-weight: 600;
 }
 
 .booking-step-text {
-  margin-bottom: 1rem;
+  margin-bottom: 0.9rem;
   color: rgba(219, 219, 219, 0.82);
   line-height: 1.45;
+  font-size: 0.95rem;
 }
 
 .quantity-selector {
@@ -100,10 +101,10 @@ Why it is separate:
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  flex: 0 0 116px;
-  width: 116px;
-  min-height: 92px;
-  padding: 1rem;
+  flex: 0 0 108px;
+  width: 108px;
+  min-height: 86px;
+  padding: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
   background: rgba(10, 21, 28, 0.72);
@@ -137,14 +138,14 @@ Why it is separate:
 }
 
 .quantity-option-number {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .quantity-option-label {
   color: rgba(245, 244, 239, 0.72);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .booking-empty-state {
@@ -160,7 +161,7 @@ Why it is separate:
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   background: rgba(12, 23, 30, 0.74);
-  padding: 1rem;
+  padding: 0.9rem;
 }
 
 .canoe-field label {
@@ -168,7 +169,7 @@ Why it is separate:
   margin-bottom: 0.65rem;
   color: #f1eee6;
   font-weight: 600;
-  font-size: 0.98rem;
+  font-size: 0.94rem;
 }
 
 .canoe-field .inputs {
@@ -179,12 +180,12 @@ Why it is separate:
 
 .canoe-field input {
   width: 100%;
-  padding: 0.85rem 0.95rem;
+  padding: 0.78rem 0.88rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.8rem;
   background: rgba(255, 255, 255, 0.05);
   color: #f5f4ef;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .canoe-field input::placeholder {
@@ -212,7 +213,7 @@ Why it is separate:
 
 .booking-summary-item,
 .booking-summary-empty {
-  padding: 0.8rem 0.9rem;
+  padding: 0.72rem 0.82rem;
   border-radius: 0.85rem;
   background: rgba(255, 255, 255, 0.05);
   color: rgba(245, 244, 239, 0.9);
@@ -327,6 +328,16 @@ Why it is separate:
     overflow-y: auto;
   }
 
+  .modal-content.booking-modal-content {
+    max-width: 700px;
+    padding: 1.35rem;
+  }
+
+  .booking-step-panel,
+  .booking-summary-card {
+    padding: 0.95rem;
+  }
+
   .booking-step-layout {
     grid-template-columns: 1fr;
   }
@@ -351,5 +362,40 @@ Why it is separate:
 
   .canoe-field .inputs input {
     width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .modal-content.booking-modal-content {
+    max-width: min(100%, 410px);
+    padding: 1.05rem 0.95rem;
+    border-radius: 1.15rem;
+  }
+
+  .booking-modal-header {
+    margin-bottom: 1rem;
+  }
+
+  .booking-step-heading h3,
+  .booking-summary-card h3 {
+    font-size: 1.08rem;
+  }
+
+  .booking-intro,
+  .booking-step-text {
+    font-size: 0.93rem;
+    line-height: 1.45;
+  }
+
+  .booking-step-panel,
+  .booking-summary-card {
+    padding: 0.95rem;
+  }
+
+  .quantity-option {
+    flex: 0 0 100px;
+    width: 100px;
+    min-height: 82px;
+    padding: 0.85rem;
   }
 }

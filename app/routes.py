@@ -62,6 +62,7 @@ logging.basicConfig(level=logging.INFO)
 # Each module should have its own logger. __name__ resolves to this file's
 # import path ("main"), which helps identify where log messages originate.
 logger = logging.getLogger(__name__)
+MAX_PARTICIPANT_NAME_LENGTH = 20
 
 main_blueprint = Blueprint("main", __name__)
 
@@ -156,6 +157,18 @@ def build_participant_names_from_form(requested_canoes: int) -> list[dict[str, s
         if not first_name and not last_name:
             first_name = "Unnamed"
             last_name = f"participant {canoe_number}"
+
+        if len(first_name) > MAX_PARTICIPANT_NAME_LENGTH:
+            raise ValueError(
+                f"Förnamnet för kanot {canoe_number} får vara högst "
+                f"{MAX_PARTICIPANT_NAME_LENGTH} tecken."
+            )
+
+        if len(last_name) > MAX_PARTICIPANT_NAME_LENGTH:
+            raise ValueError(
+                f"Efternamnet för kanot {canoe_number} får vara högst "
+                f"{MAX_PARTICIPANT_NAME_LENGTH} tecken."
+            )
 
         participants.append(
             {
@@ -272,6 +285,16 @@ def get_admin_participant_name_parts() -> tuple[str, str]:
 
     if not first_name or not last_name:
         raise ValueError("Både förnamn och efternamn måste fyllas i.")
+
+    if len(first_name) > MAX_PARTICIPANT_NAME_LENGTH:
+        raise ValueError(
+            f"Förnamn får vara högst {MAX_PARTICIPANT_NAME_LENGTH} tecken långt."
+        )
+
+    if len(last_name) > MAX_PARTICIPANT_NAME_LENGTH:
+        raise ValueError(
+            f"Efternamn får vara högst {MAX_PARTICIPANT_NAME_LENGTH} tecken långt."
+        )
 
     return first_name, last_name
 
@@ -464,7 +487,11 @@ def payment():
         )
         return redirect(url_for("main.index"))
 
-    participant_names = build_participant_names_from_form(requested)
+    try:
+        participant_names = build_participant_names_from_form(requested)
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("main.index"))
     active_event = get_active_event()
     if active_event is None:
         current_app.logger.warning(

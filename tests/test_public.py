@@ -111,6 +111,28 @@ def test_successful_booking_creates_records(client):
         assert BookingOrder.query.first().event_id is not None
 
 
+def test_booking_rejects_participant_names_longer_than_twenty_characters(client):
+    """Reject participant names that exceed the public booking length limit."""
+
+    response = client.post(
+        "/create-checkout-session",
+        data={
+            "canoeCount": "1",
+            "canoe1_fname": "A" * 21,
+            "canoe1_lname": "Andersson",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Förnamnet för kanot 1 får vara högst 20 tecken." in response.get_data(
+        as_text=True
+    )
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 0
+
+
 def test_home_page_uses_database_event_values(client):
     """Render the homepage using values from the active event row."""
 

@@ -135,6 +135,7 @@
                   type="text"
                   name="participant_first_name"
                   placeholder="Förnamn"
+                  maxlength="20"
                   required
                 >
               </label>
@@ -145,6 +146,7 @@
                   type="text"
                   name="participant_last_name"
                   placeholder="Efternamn"
+                  maxlength="20"
                   required
                 >
               </label>
@@ -203,6 +205,7 @@
                             name="participant_first_name"
                             value="{{ booking.participant_first_name }}"
                             placeholder="Förnamn"
+                            maxlength="20"
                             required
                           >
                           <input
@@ -210,6 +213,7 @@
                             name="participant_last_name"
                             value="{{ booking.participant_last_name }}"
                             placeholder="Efternamn"
+                            maxlength="20"
                             required
                           >
                           <button type="submit">Spara</button>
@@ -319,17 +323,18 @@
 
             <label class="admin-form-field">
               <span>Nytt datum</span>
-                <input
-                  type="text"
-                  name="new_event_date"
-                  value="{{ create_event_defaults.new_event_date }}"
-                  placeholder="YYYY-MM-DD"
-                  inputmode="numeric"
-                  pattern="\d{4}-\d{2}-\d{2}"
-                  data-required-message="Datum måste fyllas i."
-                  data-validation-type="date"
-                  data-format-message="Ange datum i formatet ÅÅÅÅ-MM-DD, till exempel 2026-03-20."
-                  autocomplete="off"
+              <input
+                type="text"
+                name="new_event_date"
+                value="{{ create_event_defaults.new_event_date }}"
+                placeholder="YYYY-MM-DD"
+                inputmode="numeric"
+                pattern="\d{4}-\d{2}-\d{2}"
+                maxlength="10"
+                data-required-message="Datum måste fyllas i."
+                data-validation-type="date"
+                data-format-message="Ange datum i formatet ÅÅÅÅ-MM-DD, till exempel 2026-03-20."
+                autocomplete="off"
                   required
               >
               <small class="admin-field-hint">Ange datum som YYYY-MM-DD.</small>
@@ -358,6 +363,7 @@
                   placeholder="YYYY-MM-DD"
                   inputmode="numeric"
                   pattern="\d{4}-\d{2}-\d{2}"
+                  maxlength="10"
                   data-required-message="Eventdatum måste fyllas i."
                   data-validation-type="date"
                   data-format-message="Ange datum i formatet ÅÅÅÅ-MM-DD, till exempel 2026-03-20."
@@ -373,6 +379,7 @@
                   type="text"
                   name="title"
                   value="{{ selected_event.title }}"
+                  maxlength="120"
                   data-required-message="Titel måste fyllas i."
                   required
                 >
@@ -380,7 +387,7 @@
 
               <label class="admin-form-field">
                 <span>Undertitel</span>
-                <input type="text" name="subtitle" value="{{ selected_event.subtitle }}">
+                <input type="text" name="subtitle" value="{{ selected_event.subtitle }}" maxlength="255">
               </label>
 
               <label class="admin-form-field">
@@ -392,6 +399,7 @@
                   placeholder="HH:MM"
                   inputmode="numeric"
                   pattern="\d{2}:\d{2}"
+                  maxlength="5"
                   data-required-message="Starttid måste fyllas i."
                   data-validation-type="time"
                   data-format-message="Ange tid i 24-timmarsformatet TT:MM, till exempel 10:00."
@@ -407,6 +415,7 @@
                   type="text"
                   name="starting_location_name"
                   value="{{ selected_event.starting_location_name }}"
+                  maxlength="255"
                   data-required-message="Startplats måste fyllas i."
                   required
                 >
@@ -418,6 +427,7 @@
                   type="url"
                   name="starting_location_url"
                   value="{{ selected_event.starting_location_url }}"
+                  maxlength="500"
                   data-required-message="Länk till startplats måste fyllas i."
                   required
                 >
@@ -429,6 +439,7 @@
                   type="text"
                   name="end_location_name"
                   value="{{ selected_event.end_location_name }}"
+                  maxlength="255"
                   data-required-message="Slutplats måste fyllas i."
                   required
                 >
@@ -440,6 +451,7 @@
                   type="url"
                   name="end_location_url"
                   value="{{ selected_event.end_location_url }}"
+                  maxlength="500"
                   data-required-message="Länk till slutplats måste fyllas i."
                   required
                 >
@@ -476,6 +488,7 @@
                   type="email"
                   name="contact_email"
                   value="{{ selected_event.contact_email }}"
+                  maxlength="255"
                   data-required-message="Kontaktmejl måste fyllas i."
                   required
                 >
@@ -483,7 +496,7 @@
 
               <label class="admin-form-field">
                 <span>Kontakttelefon</span>
-                <input type="text" name="contact_phone" value="{{ selected_event.contact_phone or '' }}">
+                <input type="text" name="contact_phone" value="{{ selected_event.contact_phone or '' }}" maxlength="50">
               </label>
 
               <label class="admin-form-field admin-form-field--full">
