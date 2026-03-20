@@ -135,6 +135,21 @@ Important note:
    bookings for the active event.
 7. The event panel lets admins select an event, update its settings, create a
    new event by copying an existing one, and switch which event is active.
+8. A few low-change event settings still stay in the database only and are not
+   shown in the admin form, so the admin UI remains simpler for non-technical
+   users.
+
+Important admin-format note:
+
+- The admin event form uses explicit Swedish text inputs for date and time
+  (`YYYY-MM-DD` and `HH:MM`) instead of browser-native date and time pickers.
+- This keeps the admin input format consistent even when a browser would
+  otherwise show English locale formatting such as `03/22/2025` or `10:00 AM`.
+- The admin JavaScript also adds Swedish validation messages for these fields
+  so format errors do not fall back to the browser's default English wording.
+- The subtitle field is optional and can be saved as an empty value.
+- If the active event subtitle is blank, the homepage leaves the subtitle area
+  empty instead of falling back to the older `config.py` subtitle.
 
 ## Project Structure
 

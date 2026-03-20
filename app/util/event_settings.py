@@ -168,13 +168,17 @@ def build_event_settings_with_fallback() -> dict[str, Any]:
         current_app.logger.warning(warning_message)
         fallback_warnings.append(warning_message)
 
+    fields_that_allow_blank_values = {"subtitle"}
+
     def choose_value(field_name: str) -> Any:
         fallback_value = fallback_values[field_name]
         if active_event is None:
             return fallback_value
 
         database_value = getattr(active_event, field_name)
-        if database_value in (None, ""):
+        if database_value is None or (
+            database_value == "" and field_name not in fields_that_allow_blank_values
+        ):
             warning_message = (
                 f"Active event field '{field_name}' is missing. Using config.py "
                 "fallback value instead."

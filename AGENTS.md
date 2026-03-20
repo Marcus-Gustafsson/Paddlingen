@@ -20,6 +20,8 @@ maintain over time.
   - previous-years image display,
   - logging and monitoring,
   - deployment that is easy to reason about.
+- The UI that the admin and user interact with should all be in correct Swedish grammar, as the users of the website are only Swedish people.
+- All dates, currency, time, should use Swedish format.
 
 ## Development Environment
 

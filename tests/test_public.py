@@ -135,6 +135,20 @@ def test_home_page_uses_database_event_values(client):
     assert "1500 kr" in page
 
 
+def test_home_page_keeps_subtitle_blank_when_event_subtitle_is_empty(client):
+    """Do not fall back to config.py when the active event subtitle is blank."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.subtitle = ""
+        db.session.commit()
+
+    response = client.get("/")
+    page = response.get_data(as_text=True)
+    assert "Bästa dagen på hela året!" not in page
+    assert 'class="main-subtitle no-select"' not in page
+
+
 def test_invalid_form_data_returns_flash_error(client):
     """Submit empty form data and expect an error without database changes.
 

@@ -93,6 +93,16 @@ Important note:
   fallback values from `config.py`.
 - Run `uv run flask --app wsgi seed-active-event` after applying migrations so
   the database gets its first active event row.
+- Some low-change operational values are intentionally hidden from the admin
+  event form to keep the UI simpler:
+  - max canoes per booking,
+  - weather forecast window,
+  - weather latitude,
+  - weather longitude.
+- Those values are still stored in the `events` table and copied forward when a
+  new event is created.
+- If one of them must change, edit the active event row directly in Supabase
+  and keep the matching fallback in `config.py` updated too.
 
 ## Current Frontend Structure
 

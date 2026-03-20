@@ -1,5 +1,6 @@
 """Tests for CRUD operations in the admin interface."""
 
+from html import unescape
 from datetime import date
 
 from app import BookedCanoe, BookingOrder, Event, db
@@ -120,7 +121,7 @@ def test_admin_can_create_update_and_activate_events(client):
         f"/admin/events/update/{created_event.id}",
         data={
             "title": "Paddlingen 2027 Uppdaterad",
-            "subtitle": "Uppdaterad undertitel",
+            "subtitle": "",
             "event_date": "2027-03-19",
             "start_time": "11:30",
             "starting_location_name": "Ny startplats",
@@ -147,6 +148,7 @@ def test_admin_can_create_update_and_activate_events(client):
 
     updated_event = db.session.get(Event, created_event.id)
     assert updated_event.title == "Paddlingen 2027 Uppdaterad"
+    assert updated_event.subtitle == ""
     assert updated_event.available_canoes == 48
     assert str(updated_event.price_per_canoe_sek) == "1350.00"
 
@@ -155,8 +157,8 @@ def test_admin_can_create_update_and_activate_events(client):
         follow_redirects=True,
     )
     assert activate_response.status_code == 200
-    assert "Det valda eventet är nu aktivt på hemsidan." in activate_response.get_data(
-        as_text=True
+    assert 'Eventet "2027-03-19" är nu aktivt på hemsidan.' in unescape(
+        activate_response.get_data(as_text=True)
     )
 
     refreshed_original_event = db.session.get(Event, active_event.id)

@@ -159,6 +159,22 @@ Important `events` fields now include:
 - weather latitude and longitude
 - FAQ, rules, and contact values
 
+Important admin note:
+
+- The admin event form does not show every column from the `events` table.
+- To keep the admin view simpler for non-technical users, these low-change
+  fields are currently hidden from the admin event form:
+  - `max_canoes_per_booking`
+  - `weather_forecast_days_before_event`
+  - `weather_latitude`
+  - `weather_longitude`
+- When a new event is created, these values are copied from the selected source
+  event automatically.
+- If you really need to change one of them, update the value directly in the
+  database row in Supabase.
+- Keep the matching fallback values in `config.py` aligned as well, so the app
+  still has sensible defaults if the active event row is missing.
+
 ## New Event Commands
 
 ### Seed or refresh the active event

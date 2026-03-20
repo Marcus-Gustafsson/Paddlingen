@@ -10,7 +10,7 @@
       knowing the underlying database structure.
 -->
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="sv-SE">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,16 +20,11 @@
 </head>
 <body class="admin-page" data-open-admin-panel="{{ open_admin_panel }}">
   <div class="admin-top-row" aria-label="Adminöversikt">
-    <div class="admin-session-card">
-      <span class="admin-summary-label">Inloggad som</span>
-      <strong>{{ current_user.username }}</strong>
-      <a class="admin-session-link" href="{{ url_for('main.logout') }}">Logga ut</a>
-    </div>
+    <a class="admin-home-link" href="{{ url_for('main.index') }}">← Till hemsidan</a>
 
     <header class="admin-header">
       <div class="admin-header-copy">
-        <p class="admin-step-label">Administrationspanel</p>
-        <h1>Hantera bokningar och event</h1>
+        <p class="admin-step-label">Administrationsöversikt</p>
         <div class="admin-header-meta" aria-label="Översikt">
           <div class="admin-header-meta-item">
             <span class="admin-summary-label">Aktivt event</span>
@@ -42,7 +37,7 @@
             </strong>
           </div>
           <div class="admin-header-meta-item">
-            <span class="admin-summary-label">Bekräftade kanoter</span>
+            <span class="admin-summary-label">Bokade kanoter</span>
             <strong>{{ confirmed_booking_count }}</strong>
           </div>
           <div class="admin-header-meta-item">
@@ -53,7 +48,11 @@
       </div>
     </header>
 
-    <a class="admin-home-link" href="{{ url_for('main.index') }}">← Till hemsidan</a>
+    <div class="admin-session-card">
+      <span class="admin-summary-label">Inloggad som</span>
+      <strong>{{ current_user.username }}</strong>
+      <a class="admin-session-link" href="{{ url_for('main.logout') }}">Logga ut</a>
+    </div>
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -75,8 +74,7 @@
       >
         <strong>Hantera bokningar</strong>
         <span>
-          Lägg till manuella bokningar, justera namn och ta bort felaktiga
-          poster från ett och samma ställe.
+          Lägg till bokningar, justera namn och ta bort felaktiga bokningar.
         </span>
       </button>
 
@@ -192,8 +190,8 @@
                 <tbody>
                   {% for booking in bookings %}
                     <tr>
-                      <td>{{ booking.id }}</td>
-                      <td class="name-cell">
+                      <td data-label="ID">{{ booking.id }}</td>
+                      <td class="name-cell" data-label="Deltagare">
                         <form
                           action="{{ url_for('main.admin_update', id=booking.id) }}"
                           method="post"
@@ -217,8 +215,8 @@
                           <button type="submit">Spara</button>
                         </form>
                       </td>
-                      <td>{{ booking.booking_order.payment_method_label }}</td>
-                      <td class="actions-cell">
+                      <td data-label="Betalsätt">{{ booking.booking_order.payment_method_label }}</td>
+                      <td class="actions-cell" data-label="Åtgärd">
                         <form
                           action="{{ url_for('main.admin_delete', id=booking.id) }}"
                           method="post"
@@ -279,8 +277,10 @@
                 href="{{ url_for('main.admin_dashboard', panel='events', event_id=event.id) }}"
                 class="admin-event-list-item{% if selected_event and event.id == selected_event.id %} admin-event-list-item--selected{% endif %}"
               >
-                <span class="admin-event-list-date">{{ event.event_date.strftime('%Y-%m-%d') }}</span>
-                <strong>{{ event.title }}</strong>
+                <strong class="admin-event-list-date">
+                  {{ format_swedish_date_display(event.event_date, include_year=true) }}
+                </strong>
+                <span class="admin-event-list-iso">{{ event.event_date.strftime('%Y-%m-%d') }}</span>
                 {% if event.is_active %}
                   <span class="admin-event-badge">Aktivt</span>
                 {% endif %}
@@ -309,8 +309,8 @@
 
           <h3>Skapa nytt event</h3>
           <p class="admin-subcard-copy">
-            Skapa nästa års event genom att kopiera det valda eventet. Därefter
-            kan du justera alla fält i formuläret till höger.
+            Skapa nästa års event genom att kopiera det valda eventet och ange
+            ett nytt datum.
           </p>
 
           <form action="{{ url_for('main.admin_create_event') }}" method="post" class="admin-form">
@@ -319,22 +319,20 @@
 
             <label class="admin-form-field">
               <span>Nytt datum</span>
-              <input
-                type="date"
-                name="new_event_date"
-                value="{{ create_event_defaults.new_event_date }}"
-                required
+                <input
+                  type="text"
+                  name="new_event_date"
+                  value="{{ create_event_defaults.new_event_date }}"
+                  placeholder="YYYY-MM-DD"
+                  inputmode="numeric"
+                  pattern="\d{4}-\d{2}-\d{2}"
+                  data-required-message="Datum måste fyllas i."
+                  data-validation-type="date"
+                  data-format-message="Ange datum i formatet ÅÅÅÅ-MM-DD, till exempel 2026-03-20."
+                  autocomplete="off"
+                  required
               >
-            </label>
-
-            <label class="admin-form-field">
-              <span>Titel för det nya eventet</span>
-              <input type="text" name="new_title" value="{{ create_event_defaults.title }}">
-            </label>
-
-            <label class="admin-form-field">
-              <span>Undertitel för det nya eventet</span>
-              <input type="text" name="new_subtitle" value="{{ create_event_defaults.subtitle }}">
+              <small class="admin-field-hint">Ange datum som YYYY-MM-DD.</small>
             </label>
 
             <button type="submit" class="admin-primary-button">Skapa ny kopia</button>
@@ -352,78 +350,135 @@
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
               <label class="admin-form-field">
+                <span>Eventdatum</span>
+                <input
+                  type="text"
+                  name="event_date"
+                  value="{{ selected_event.event_date.strftime('%Y-%m-%d') }}"
+                  placeholder="YYYY-MM-DD"
+                  inputmode="numeric"
+                  pattern="\d{4}-\d{2}-\d{2}"
+                  data-required-message="Eventdatum måste fyllas i."
+                  data-validation-type="date"
+                  data-format-message="Ange datum i formatet ÅÅÅÅ-MM-DD, till exempel 2026-03-20."
+                  autocomplete="off"
+                  required
+                >
+                <small class="admin-field-hint">Svenskt datumformat: YYYY-MM-DD.</small>
+              </label>
+
+              <label class="admin-form-field">
                 <span>Titel</span>
-                <input type="text" name="title" value="{{ selected_event.title }}" required>
+                <input
+                  type="text"
+                  name="title"
+                  value="{{ selected_event.title }}"
+                  data-required-message="Titel måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Undertitel</span>
-                <input type="text" name="subtitle" value="{{ selected_event.subtitle }}" required>
-              </label>
-
-              <label class="admin-form-field">
-                <span>Eventdatum</span>
-                <input type="date" name="event_date" value="{{ selected_event.event_date.strftime('%Y-%m-%d') }}" required>
+                <input type="text" name="subtitle" value="{{ selected_event.subtitle }}">
               </label>
 
               <label class="admin-form-field">
                 <span>Starttid</span>
-                <input type="time" name="start_time" value="{{ selected_event.start_time.strftime('%H:%M') }}" required>
+                <input
+                  type="text"
+                  name="start_time"
+                  value="{{ selected_event.start_time.strftime('%H:%M') }}"
+                  placeholder="HH:MM"
+                  inputmode="numeric"
+                  pattern="\d{2}:\d{2}"
+                  data-required-message="Starttid måste fyllas i."
+                  data-validation-type="time"
+                  data-format-message="Ange tid i 24-timmarsformatet TT:MM, till exempel 10:00."
+                  autocomplete="off"
+                  required
+                >
+                <small class="admin-field-hint">24-timmarsformat: HH:MM.</small>
               </label>
 
               <label class="admin-form-field">
                 <span>Startplats</span>
-                <input type="text" name="starting_location_name" value="{{ selected_event.starting_location_name }}" required>
+                <input
+                  type="text"
+                  name="starting_location_name"
+                  value="{{ selected_event.starting_location_name }}"
+                  data-required-message="Startplats måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Länk till startplats</span>
-                <input type="url" name="starting_location_url" value="{{ selected_event.starting_location_url }}" required>
+                <input
+                  type="url"
+                  name="starting_location_url"
+                  value="{{ selected_event.starting_location_url }}"
+                  data-required-message="Länk till startplats måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Slutplats</span>
-                <input type="text" name="end_location_name" value="{{ selected_event.end_location_name }}" required>
+                <input
+                  type="text"
+                  name="end_location_name"
+                  value="{{ selected_event.end_location_name }}"
+                  data-required-message="Slutplats måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Länk till slutplats</span>
-                <input type="url" name="end_location_url" value="{{ selected_event.end_location_url }}" required>
+                <input
+                  type="url"
+                  name="end_location_url"
+                  value="{{ selected_event.end_location_url }}"
+                  data-required-message="Länk till slutplats måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Antal kanoter</span>
-                <input type="number" min="1" name="available_canoes" value="{{ selected_event.available_canoes }}" required>
+                <input
+                  type="number"
+                  min="1"
+                  name="available_canoes"
+                  value="{{ selected_event.available_canoes }}"
+                  data-required-message="Antal kanoter måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Pris per kanot (SEK)</span>
-                <input type="number" step="0.01" min="0.01" name="price_per_canoe_sek" value="{{ selected_event.price_per_canoe_sek }}" required>
-              </label>
-
-              <label class="admin-form-field">
-                <span>Max antal per bokning</span>
-                <input type="number" min="1" name="max_canoes_per_booking" value="{{ selected_event.max_canoes_per_booking }}" required>
-              </label>
-
-              <label class="admin-form-field">
-                <span>Väderfönster i dagar</span>
-                <input type="number" min="0" name="weather_forecast_days_before_event" value="{{ selected_event.weather_forecast_days_before_event }}" required>
-              </label>
-
-              <label class="admin-form-field">
-                <span>Väderlatitud</span>
-                <input type="number" step="0.000001" name="weather_latitude" value="{{ selected_event.weather_latitude }}" required>
-              </label>
-
-              <label class="admin-form-field">
-                <span>Väderlongitud</span>
-                <input type="number" step="0.000001" name="weather_longitude" value="{{ selected_event.weather_longitude }}" required>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  name="price_per_canoe_sek"
+                  value="{{ selected_event.price_per_canoe_sek }}"
+                  data-required-message="Pris per kanot måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
                 <span>Kontaktmejl</span>
-                <input type="email" name="contact_email" value="{{ selected_event.contact_email }}" required>
+                <input
+                  type="email"
+                  name="contact_email"
+                  value="{{ selected_event.contact_email }}"
+                  data-required-message="Kontaktmejl måste fyllas i."
+                  required
+                >
               </label>
 
               <label class="admin-form-field">
@@ -433,22 +488,42 @@
 
               <label class="admin-form-field admin-form-field--full">
                 <span>FAQ: Bokning</span>
-                <textarea name="faq_booking_text" rows="5" required>{{ selected_event.faq_booking_text }}</textarea>
+                <textarea
+                  name="faq_booking_text"
+                  rows="5"
+                  data-required-message="Texten för FAQ: Bokning måste fyllas i."
+                  required
+                >{{ selected_event.faq_booking_text }}</textarea>
               </label>
 
               <label class="admin-form-field admin-form-field--full">
                 <span>FAQ: Ändringar och frågor</span>
-                <textarea name="faq_changes_and_questions_text" rows="5" required>{{ selected_event.faq_changes_and_questions_text }}</textarea>
+                <textarea
+                  name="faq_changes_and_questions_text"
+                  rows="5"
+                  data-required-message="Texten för FAQ: Ändringar och frågor måste fyllas i."
+                  required
+                >{{ selected_event.faq_changes_and_questions_text }}</textarea>
               </label>
 
               <label class="admin-form-field admin-form-field--full">
                 <span>Regler: På vattnet</span>
-                <textarea name="rules_on_the_water_text" rows="5" required>{{ selected_event.rules_on_the_water_text }}</textarea>
+                <textarea
+                  name="rules_on_the_water_text"
+                  rows="5"
+                  data-required-message="Texten för Regler: På vattnet måste fyllas i."
+                  required
+                >{{ selected_event.rules_on_the_water_text }}</textarea>
               </label>
 
               <label class="admin-form-field admin-form-field--full">
                 <span>Regler: Efter paddlingen</span>
-                <textarea name="rules_after_paddling_text" rows="5" required>{{ selected_event.rules_after_paddling_text }}</textarea>
+                <textarea
+                  name="rules_after_paddling_text"
+                  rows="5"
+                  data-required-message="Texten för Regler: Efter paddlingen måste fyllas i."
+                  required
+                >{{ selected_event.rules_after_paddling_text }}</textarea>
               </label>
 
               <div class="admin-form-actions admin-form-field--full">

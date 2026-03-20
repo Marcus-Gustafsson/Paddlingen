@@ -31,6 +31,7 @@ from flask_login import (  # type: ignore[import-untyped]
 
 from .util.event_settings import (
     build_event_settings_with_fallback,
+    format_swedish_date_display,
     get_active_event,
     get_available_canoes_total_with_fallback,
     get_event_year_with_fallback,
@@ -275,8 +276,13 @@ def get_admin_participant_name_parts() -> tuple[str, str]:
     return first_name, last_name
 
 
-def parse_admin_event_form_values() -> dict[str, object]:
+def parse_admin_event_form_values(event: Event) -> dict[str, object]:
     """Validate and convert the admin event form into Python values.
+
+    Args:
+        event: The existing event row being edited. Low-change values that are
+            hidden in the admin form fall back to this row when they are not
+            included in the submitted request.
 
     Returns:
         dict[str, object]: Clean values ready to assign to an :class:`Event`.
@@ -305,7 +311,6 @@ def parse_admin_event_form_values() -> dict[str, object]:
     if not all(
         [
             title,
-            subtitle,
             starting_location_name,
             starting_location_url,
             end_location_name,
@@ -327,12 +332,23 @@ def parse_admin_event_form_values() -> dict[str, object]:
             request.form.get("start_time", "").strip(), "%H:%M"
         ).time()
         available_canoes = int(request.form.get("available_canoes", "0"))
-        max_canoes_per_booking = int(request.form.get("max_canoes_per_booking", "0"))
-        weather_forecast_days_before_event = int(
-            request.form.get("weather_forecast_days_before_event", "0")
+        max_canoes_per_booking = int(
+            request.form.get(
+                "max_canoes_per_booking", str(event.max_canoes_per_booking)
+            )
         )
-        weather_latitude = float(request.form.get("weather_latitude", "0"))
-        weather_longitude = float(request.form.get("weather_longitude", "0"))
+        weather_forecast_days_before_event = int(
+            request.form.get(
+                "weather_forecast_days_before_event",
+                str(event.weather_forecast_days_before_event),
+            )
+        )
+        weather_latitude = float(
+            request.form.get("weather_latitude", str(event.weather_latitude))
+        )
+        weather_longitude = float(
+            request.form.get("weather_longitude", str(event.weather_longitude))
+        )
         price_per_canoe_sek = normalize_money_decimal(
             request.form.get("price_per_canoe_sek", "0")
         )
@@ -575,7 +591,6 @@ def login():
         if user and user.check_password(password):
             # Log in this user (stores user.id in session)
             login_user(user)
-            flash("Inloggning lyckades!", "success")
             # next = redirect target from ?next=...
             next_page = request.args.get("next") or url_for("main.admin_dashboard")
             return redirect(next_page)
@@ -721,6 +736,7 @@ def admin_dashboard():
         bookings=bookings,
         events=events,
         active_event=active_event,
+        format_swedish_date_display=format_swedish_date_display,
         selected_event=selected_event,
         confirmed_booking_count=confirmed_booking_count,
         remaining_canoes=remaining_canoes,
@@ -909,7 +925,7 @@ def admin_update_event(event_id: int):
         abort(404)
 
     try:
-        cleaned_values = parse_admin_event_form_values()
+        cleaned_values = parse_admin_event_form_values(event)
     except ValueError as error:
         flash(str(error), "error")
         return redirect(
@@ -947,7 +963,10 @@ def admin_activate_event(event_id: int):
         existing_event.is_active = existing_event.id == event_to_activate.id
 
     db.session.commit()
-    flash("Det valda eventet är nu aktivt på hemsidan.", "success")
+    flash(
+        f'Eventet "{event_to_activate.event_date.strftime("%Y-%m-%d")}" är nu aktivt på hemsidan.',
+        "success",
+    )
     return redirect(
         url_for(
             "main.admin_dashboard",
