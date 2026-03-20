@@ -216,8 +216,8 @@ This is the current role of the main files and folders.
   limit, forecast window, and weather coordinates.
 
 - `app/util/helper_functions.py`
-  Contains helper logic, currently including image lookup for the flattened
-  `static/images/previous_years/` folder.
+  Contains helper logic, including image lookup and stable image metadata for
+  the flattened `static/images/previous_years/` folder.
 
 ### Frontend files
 
@@ -275,7 +275,8 @@ This is the current role of the main files and folders.
 
 - `static/js/gallery.js`
   Small standalone module for the previous-years ribbon animation and the
-  gallery lightbox.
+  gallery lightbox. It also preloads the next and previous gallery image so
+  image navigation feels faster without loading the whole gallery at once.
 
 - `static/js/booking.js`
   Small standalone module for the two-step public booking modal.
@@ -288,6 +289,18 @@ This is the current role of the main files and folders.
   Static image root. The homepage background image now lives directly in this
   folder as `nitten.png`, while older gallery images live in the flattened
   `static/images/previous_years/` folder.
+
+- `data/previous_year_images.json`
+  Stores stable public image IDs such as `IMG-0001` together with the matching
+  filenames for the previous-years gallery. The gallery modal shows each image
+  ID through a separate `?` help popup so users can reference the correct image
+  when contacting the admin.
+
+- `static/images/previous_years/ribbon/`
+  Stores generated WebP ribbon variants keyed by stable image ID.
+
+- `static/images/previous_years/gallery/`
+  Stores generated WebP gallery variants keyed by stable image ID.
 
 ### Database and migrations
 
@@ -523,7 +536,9 @@ the file is now growing large enough that it may later need to be split.
 ### Authentication routes
 
 - `/login`
-  Handles admin login.
+  Handles admin login. It now only accepts local internal `next` redirect
+  targets after login so the route cannot be used as an open redirect to an
+  external site.
 
 - `/logout`
   Logs out the current admin user.
@@ -629,19 +644,25 @@ Why this matters:
 Images are currently stored under `static/images/`, with two main roles:
 
 1. `static/images/nitten.png` is the current homepage background image.
-2. `static/images/previous_years/` contains the flattened gallery and ribbon
-   images from earlier years.
+2. `static/images/previous_years/` contains the original previous-years images.
+3. `static/images/previous_years/ribbon/` contains generated small WebP
+   variants used by the homepage ribbon.
+4. `static/images/previous_years/gallery/` contains generated medium WebP
+   variants used by the gallery lightbox.
 
 There is a helper function in `app/util/helper_functions.py` that:
 
-1. reads the flattened `previous_years` folder,
-2. filters valid image file types,
-3. returns a sorted image list for the ribbon and full gallery.
+1. reads the flattened `previous_years` source folder,
+2. loads stable image metadata from `data/previous_year_images.json`,
+3. returns stable image IDs plus the matching generated variant paths.
 
 Why this was likely chosen:
 
 - It is simple.
 - It avoids needing a separate image storage system.
+- It keeps the public ribbon lighter than the full gallery.
+- It lets the homepage ribbon use lazy-loaded `<img>` elements instead of
+  eagerly loaded CSS background images.
 - It removes the old year-folder dependency from the gallery code.
 - It works well when image uploads are not happening through the website itself.
 

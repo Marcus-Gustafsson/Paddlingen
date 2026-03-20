@@ -2,6 +2,7 @@
 
 from app import db
 from app.util.db_models import BookedCanoe, BookingOrder, Event
+from app.util.helper_functions import get_previous_year_image_metadata
 
 
 def test_home_page(client):
@@ -17,6 +18,12 @@ def test_home_page(client):
     assert "info@paddlingen.se" in page
     assert "Paddlingen" in page
     assert "20 mars 2026" in page
+    assert "Visa bildinformation" in page
+    assert "Bildinformation" in page
+    assert "images/previous_years/ribbon/" in page
+    assert "images/previous_years/gallery/" in page
+    assert 'loading="lazy"' in page
+    assert 'fetchpriority="low"' in page
 
 
 def test_login_page(client):
@@ -169,6 +176,22 @@ def test_home_page_keeps_subtitle_blank_when_event_subtitle_is_empty(client):
     page = response.get_data(as_text=True)
     assert "Bästa dagen på hela året!" not in page
     assert 'class="main-subtitle no-select"' not in page
+
+
+def test_previous_year_image_metadata_has_stable_ids(client):
+    """Return image metadata entries with stable IDs and matching filenames."""
+
+    with client.application.app_context():
+        image_metadata = get_previous_year_image_metadata()
+
+    assert image_metadata
+    assert all(
+        metadata_entry["id"].startswith("IMG-") for metadata_entry in image_metadata
+    )
+    assert len({metadata_entry["id"] for metadata_entry in image_metadata}) == len(
+        image_metadata
+    )
+    assert all(metadata_entry["filename"] for metadata_entry in image_metadata)
 
 
 def test_invalid_form_data_returns_flash_error(client):

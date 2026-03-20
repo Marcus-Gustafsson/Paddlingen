@@ -1,6 +1,6 @@
 # Frontend Roadmap
 
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 ## Goal
 
@@ -57,12 +57,14 @@ Goal:
 - Make the admin login page feel intentional and consistent with the rest of
   the site.
 
-### Step 1. Redesign the login layout
+### Step 1. Redesign the login layout (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
 - Replace the current page with one centered login card.
 - Keep one clear title, clear labels, and one obvious submit action.
+- Align the visual direction with the public site.
+- Keep the page responsive on desktop, tablet, and phone.
 
 Why:
 
@@ -73,12 +75,13 @@ How to test:
 
 - Open `/login` and confirm the page is visually cleaner and still easy to use.
 
-### Step 2. Improve validation and feedback visibility on the login page
+### Step 2. Improve validation and feedback visibility on the login page (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
 - Make error and success messages easier to notice.
-- Confirm keyboard focus stays sensible after a failed login.
+- Replace the older banner-style feedback with clearer toast-style feedback.
+- Keep login validation and messages understandable for non-technical admins.
 
 Why:
 
@@ -94,20 +97,16 @@ Goal:
 
 - Make the admin page easier to read and safe for non-technical admins to use.
 
-### Step 1. Redesign the dashboard around two primary admin actions
+### Step 1. Redesign the dashboard around two primary admin actions (Completed 2026-03-20)
 
-Status:
-
-- Initial draft implemented on 2026-03-19.
-- Further visual refinement is still expected after manual review.
-
-What to do:
+Completed work:
 
 - Replace the current plain page with a clearer dashboard layout.
 - Add two obvious primary action buttons or cards:
   - `Hantera bokningar`
   - `Hantera event`
 - Make these the first things an admin sees after logging in.
+- Refine the top-row utility layout and responsive behavior.
 
 Why:
 
@@ -120,18 +119,9 @@ How to test:
 - Log in as admin and confirm the two primary actions are immediately obvious
   and easy to understand without technical context.
 
-### Step 2. Add a booking-management modal or panel
+### Step 2. Add a booking-management modal or panel (Completed 2026-03-20)
 
-Status:
-
-- Initial draft implemented on 2026-03-19.
-- The panel now supports:
-  - manual booking creation,
-  - booking name edits,
-  - booking deletion,
-  - manual payment-method selection for admin-added bookings.
-
-What to do:
+Completed work:
 
 - Add one focused booking-management modal or panel that opens from
   `Hantera bokningar`.
@@ -143,6 +133,10 @@ What to do:
   page.
 - Keep the workflow simple enough that a new admin can make a change without
   understanding the database tables behind it.
+- Support manual payment methods, including Stripe fallback cases.
+- Split participant names into first-name and last-name fields.
+- Improve mobile rendering by switching to stacked booking cards on smaller
+  screens.
 
 Why:
 
@@ -154,18 +148,9 @@ How to test:
 - Add, edit, and delete a booking and confirm the workflow feels clear from one
   place.
 
-### Step 3. Add an event-settings modal or panel
+### Step 3. Add an event-settings modal or panel (Completed 2026-03-20)
 
-Status:
-
-- Initial draft implemented on 2026-03-19.
-- The panel now supports:
-  - selecting an existing event,
-  - editing event fields,
-  - creating a new event by copying an existing one,
-  - activating the selected event.
-
-What to do:
+Completed work:
 
 - Add one focused event-management modal or panel that opens from
   `Hantera event`.
@@ -188,6 +173,11 @@ What to do:
   - FAQ card content
   - rules card content
   - contact details
+- Simplify the create flow so new events only require a new date and copy the
+  rest from the selected event.
+- Keep the admin-facing date and time fields aligned with Swedish formats.
+- Move low-change technical fields out of the admin form to keep the UI simpler
+  for non-technical admins.
 
 Why:
 
@@ -227,9 +217,9 @@ Goal:
 
 - Confirm the redesigned public and admin pages stay usable across screen sizes.
 
-### Step 1. Re-test desktop, phone, and tablet layouts
+### Step 1. Re-test desktop, phone, and tablet layouts (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
 - Re-run manual checks on:
   - homepage,
@@ -260,13 +250,110 @@ How to test:
 
 - Load the site on a phone and confirm the public page feels correct.
 
+## Phase 5: Improve The Gallery And Public Image Handling
+
+Goal:
+
+- Keep the previous-years images easier to load, easier to manage, and easier
+  to identify when someone asks about a specific photo.
+
+### Step 1. Add optimized image variants for ribbon and gallery (Completed 2026-03-20)
+
+Completed work:
+
+- Stop using the same image files for every gallery-related surface.
+- Add:
+  - smaller ribbon thumbnails,
+  - medium-sized gallery images,
+  - and keep originals archived separately if needed later.
+- Generate those variants together with the image metadata sync workflow.
+
+Why:
+
+- The homepage ribbon should not need to download the same heavier files that
+  the full gallery uses.
+- Smaller image variants reduce bandwidth and improve the page feel.
+
+How to test:
+
+- Open the homepage and confirm the ribbon still looks correct.
+- Open the gallery and confirm the modal still looks sharp enough.
+- Compare page load size before and after the change.
+
+### Step 2. Add image metadata with stable public IDs (Completed 2026-03-20)
+
+Completed work:
+
+- Add one metadata file for the previous-years images.
+- Give each image a stable public ID such as:
+  - `IMG-0001`
+  - `IMG-0002`
+- Keep the first version simple with:
+  - image ID,
+  - filename.
+- Add a sync script so new or removed files can update the metadata file
+  without changing older image IDs.
+
+Why:
+
+- The current `1 / 100` gallery counter is not stable enough to use as a
+  support identifier.
+- Stable image IDs let users report one specific picture even if the gallery
+  order changes later.
+
+How to test:
+
+- Open the gallery and confirm each image has one stable ID.
+- Reorder or add one image and confirm the older image IDs do not change.
+
+### Step 3. Show image support information inside the gallery modal (Completed 2026-03-20)
+
+Completed work:
+
+- Add a small information button or help area inside the gallery modal.
+- Show:
+  - the stable image ID,
+  - and short text explaining how someone can contact the organizer by email
+    if they want to ask a question or request removal.
+- Keep that information inside a separate `?` popup instead of showing it on
+  every image all the time.
+
+Why:
+
+- This gives users a clear and consistent way to identify the correct photo.
+
+How to test:
+
+- Open the gallery modal.
+- Confirm the image help/info area is easy to find but does not get in the way
+  of the image itself.
+
+### Step 4. Reduce homepage image loading further (Completed 2026-03-20)
+
+Completed work:
+
+- Review how many ribbon images are loaded immediately.
+- Avoid downloading more image data than the homepage really needs.
+- Switch the ribbon from CSS background images to lazy-loaded `<img>` elements
+  so the browser can defer offscreen image work more effectively.
+- Add next/previous image preloading in the gallery lightbox so browsing
+  remains smooth without loading the whole gallery at once.
+
+Why:
+
+- Even with local hosting or a VPS, smaller homepage payloads improve user
+  experience and make hosting simpler.
+
+How to test:
+
+- Reload the homepage with the browser network panel open.
+- Confirm fewer or smaller image files are loaded on first view.
+
 ## Current Recommended Next Step
 
 The next frontend step is:
 
-1. Redesign the admin login page so it matches the newer public-site styling.
-2. Then redesign the admin dashboard around two primary actions:
-   - `Hantera bokningar`
-   - `Hantera event`
-3. After that, implement the event-management modal so admins can edit active
-   event values and create upcoming event rows without changing source code.
+1. Keep refining the admin and public responsive layout based on real-device
+   testing.
+2. Move to the next roadmap area outside `Phase 5`, since the gallery image
+   handling work is now in place.

@@ -135,13 +135,13 @@
 .admin-form-field textarea,
 .inline-form input[type="text"] {
   width: 100%;
-  min-height: 46px;
-  padding: 0.88rem 1rem;
+  min-height: 42px;
+  padding: 0.76rem 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   background: rgba(8, 20, 26, 0.68);
   color: #f5f2eb;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -149,7 +149,7 @@
 }
 
 .admin-form-field textarea {
-  min-height: 120px;
+  min-height: 108px;
   resize: vertical;
 }
 
@@ -157,6 +157,17 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
+}
+
+.admin-form-field {
+  align-items: center;
+}
+
+.admin-form-field select[name="manual_payment_method"] {
+  width: auto;
+  min-width: 220px;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .login-field input:focus,
@@ -412,10 +423,12 @@
 .admin-action-grid {
   display: grid;
   gap: 1rem;
+  width: min(100%, 860px);
+  margin: 0 auto;
 }
 
 .admin-action-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .admin-action-card,
@@ -424,6 +437,12 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(10, 28, 35, 0.82);
   box-shadow: 0 18px 44px rgba(4, 12, 16, 0.16);
+}
+
+.admin-action-card {
+  width: 100%;
+  align-items: center;
+  text-align: center;
 }
 
 .admin-summary-label {
@@ -502,51 +521,51 @@
 
 .admin-panel {
   position: relative;
-  width: min(100%, 1020px);
+  width: min(100%, 920px);
   max-height: calc(100vh - 2.5rem);
   overflow: auto;
-  padding: 1.25rem;
-  border-radius: 30px;
+  padding: 1rem;
+  border-radius: 26px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(10, 28, 35, 0.92);
-  box-shadow: 0 18px 42px rgba(4, 12, 16, 0.24);
+  box-shadow: 0 16px 34px rgba(4, 12, 16, 0.22);
 }
 
 .admin-panel--wide {
-  width: min(100%, 1100px);
+  width: min(100%, 980px);
 }
 
 .admin-panel-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 2.8rem;
-  height: 2.8rem;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 2.45rem;
+  height: 2.45rem;
   border: none;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: #f5f2eb;
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   cursor: pointer;
 }
 
 .admin-panel-header {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  margin-bottom: 1rem;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
 }
 
 .admin-panel-header h2,
 .admin-subcard h3 {
   margin: 0;
-  font-size: clamp(1.25rem, 1.8vw, 1.65rem);
+  font-size: clamp(1.12rem, 1.55vw, 1.45rem);
   font-weight: 600;
 }
 
 .admin-panel-grid {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.75rem;
 }
 
 .admin-panel-grid--bookings {
@@ -554,12 +573,12 @@
 }
 
 .admin-panel-grid--events {
-  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
   align-items: start;
 }
 
 .admin-subcard {
-  padding: 1.05rem;
+  padding: 0.9rem;
 }
 
 .admin-subcard--sidebar,
@@ -572,26 +591,26 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .admin-divider {
   height: 1px;
-  margin: 1.15rem 0;
+  margin: 0.95rem 0;
   background: rgba(255, 255, 255, 0.1);
 }
 
 .admin-event-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .admin-event-list-item {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  padding: 0.82rem 0.9rem;
+  padding: 0.72rem 0.82rem;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
@@ -605,12 +624,12 @@
 }
 
 .admin-event-list-date {
-  font-size: 1rem;
+  font-size: 0.94rem;
   color: #f5f2eb;
 }
 
 .admin-event-list-iso {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(241, 244, 241, 0.68);
@@ -666,7 +685,7 @@
 .admin-form--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .admin-form-field--full,
@@ -683,8 +702,8 @@
 .admin-secondary-button,
 .admin-add button,
 .inline-form button {
-  min-height: 46px;
-  padding: 0.82rem 1.05rem;
+  min-height: 42px;
+  padding: 0.72rem 0.95rem;
   cursor: pointer;
 }
 
@@ -708,9 +727,9 @@
 
 .overview-table th,
 .overview-table td {
-  padding: 0.95rem 1rem;
+  padding: 0.8rem 0.85rem;
   text-align: left;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #f5f2eb;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   vertical-align: middle;
@@ -727,14 +746,14 @@
 .inline-form {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .name-cell .inline-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .edit-form input[type="text"] {
@@ -747,7 +766,7 @@
 
 .admin-empty-state {
   margin: 0;
-  padding: 1rem;
+  padding: 0.85rem;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
   color: rgba(241, 244, 241, 0.82);
@@ -902,7 +921,7 @@
 
   .admin-panel-header h2,
   .admin-subcard h3 {
-    font-size: 1.18rem;
+    font-size: clamp(1.12rem, 1.55vw, 1.45rem);
   }
 
   .admin-panel-copy,

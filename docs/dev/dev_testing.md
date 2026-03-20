@@ -1,6 +1,6 @@
 # Development Testing
 
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 ## Purpose
 
@@ -236,6 +236,43 @@ uv run flask --app wsgi clear-test-bookings
 What it does:
 
 - removes the seeded test bookings without touching normal bookings.
+
+## Previous-Years Image Asset Sync
+
+Run this whenever you add, remove, or rename files in:
+
+```text
+static/images/previous_years/
+```
+
+Command:
+
+```bash
+uv run python scripts/sync_previous_year_image_metadata.py
+```
+
+What it does:
+
+- reads the current image files,
+- loads `data/previous_year_images.json`,
+- keeps existing `IMG-000x` IDs for filenames that already exist,
+- assigns new IDs only to new filenames,
+- removes metadata rows for files that no longer exist.
+- writes optimized ribbon variants to `static/images/previous_years/ribbon/`,
+- writes optimized gallery variants to `static/images/previous_years/gallery/`.
+
+Best practice:
+
+- run this script explicitly when the image folder changes
+- do not try to update the metadata automatically on app startup
+
+Why:
+
+- explicit updates are easier to reason about
+- automatic rewrites during app startup can hide mistakes and make image-ID
+  changes harder to track
+- generating the optimized image variants at the same time keeps the public
+  image paths in sync with the metadata
 
 ### Suggested testing workflow
 

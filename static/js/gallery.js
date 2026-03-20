@@ -25,6 +25,18 @@
     const counterElement = modalElement
       ? modalElement.querySelector(".gallery-counter")
       : null;
+    const infoTriggerButton = modalElement
+      ? modalElement.querySelector(".gallery-info-trigger")
+      : null;
+    const infoPanelElement = modalElement
+      ? modalElement.querySelector(".gallery-info-panel")
+      : null;
+    const infoCloseButton = modalElement
+      ? modalElement.querySelector(".gallery-info-close")
+      : null;
+    const infoImageIdElement = modalElement
+      ? modalElement.querySelector(".gallery-info-image-id")
+      : null;
     const closeButton = modalElement
       ? modalElement.querySelector(".gallery-close")
       : null;
@@ -42,6 +54,10 @@
       !modalElement ||
       !imageElement ||
       !counterElement ||
+      !infoTriggerButton ||
+      !infoPanelElement ||
+      !infoCloseButton ||
+      !infoImageIdElement ||
       !closeButton ||
       !previousButton ||
       !nextButton
@@ -51,16 +67,66 @@
 
     let galleryImages = [];
     let currentImageIndex = 0;
+    const preloadedGalleryImageUrls = new Set();
+
+    infoTriggerButton.setAttribute("aria-expanded", "false");
+
+    function getImageUrlByIndex(imageIndex) {
+      if (!galleryImages.length) {
+        return null;
+      }
+
+      const normalizedIndex =
+        (imageIndex + galleryImages.length) % galleryImages.length;
+      const selectedImage = galleryImages[normalizedIndex];
+      return typeof selectedImage === "string" ? selectedImage : selectedImage.url;
+    }
+
+    function preloadGalleryImageAtIndex(imageIndex) {
+      const imageUrl = getImageUrlByIndex(imageIndex);
+      if (!imageUrl || preloadedGalleryImageUrls.has(imageUrl)) {
+        return;
+      }
+
+      const preloadedImage = new Image();
+      preloadedImage.decoding = "async";
+      preloadedImage.src = imageUrl;
+      preloadedGalleryImageUrls.add(imageUrl);
+    }
 
     function updateGalleryView() {
       if (!galleryImages.length) {
         return;
       }
 
-      imageElement.src = galleryImages[currentImageIndex];
+      const currentImage = galleryImages[currentImageIndex];
+      const imageUrl =
+        typeof currentImage === "string" ? currentImage : currentImage.url;
+      const imageId =
+        typeof currentImage === "string"
+          ? `IMG-${String(currentImageIndex + 1).padStart(4, "0")}`
+          : currentImage.id;
+      imageElement.src = imageUrl;
+      imageElement.alt = `Galleri bild ${imageId}`;
       counterElement.textContent = `${currentImageIndex + 1} / ${galleryImages.length}`;
+      infoImageIdElement.textContent = `ID: ${imageId}`;
       previousButton.style.display = galleryImages.length > 1 ? "block" : "none";
       nextButton.style.display = galleryImages.length > 1 ? "block" : "none";
+
+      if (galleryImages.length > 1) {
+        preloadGalleryImageAtIndex(currentImageIndex + 1);
+        preloadGalleryImageAtIndex(currentImageIndex - 1);
+      }
+    }
+
+    function openGalleryInfoPanel() {
+      infoPanelElement.hidden = false;
+      infoTriggerButton.setAttribute("aria-expanded", "true");
+    }
+
+    function closeGalleryInfoPanel() {
+      infoPanelElement.hidden = true;
+      infoTriggerButton.setAttribute("aria-expanded", "false");
     }
 
     function openGallery(images, startIndex = 0) {
@@ -70,12 +136,15 @@
 
       galleryImages = images;
       currentImageIndex = startIndex;
+      preloadedGalleryImageUrls.clear();
+      closeGalleryInfoPanel();
       updateGalleryView();
       modalElement.style.display = "flex";
     }
 
     function closeGallery() {
       modalElement.style.display = "none";
+      closeGalleryInfoPanel();
       galleryImages = [];
     }
 
@@ -91,6 +160,15 @@
     });
 
     closeButton.addEventListener("click", closeGallery);
+    infoTriggerButton.addEventListener("click", () => {
+      if (infoPanelElement.hidden) {
+        openGalleryInfoPanel();
+        return;
+      }
+
+      closeGalleryInfoPanel();
+    });
+    infoCloseButton.addEventListener("click", closeGalleryInfoPanel);
 
     modalElement.addEventListener("click", (event) => {
       if (event.target === modalElement) {
@@ -104,6 +182,11 @@
       }
 
       if (event.key === "Escape") {
+        if (!infoPanelElement.hidden) {
+          closeGalleryInfoPanel();
+          return;
+        }
+
         closeGallery();
       }
 

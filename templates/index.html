@@ -113,12 +113,30 @@ Why it’s here:
               <div id="galleryRibbonTrack" class="gallery-ribbon-track">
                 <div class="gallery-ribbon-group">
                   {% for image_url in previous_year_ribbon_image_urls %}
-                    <div class="gallery-ribbon-tile" style="background-image: url('{{ image_url }}');"></div>
+                    <div class="gallery-ribbon-tile">
+                      <img
+                        src="{{ image_url }}"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                        aria-hidden="true"
+                      >
+                    </div>
                   {% endfor %}
                 </div>
                 <div class="gallery-ribbon-group" aria-hidden="true">
                   {% for image_url in previous_year_ribbon_image_urls %}
-                    <div class="gallery-ribbon-tile" style="background-image: url('{{ image_url }}');"></div>
+                    <div class="gallery-ribbon-tile">
+                      <img
+                        src="{{ image_url }}"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                        aria-hidden="true"
+                      >
+                    </div>
                   {% endfor %}
                 </div>
               </div>
@@ -368,9 +386,20 @@ Why it’s here:
   <div id="galleryModal" class="gallery-modal">
     <div class="gallery-content">
       <button class="gallery-close" aria-label="Stäng">&times;</button>
+      <button class="gallery-info-trigger" type="button" aria-label="Visa bildinformation">?</button>
       <button class="gallery-prev" aria-label="Föregående bild">&#10094;</button>
       <img src="" alt="Galleri bild" class="gallery-image">
       <button class="gallery-next" aria-label="Nästa bild">&#10095;</button>
+      <div class="gallery-info-panel" hidden role="dialog" aria-modal="true" aria-labelledby="galleryInfoTitle">
+        <button class="gallery-info-close" type="button" aria-label="Stäng bildinformation">&times;</button>
+        <h3 id="galleryInfoTitle">Bildinformation</h3>
+        <p class="gallery-info-image-id"></p>
+        <p class="gallery-info-text">
+          Om du har frågor om bilden eller vill att den ska tas bort, mejla
+          <a href="mailto:{{ event_settings.contact_email }}">{{ event_settings.contact_email }}</a>
+          och ange orsak samt ID.
+        </p>
+      </div>
       <div class="gallery-caption">
         <span class="gallery-counter"></span>
       </div>

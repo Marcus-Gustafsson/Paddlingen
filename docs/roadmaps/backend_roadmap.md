@@ -1,6 +1,6 @@
 # Backend Roadmap
 
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 ## Goal
 
@@ -272,7 +272,66 @@ How to test:
 - Run the cleanup command or job.
 - Confirm only the intended stale rows are removed.
 
-## Phase 3: Make Booking Safety Explicit
+## Phase 3: Add Controlled Access To The Public Site
+
+Goal:
+
+- Keep the public site limited to invited users instead of making bookings,
+  participant data, and images open to anyone on the internet.
+
+### Step 1. Design the site-wide access gate
+
+What to do:
+
+- Decide how invited users should unlock the public site.
+- Start with one shared password for the whole event site.
+- Decide which routes stay public and which routes require the access gate.
+
+Why:
+
+- The event is not meant for random outside visitors.
+- A shared access gate lowers unnecessary exposure of participant-related
+  information and previous-years images.
+
+How to test:
+
+- Visit the site in a private browser window and confirm access is blocked
+  until the correct shared password is entered.
+
+### Step 2. Add a public access session after the password is entered
+
+What to do:
+
+- Store a session flag after a visitor enters the correct shared password.
+- Keep the access behavior separate from the admin login flow.
+
+Why:
+
+- Admin login and visitor access solve different problems and should stay easy
+  to reason about.
+
+How to test:
+
+- Unlock the site once and confirm the user can move around without entering
+  the password again on every page refresh.
+
+### Step 3. Apply the access gate to the public routes
+
+What to do:
+
+- Protect the homepage and other public-facing routes that expose event or
+  participant information.
+
+Why:
+
+- The gate only helps if it actually covers the user-facing entry points.
+
+How to test:
+
+- Confirm an unlocked session can still use the booking flow and gallery.
+- Confirm a locked session is redirected to the public access screen.
+
+## Phase 4: Make Booking Safety Explicit
 
 Goal:
 

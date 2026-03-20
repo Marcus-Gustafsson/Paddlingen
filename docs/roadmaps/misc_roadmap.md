@@ -84,7 +84,68 @@ How to test:
 - Send a test request through the public tunnel and confirm the app receives
   it.
 
-## Phase 3: Add Monitoring, Logging, And Alerts
+## Phase 3: Add Privacy And Content-Governance Basics
+
+Goal:
+
+- Keep the project easier to manage when handling participant data and event
+  photos.
+
+### Step 1. Add a simple privacy and personal-data information page
+
+What to do:
+
+- Add one clear page that explains:
+  - what personal data the site handles,
+  - why it is handled,
+  - who to contact with questions,
+  - and how removal or correction requests are handled.
+
+Why:
+
+- The site stores booking names and shows identifiable event photos.
+- Even for a small event project, the handling should be explained clearly.
+
+How to test:
+
+- Open the page and confirm a non-technical user can understand how to ask
+  about their data.
+
+### Step 2. Add a documented photo-removal workflow
+
+What to do:
+
+- Define how someone asks about a photo or asks for it to be removed.
+- Use the stable public image ID in that workflow.
+
+Why:
+
+- The organizer needs one consistent way to identify the correct picture and
+  act on the request.
+
+How to test:
+
+- Pick one image ID and confirm the request flow is clear from the public site.
+
+### Step 3. Keep the site on necessary cookies only
+
+What to do:
+
+- Avoid adding analytics or marketing cookies for now.
+- Keep the current cookie use limited to necessary site behavior such as
+  sessions and CSRF protection.
+
+Why:
+
+- This keeps the privacy setup simpler until a stronger reason exists to add
+  more tracking.
+
+How to test:
+
+- Review the app behavior and confirm the site still works without any
+  non-essential cookie features.
+
+## Phase 4: Add Monitoring, Logging, And Alerts
 
 Goal:
 
@@ -146,7 +207,7 @@ How to test:
 
 - Trigger a test alert and confirm it arrives.
 
-## Phase 4: Test Deployment On Google Cloud Run
+## Phase 5: Test Deployment On Google Cloud Run
 
 Goal:
 
@@ -226,7 +287,7 @@ How to test:
 
 - Confirm the chosen tables have the intended RLS setting.
 
-## Phase 5: Prepare For Public Launch
+## Phase 6: Prepare For Public Launch
 
 Goal:
 

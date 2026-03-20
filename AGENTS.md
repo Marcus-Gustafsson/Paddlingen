@@ -22,6 +22,9 @@ maintain over time.
   - deployment that is easy to reason about.
 - The UI that the admin and user interact with should all be in correct Swedish grammar, as the users of the website are only Swedish people.
 - All dates, currency, time, should use Swedish format.
+- The code, comments, dev documents, commands, explanations, roadmaps, etc should be in English
+- All explanations should be beginner friendly, and all commands should be fully documented.
+- Always respond in English in the codex session, do not switch to Swedish.
 
 ## Development Environment
 

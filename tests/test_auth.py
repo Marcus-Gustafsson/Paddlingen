@@ -54,3 +54,29 @@ def test_login_rate_limit_exceeded(client):
         assert ok_response.status_code == 200
     limited_response = client.get("/login", environ_overrides={"REMOTE_ADDR": test_ip})
     assert limited_response.status_code == 429
+
+
+def test_login_rejects_external_next_redirect(client):
+    """Block external `next` URLs so login cannot be used as an open redirect."""
+
+    response = client.post(
+        "/login?next=http://google.com",
+        data={"username": "admin", "password": "password"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin")
+
+
+def test_login_allows_internal_next_redirect(client):
+    """Allow safe internal `next` paths after a successful login."""
+
+    response = client.post(
+        "/login?next=/admin",
+        data={"username": "admin", "password": "password"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin")

@@ -132,8 +132,14 @@ The public frontend is now split into smaller files.
 ### Images
 
 - `static/images/nitten.png` is the current homepage background image.
-- `static/images/previous_years/` contains the ribbon and gallery images from
-  earlier years.
+- `static/images/previous_years/` contains the original previous-years images.
+- `static/images/previous_years/ribbon/` contains generated ribbon-sized image
+  variants.
+- `static/images/previous_years/gallery/` contains generated gallery-sized
+  image variants.
+- `data/previous_year_images.json` stores stable public image IDs for the
+  previous-years gallery. These IDs are shown in the gallery through a small
+  `?` popup instead of being visible all the time.
 
 ## Current Admin Setup
 

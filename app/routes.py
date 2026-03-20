@@ -8,6 +8,7 @@ registered by the application factory.
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from urllib.parse import urlsplit
 import requests
 from flask import (
     abort,
@@ -40,7 +41,10 @@ from .util.event_settings import (
     get_weather_coordinates_with_fallback,
     normalize_money_decimal,
 )
-from .util.helper_functions import get_previous_year_image_filenames
+from .util.helper_functions import (
+    get_previous_year_image_metadata,
+    get_previous_year_variant_filename,
+)
 from .util.db_models import (
     BookedCanoe,
     BookingOrder,
@@ -76,6 +80,32 @@ def get_total_available_canoes() -> int:
     """
 
     return get_available_canoes_total_with_fallback()
+
+
+def get_safe_login_redirect_target() -> str:
+    """Return a safe post-login redirect path from the `next` query value.
+
+    This only accepts local application paths such as `/admin` or
+    `/admin?panel=events`. External absolute URLs are rejected to prevent open
+    redirects.
+    """
+
+    fallback_target = url_for("main.admin_dashboard")
+    next_page = request.args.get("next", "").strip()
+
+    if not next_page:
+        return fallback_target
+
+    parsed_target = urlsplit(next_page)
+    if parsed_target.scheme or parsed_target.netloc:
+        logger.warning("Blocked external login redirect target: %s", next_page)
+        return fallback_target
+
+    if not parsed_target.path.startswith("/"):
+        logger.warning("Blocked non-local login redirect target: %s", next_page)
+        return fallback_target
+
+    return next_page
 
 
 def get_max_canoes_per_booking() -> int:
@@ -191,22 +221,39 @@ def build_event_settings() -> dict[str, object]:
     return build_event_settings_with_fallback()
 
 
-def build_previous_year_gallery_data() -> tuple[list[str], list[str]]:
+def build_previous_year_gallery_data() -> tuple[list[str], list[dict[str, str]]]:
     """Build ribbon and gallery image URLs for previous-year photos.
 
     Returns:
-        tuple[list[str], list[str]]: Two lists of static image URLs.
-        The first list is used by the homepage ribbon.
-        The second list contains the full combined gallery used by the image
-        viewer modal. For now both lists contain the same images because the
-        ribbon should loop through all available previous-year photos.
+        tuple[list[str], list[dict[str, str]]]: Ribbon image URLs plus gallery
+        image objects with stable public IDs and filenames.
     """
-    image_filenames = get_previous_year_image_filenames()
-    image_urls = [
-        url_for("static", filename=f"images/previous_years/{image_filename}")
-        for image_filename in image_filenames
+    image_metadata = get_previous_year_image_metadata()
+    ribbon_image_urls = [
+        url_for(
+            "static",
+            filename=(
+                "images/previous_years/ribbon/"
+                f"{get_previous_year_variant_filename(image_entry['id'])}"
+            ),
+        )
+        for image_entry in image_metadata
     ]
-    return image_urls, image_urls
+    gallery_images = [
+        {
+            "id": image_entry["id"],
+            "filename": image_entry["filename"],
+            "url": url_for(
+                "static",
+                filename=(
+                    "images/previous_years/gallery/"
+                    f"{get_previous_year_variant_filename(image_entry['id'])}"
+                ),
+            ),
+        }
+        for image_entry in image_metadata
+    ]
+    return ribbon_image_urls, gallery_images
 
 
 def get_event_coordinates() -> tuple[float, float]:
@@ -608,7 +655,7 @@ def login():
     """
     if current_user.is_authenticated:
         # Already logged in? Go to admin dashboard.
-        return redirect(url_for("main.admin_dashboard"))
+        return redirect(get_safe_login_redirect_target())
 
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -618,9 +665,7 @@ def login():
         if user and user.check_password(password):
             # Log in this user (stores user.id in session)
             login_user(user)
-            # next = redirect target from ?next=...
-            next_page = request.args.get("next") or url_for("main.admin_dashboard")
-            return redirect(next_page)
+            return redirect(get_safe_login_redirect_target())
         else:
             flash("Felaktigt användarnamn eller lösenord", "error")
 
