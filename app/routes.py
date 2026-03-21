@@ -21,6 +21,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_from_directory,
     session,
     url_for,
 )
@@ -45,7 +46,9 @@ from .util.event_settings import (
 )
 from .util.helper_functions import (
     get_previous_year_image_metadata,
+    get_previous_year_variant_folder,
     get_previous_year_variant_filename,
+    get_project_root_from_static_folder,
 )
 from .util.db_models import (
     BookedCanoe,
@@ -71,6 +74,10 @@ logger = logging.getLogger(__name__)
 MAX_PARTICIPANT_NAME_LENGTH = 20
 PUBLIC_SITE_ACCESS_SESSION_KEY = "public_site_access_granted"
 PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY = "public_site_just_unlocked"
+PROTECTED_PREVIOUS_YEAR_STATIC_PREFIXES = (
+    "/static/images/previous_years/ribbon/",
+    "/static/images/previous_years/gallery/",
+)
 
 main_blueprint = Blueprint("main", __name__)
 
@@ -127,6 +134,15 @@ def has_public_site_access() -> bool:
     return bool(session.get(PUBLIC_SITE_ACCESS_SESSION_KEY))
 
 
+def is_protected_previous_year_static_request() -> bool:
+    """Return whether the current request targets a protected static image."""
+
+    return any(
+        request.path.startswith(path_prefix)
+        for path_prefix in PROTECTED_PREVIOUS_YEAR_STATIC_PREFIXES
+    )
+
+
 def require_public_site_access():
     """Return a redirect or JSON response when the public site is still locked."""
 
@@ -161,9 +177,13 @@ def enforce_public_site_access_gate():
     if has_public_site_access():
         return None
 
+    if is_protected_previous_year_static_request():
+        abort(403)
+
     allowed_endpoints = {
         "main.index",
         "main.unlock_public_site",
+        "main.serve_previous_year_image",
         "static",
     }
     if request.endpoint in allowed_endpoints:
@@ -295,11 +315,9 @@ def build_previous_year_gallery_data() -> tuple[list[str], list[dict[str, str]]]
     image_metadata = get_previous_year_image_metadata()
     ribbon_image_urls = [
         url_for(
-            "static",
-            filename=(
-                "images/previous_years/ribbon/"
-                f"{get_previous_year_variant_filename(image_entry['id'])}"
-            ),
+            "main.serve_previous_year_image",
+            variant_name="ribbon",
+            image_id=image_entry["id"],
         )
         for image_entry in image_metadata
     ]
@@ -308,16 +326,52 @@ def build_previous_year_gallery_data() -> tuple[list[str], list[dict[str, str]]]
             "id": image_entry["id"],
             "filename": image_entry["filename"],
             "url": url_for(
-                "static",
-                filename=(
-                    "images/previous_years/gallery/"
-                    f"{get_previous_year_variant_filename(image_entry['id'])}"
-                ),
+                "main.serve_previous_year_image",
+                variant_name="gallery",
+                image_id=image_entry["id"],
             ),
         }
         for image_entry in image_metadata
     ]
     return ribbon_image_urls, gallery_images
+
+
+@main_blueprint.route("/previous-years-images/<variant_name>/<image_id>.webp")
+def serve_previous_year_image(variant_name: str, image_id: str):
+    """Serve one protected previous-years image variant by stable image ID.
+
+    This route keeps the ribbon and gallery images behind the shared public
+    access gate. Locked visitors should not be able to fetch the image files
+    directly, even if they guess a URL.
+    """
+
+    if not has_public_site_access():
+        abort(403)
+
+    if variant_name not in {"ribbon", "gallery"}:
+        abort(404)
+
+    image_metadata = get_previous_year_image_metadata()
+    known_image_ids = {image_entry["id"] for image_entry in image_metadata}
+    if image_id not in known_image_ids:
+        abort(404)
+
+    static_folder = current_app.static_folder
+    if static_folder is None:
+        raise RuntimeError("Static folder is not configured")
+
+    project_root = get_project_root_from_static_folder(static_folder)
+    variant_folder = get_previous_year_variant_folder(project_root, variant_name)
+    variant_filename = get_previous_year_variant_filename(image_id)
+
+    if not (variant_folder / variant_filename).exists():
+        abort(404)
+
+    return send_from_directory(
+        variant_folder,
+        variant_filename,
+        mimetype="image/webp",
+    )
 
 
 def get_event_coordinates() -> tuple[float, float]:

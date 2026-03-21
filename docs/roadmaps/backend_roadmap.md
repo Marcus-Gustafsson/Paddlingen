@@ -338,7 +338,7 @@ How to test:
 - Confirm an unlocked session can still use the booking flow and gallery.
 - Confirm a locked session is redirected to the public access screen.
 
-### Step 4. Protect gallery and ribbon images behind Flask routes later
+### Step 4. Protect gallery and ribbon images behind Flask routes (Completed 2026-03-21)
 
 What to do:
 
@@ -376,6 +376,27 @@ How to test:
 
 - Save a new shared public password through the admin page.
 - Confirm the old password stops working and the new one unlocks the site.
+
+### Step 6. Use a production-grade rate-limit storage backend
+
+What to do:
+
+- Keep the existing request limits on `/unlock` and `/login`.
+- Replace Flask-Limiter's in-memory storage with a shared backend for
+  deployment, such as Redis.
+
+Why:
+
+- The brute-force protection routes already exist, but the current in-memory
+  storage is only suitable for local development and very simple deployments.
+- A shared backend keeps the limits consistent across restarts, multiple
+  workers, or multiple app instances.
+
+How to test:
+
+- Trigger the `/unlock` and `/login` limits from the same IP address.
+- Confirm the limit still applies correctly after an app restart or when using
+  multiple app workers.
 
 ## Phase 4: Make Booking Safety Explicit
 

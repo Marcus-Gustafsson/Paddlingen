@@ -154,6 +154,9 @@ The public frontend is now split into smaller files.
 - `data/previous_year_images.json` stores stable public image IDs for the
   previous-years gallery. These IDs are shown in the gallery through a small
   `?` popup instead of being visible all the time.
+- The generated ribbon and gallery variants are no longer linked directly from
+  `/static/` on the public page. Flask now serves them through protected image
+  routes after the shared public password has been unlocked.
 
 ## Current Admin Setup
 
@@ -187,6 +190,8 @@ Current admin dashboard behavior:
   - editing the selected event,
   - creating a new event by copying an existing one,
   - activating the selected event.
+- Both `/unlock` and `/login` are rate limited already, but the current
+  limiter storage is still the simple in-memory development setup.
 
 ## Current Known Workflow Gaps
 

@@ -45,8 +45,8 @@ def test_home_page(client):
     assert "20 mars 2026" in page
     assert "Visa bildinformation" in page
     assert "Bildinformation" in page
-    assert "images/previous_years/ribbon/" in page
-    assert "images/previous_years/gallery/" in page
+    assert "/previous-years-images/ribbon/" in page
+    assert "/previous-years-images/gallery/" in page
     assert 'loading="lazy"' in page
     assert 'fetchpriority="low"' in page
 
@@ -226,6 +226,41 @@ def test_previous_year_image_metadata_has_stable_ids(client):
     assert all(metadata_entry["filename"] for metadata_entry in image_metadata)
 
 
+def test_locked_previous_year_image_returns_forbidden(client):
+    """Block direct image fetches until the shared public password is unlocked."""
+
+    with client.application.app_context():
+        image_metadata = get_previous_year_image_metadata()
+
+    image_id = image_metadata[0]["id"]
+    response = client.get(f"/previous-years-images/ribbon/{image_id}.webp")
+    assert response.status_code == 403
+
+
+def test_locked_legacy_static_previous_year_image_returns_forbidden(client):
+    """Block the old static ribbon/gallery paths before the site is unlocked."""
+
+    with client.application.app_context():
+        image_metadata = get_previous_year_image_metadata()
+
+    image_id = image_metadata[0]["id"]
+    response = client.get(f"/static/images/previous_years/ribbon/{image_id}.webp")
+    assert response.status_code == 403
+
+
+def test_unlocked_previous_year_image_is_served(client):
+    """Allow protected ribbon/gallery images after the shared gate is unlocked."""
+
+    with client.application.app_context():
+        image_metadata = get_previous_year_image_metadata()
+
+    unlock_public_site(client)
+    image_id = image_metadata[0]["id"]
+    response = client.get(f"/previous-years-images/gallery/{image_id}.webp")
+    assert response.status_code == 200
+    assert response.mimetype == "image/webp"
+
+
 def test_invalid_form_data_returns_flash_error(client):
     """Submit empty form data and expect an error without database changes.
 
@@ -265,3 +300,25 @@ def test_unlock_rejects_wrong_public_password(client):
     assert "Fel lösenord. Försök igen." in page
     assert "Öppna sidan" in page
     assert "Boka kanot" not in page
+
+
+def test_unlock_rate_limit_exceeded(client):
+    """Block repeated shared-password attempts from the same IP address."""
+
+    test_ip = "203.0.113.44"
+    for _ in range(5):
+        response = client.post(
+            "/unlock",
+            data={"password": "wrong-password"},
+            environ_overrides={"REMOTE_ADDR": test_ip},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    limited_response = client.post(
+        "/unlock",
+        data={"password": "wrong-password"},
+        environ_overrides={"REMOTE_ADDR": test_ip},
+        follow_redirects=False,
+    )
+    assert limited_response.status_code == 429

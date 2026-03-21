@@ -547,12 +547,18 @@ the file is now growing large enough that it may later need to be split.
 
 - `/unlock`
   Verifies the shared public-site password and stores one session flag when the
-  password is correct.
+  password is correct. This route is rate limited to reduce brute-force
+  attempts.
+
+- `/previous-years-images/<variant>/<image_id>.webp`
+  Serves the protected ribbon and gallery image variants through Flask instead
+  of `/static/`, so a locked visitor cannot fetch those image files directly.
 
 - `/login`
   Handles admin login. It now only accepts local internal `next` redirect
   targets after login so the route cannot be used as an open redirect to an
-  external site.
+  external site. This route is also rate limited to reduce brute-force
+  attempts.
 
 - `/logout`
   Logs out the current admin user.

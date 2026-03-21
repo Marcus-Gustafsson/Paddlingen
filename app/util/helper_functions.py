@@ -42,6 +42,17 @@ def get_previous_year_gallery_variant_folder(project_root: Path) -> Path:
     return get_previous_year_image_folder(project_root) / "gallery"
 
 
+def get_previous_year_variant_folder(project_root: Path, variant_name: str) -> Path:
+    """Return the folder that stores the requested generated image variant."""
+
+    if variant_name == "ribbon":
+        return get_previous_year_ribbon_variant_folder(project_root)
+    if variant_name == "gallery":
+        return get_previous_year_gallery_variant_folder(project_root)
+
+    raise ValueError(f"Unsupported previous-year image variant: {variant_name}")
+
+
 def get_previous_year_variant_filename(image_id: str) -> str:
     """Return the generated variant filename for one stable image ID."""
 

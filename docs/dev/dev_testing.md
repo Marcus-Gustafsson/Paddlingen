@@ -204,6 +204,8 @@ Check:
 - if `PUBLIC_SITE_PASSWORD_HASH` is configured, the shared password gate shows
   first,
 - entering the correct shared password unlocks the homepage,
+- a locked private browser window cannot open the protected ribbon/gallery
+  image URLs directly,
 - homepage hero loads,
 - weather widget loads,
 - info and contact popups open,
@@ -212,6 +214,37 @@ Check:
 - booking modal opens,
 - ribbon scrolls,
 - gallery modal opens.
+
+Extra manual checks:
+
+1. Open a fresh private browser window and visit:
+
+```text
+http://127.0.0.1:5000/previous-years-images/ribbon/IMG-0001.webp
+```
+
+Expected:
+
+- the image should not load before the shared public password is unlocked
+
+2. Unlock the site in the same browser session and open the same image URL
+   again.
+
+Expected:
+
+- the image should now load
+
+3. Try repeated bad passwords for:
+
+```text
+http://127.0.0.1:5000/
+http://127.0.0.1:5000/login
+```
+
+Expected:
+
+- `/unlock` and `/login` should eventually return `429 Too Many Requests`
+  because both routes are rate limited
 
 ## Development Booking Seed Commands
 
