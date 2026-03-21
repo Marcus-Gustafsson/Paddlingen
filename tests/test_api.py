@@ -8,6 +8,16 @@ rely on stable and predictable behavior.
 from app import BookedCanoe, BookingOrder, Event, db
 
 
+def unlock_public_site(client):
+    """Unlock the shared public-site gate for one test-client session."""
+
+    return client.post(
+        "/unlock",
+        data={"password": "eventpass"},
+        follow_redirects=True,
+    )
+
+
 def test_booking_count_api_returns_number(client):
     """Count bookings via the ``/api/booking-count`` endpoint.
 
@@ -45,6 +55,7 @@ def test_booking_count_api_returns_number(client):
         )
         db.session.commit()
 
+    unlock_public_site(client)
     response = client.get("/api/booking-count")
     assert response.status_code == 200
     data = response.get_json()
@@ -96,6 +107,7 @@ def test_forecast_api_returns_data(client, monkeypatch):
 
     monkeypatch.setattr("requests.get", fake_get)
 
+    unlock_public_site(client)
     response = client.get("/api/forecast?date=2024-07-01")
     assert response.status_code == 200
     data = response.get_json()
@@ -118,6 +130,7 @@ def test_forecast_api_missing_date(client):
         None: The test checks response status and JSON content.
 
     """
+    unlock_public_site(client)
     response = client.get("/api/forecast")
     assert response.status_code == 400
     assert "error" in response.get_json()
@@ -154,6 +167,16 @@ def test_forecast_api_no_data(client, monkeypatch):
 
     monkeypatch.setattr("requests.get", fake_get)
 
+    unlock_public_site(client)
     response = client.get("/api/forecast?date=2024-07-01")
     assert response.status_code == 404
     assert "error" in response.get_json()
+
+
+def test_public_api_requires_unlock(client):
+    """Reject locked visitors that call a protected public API directly."""
+
+    response = client.get("/api/booking-count")
+
+    assert response.status_code == 403
+    assert response.get_json() == {"error": "Åtkomst nekad."}

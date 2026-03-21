@@ -2,6 +2,7 @@
 
 import pytest
 import os
+from werkzeug.security import generate_password_hash
 
 from app import create_app, db, User
 from app.util.event_settings import create_or_update_active_event_from_config
@@ -32,6 +33,7 @@ def client():
         WTF_CSRF_ENABLED=False,
         SECRET_KEY="test",
         WTF_CSRF_SECRET_KEY="test",
+        PUBLIC_SITE_PASSWORD_HASH=generate_password_hash("eventpass"),
     )
     with flask_application.app_context():
         db.drop_all()

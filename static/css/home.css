@@ -18,6 +18,27 @@ body.home-page {
   color: #f4f1ea;
 }
 
+body.public-lock-page {
+  min-height: 100vh;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(4, 11, 16, 0.2) 0%,
+      rgba(5, 16, 24, 0.4) 46%,
+      rgba(6, 17, 25, 0.62) 100%
+    ),
+    linear-gradient(
+      120deg,
+      rgba(5, 23, 32, 0.34) 0%,
+      rgba(5, 23, 32, 0.1) 40%,
+      rgba(5, 23, 32, 0.4) 100%
+    ),
+    url("/static/images/nitten.png");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .home-toast-stack {
   position: fixed;
   top: 1rem;
@@ -28,6 +49,11 @@ body.home-page {
   flex-direction: column;
   gap: 0.7rem;
   transform: translateX(-50%);
+}
+
+.public-lock-page .home-toast-stack {
+  top: 10vh;
+  width: min(calc(100% - 2rem), 380px);
 }
 
 .home-toast {
@@ -193,13 +219,13 @@ body.home-page {
   line-height: 0.95;
   font-weight: 300;
   letter-spacing: -0.04em;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.9rem;
 }
 
 .home-page .main-subtitle {
   margin-bottom: 0.85rem;
   color: rgba(244, 241, 234, 0.84);
-  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  font-size: clamp(1rem, 2.2vw, 1.20rem);
   font-weight: 400;
 }
 
@@ -217,6 +243,13 @@ body.home-page {
 .home-page .date-time,
 .home-page .location {
   margin: 0;
+}
+
+.home-page .date-time {
+  font-size: 1.2rem;
+}
+
+.home-page .location {
   font-size: 1rem;
 }
 
@@ -358,6 +391,184 @@ body.home-page {
   transform: translateY(0);
 }
 
+.public-lock-page .public-lock-section {
+  min-height: 100vh;
+}
+
+.public-lock-page .public-lock-header-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.public-lock-page .public-lock-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.public-lock-page .public-lock-form {
+  width: min(100%, 620px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.public-lock-page .public-lock-details {
+  width: 100%;
+}
+
+.public-lock-page .public-lock-detail-placeholder,
+.public-lock-page .public-lock-book-placeholder,
+.public-lock-page .public-lock-ribbon-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.public-lock-page .public-lock-detail-placeholder {
+  min-height: 1.2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.public-lock-page .public-lock-password-row {
+  width: min(100%, 460px);
+  margin: 0 auto;
+}
+
+.public-lock-page .public-lock-label-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.public-lock-page .public-lock-password-row input {
+  width: 100%;
+  min-height: 3.05rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f4ef;
+  font-size: 1rem;
+  text-align: center;
+  box-shadow: 0 14px 30px rgba(4, 11, 16, 0.18);
+}
+
+.public-lock-page .public-lock-password-row input::placeholder {
+  color: rgba(245, 244, 239, 0.74);
+}
+
+.public-lock-page .public-lock-password-row input:focus {
+  outline: 2px solid rgba(255, 243, 182, 0.68);
+  outline-offset: 2px;
+}
+
+.public-lock-page .public-lock-submit-trigger {
+  margin-top: 0;
+}
+
+.public-lock-page .public-lock-submit-text .progress-text-main {
+  color: #f6f4ef;
+}
+
+.public-lock-page .public-lock-book-placeholder {
+  width: 220px;
+  min-height: 3.4rem;
+  margin-top: 1.8rem;
+  border-radius: 999px;
+}
+
+.public-lock-page .public-lock-ribbon-placeholder {
+  width: min(100%, 860px);
+  min-height: 140px;
+  margin: 2rem auto 0;
+  border-radius: 1.5rem;
+}
+
+.public-lock-page .public-lock-weather-placeholder {
+  display: grid;
+  justify-items: center;
+  gap: 0.42rem;
+}
+
+.public-lock-page .public-lock-placeholder-line {
+  display: block;
+  border-radius: 999px;
+  background: rgba(245, 244, 239, 0.8);
+}
+
+.public-lock-page .public-lock-placeholder-line--title {
+  width: 190px;
+  height: 0.95rem;
+  margin-top: 0.05rem;
+}
+
+.public-lock-page .public-lock-placeholder-line--status {
+  width: 152px;
+  height: 0.82rem;
+}
+
+.public-lock-page .public-lock-placeholder-line--forecast {
+  width: 182px;
+  height: 0.82rem;
+}
+
+.public-lock-page .public-lock-placeholder-line--source {
+  width: 205px;
+  height: 0.68rem;
+  margin-top: 0.08rem;
+}
+
+.public-lock-page .public-lock-placeholder-line--date {
+  width: 250px;
+  height: 1rem;
+}
+
+.unlock-reveal {
+  --unlock-delay: 0s;
+}
+
+.home-page--just-unlocked .unlock-reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: unlock-fade-in 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--unlock-delay);
+}
+
+.home-page--just-unlocked .unlock-reveal--1 {
+  --unlock-delay: 0.20s;
+}
+
+.home-page--just-unlocked .unlock-reveal--2 {
+  --unlock-delay: 0.40s;
+}
+
+.home-page--just-unlocked .unlock-reveal--3 {
+  --unlock-delay: 0.60s;
+}
+
+.home-page--just-unlocked .unlock-reveal--4 {
+  --unlock-delay: 0.80s;
+}
+
+@keyframes unlock-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (min-width: 721px) and (max-width: 1380px) {
   .home-page .hero-shell {
     padding: 1rem 1.25rem 1.1rem;
@@ -383,7 +594,7 @@ body.home-page {
   }
 
   .home-page .main-subtitle {
-    font-size: 1.15rem;
+    font-size: 1rem;
   }
 
   .home-page .progress-trigger {
@@ -461,5 +672,34 @@ body.home-page {
 
   .home-page .progress-text-hint {
     font-size: 0.64rem;
+  }
+
+  .public-lock-page .public-lock-password-row {
+    width: min(100%, 380px);
+  }
+
+  .public-lock-page .public-lock-ribbon-placeholder {
+    min-height: 120px;
+    margin-top: 1.7rem;
+  }
+
+  .public-lock-page .public-lock-placeholder-line--title {
+    width: 170px;
+  }
+
+  .public-lock-page .public-lock-placeholder-line--status {
+    width: 138px;
+  }
+
+  .public-lock-page .public-lock-placeholder-line--forecast {
+    width: 165px;
+  }
+
+  .public-lock-page .public-lock-placeholder-line--source {
+    width: 188px;
+  }
+
+  .public-lock-page .public-lock-placeholder-line--date {
+    width: 220px;
   }
 }

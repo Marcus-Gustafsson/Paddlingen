@@ -163,6 +163,7 @@ PAYMENT_API_KEY = os.getenv("PAYMENT_API_KEY")
 # you might create the first admin using a separate command-line script.
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+PUBLIC_SITE_PASSWORD_HASH = os.getenv("PUBLIC_SITE_PASSWORD_HASH")
 
 # In production all of the above values must be defined.
 # The variables must be set in ``.env`` or the hosting environment.
@@ -174,6 +175,7 @@ if os.getenv("FLASK_ENV") == "production":
             "PAYMENT_API_KEY": PAYMENT_API_KEY,
             "ADMIN_USERNAME": ADMIN_USERNAME,
             "ADMIN_PASSWORD": ADMIN_PASSWORD,
+            "PUBLIC_SITE_PASSWORD_HASH": PUBLIC_SITE_PASSWORD_HASH,
         }.items()
         if not value
     ]

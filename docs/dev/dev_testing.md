@@ -201,6 +201,9 @@ http://127.0.0.1:5000
 
 Check:
 
+- if `PUBLIC_SITE_PASSWORD_HASH` is configured, the shared password gate shows
+  first,
+- entering the correct shared password unlocks the homepage,
 - homepage hero loads,
 - weather widget loads,
 - info and contact popups open,
@@ -236,6 +239,20 @@ uv run flask --app wsgi clear-test-bookings
 What it does:
 
 - removes the seeded test bookings without touching normal bookings.
+
+## Shared Public Password Hash
+
+Generate a new hash for the public homepage access gate:
+
+```bash
+uv run flask --app wsgi generate-public-site-password-hash
+```
+
+What it does:
+
+- prompts for the shared public password,
+- prints one password hash,
+- lets you store that hash in `.env` as `PUBLIC_SITE_PASSWORD_HASH`.
 
 ## Previous-Years Image Asset Sync
 

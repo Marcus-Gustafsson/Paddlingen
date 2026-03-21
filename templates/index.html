@@ -25,7 +25,7 @@ Why it’s here:
     window.PADDLINGEN_PREVIOUS_YEAR_IMAGES = {{ previous_year_gallery_image_urls | tojson }};
   </script>
 </head>
-<body class="home-page">
+<body class="home-page{% if just_unlocked %} home-page--just-unlocked{% endif %}">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% set flash_state = namespace(has_home_errors=false) %}
     {% for category, msg in messages %}
@@ -47,7 +47,7 @@ Why it’s here:
   <main>
     <section id="{{ event_settings.section_id }}" class="year-section current-year-section hero-section">
       <div class="hero-shell">
-        <header class="hero-header">
+        <header class="hero-header unlock-reveal unlock-reveal--1">
           <div class="hero-utility hero-utility-left">
             <div class="weather-widget weather-widget-hero" id="weatherWidget">
               <h4 class="widget-title">
@@ -81,34 +81,38 @@ Why it’s here:
             <h2 class="main-subtitle no-select">{{ event_settings.subtitle }}</h2>
           {% endif %}
 
-          <div class="hero-details no-select">
-            <div class="date-time" id="dateTime">{{ event_settings.full_date_display }} – {{ event_settings.time_display }}</div>
-            <div class="location hero-location">
-              <span>Samlingsplats:</span>
-              <a href="{{ event_settings.location_url }}" target="_blank" rel="noopener">
-                {{ event_settings.location_name }}
-              </a>
+          <div class="unlock-reveal unlock-reveal--2">
+            <div class="hero-details no-select">
+              <div class="date-time" id="dateTime">{{ event_settings.full_date_display }} – {{ event_settings.time_display }}</div>
+              <div class="location hero-location">
+                <span>Samlingsplats:</span>
+                <a href="{{ event_settings.location_url }}" target="_blank" rel="noopener">
+                  {{ event_settings.location_name }}
+                </a>
+              </div>
             </div>
           </div>
 
-          <button
-            id="overviewTrigger"
-            class="progress-container progress-trigger"
-            type="button"
-            aria-label="Visa bokningsstatus och deltagarlista"
-          >
-            <div class="progress-bar" id="progressBar"></div>
-            <div class="progress-text" id="progressText">
-              <span class="progress-text-main">0 / {{ event_settings.available_canoes_total }} kanoter bokade</span>
-              <span class="progress-text-hint">Tryck för att se deltagare</span>
-            </div>
-          </button>
+          <div class="unlock-reveal unlock-reveal--3">
+            <button
+              id="overviewTrigger"
+              class="progress-container progress-trigger"
+              type="button"
+              aria-label="Visa bokningsstatus och deltagarlista"
+            >
+              <div class="progress-bar" id="progressBar"></div>
+              <div class="progress-text" id="progressText">
+                <span class="progress-text-main">0 / {{ event_settings.available_canoes_total }} kanoter bokade</span>
+                <span class="progress-text-hint">Tryck för att se deltagare</span>
+              </div>
+            </button>
 
-          <button id="bookBtn" class="book-btn" type="button" aria-disabled="false">
-            Boka kanot
-          </button>
+            <button id="bookBtn" class="book-btn" type="button" aria-disabled="false">
+              Boka kanot
+            </button>
+          </div>
 
-          <section class="gallery-ribbon scroll-animate in-view" aria-label="Tidigare års bilder">
+          <section class="gallery-ribbon scroll-animate in-view unlock-reveal unlock-reveal--4" aria-label="Tidigare års bilder">
             <div class="gallery-ribbon-viewport" aria-hidden="true">
               <div id="galleryRibbonTrack" class="gallery-ribbon-track">
                 <div class="gallery-ribbon-group">

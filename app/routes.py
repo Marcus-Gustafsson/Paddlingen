@@ -8,6 +8,7 @@ registered by the application factory.
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from functools import wraps
 from urllib.parse import urlsplit
 import requests
 from flask import (
@@ -29,6 +30,7 @@ from flask_login import (  # type: ignore[import-untyped]
     login_user,
     logout_user,
 )
+from werkzeug.security import check_password_hash
 
 from .util.event_settings import (
     build_event_settings_with_fallback,
@@ -67,6 +69,8 @@ logging.basicConfig(level=logging.INFO)
 # import path ("main"), which helps identify where log messages originate.
 logger = logging.getLogger(__name__)
 MAX_PARTICIPANT_NAME_LENGTH = 20
+PUBLIC_SITE_ACCESS_SESSION_KEY = "public_site_access_granted"
+PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY = "public_site_just_unlocked"
 
 main_blueprint = Blueprint("main", __name__)
 
@@ -106,6 +110,66 @@ def get_safe_login_redirect_target() -> str:
         return fallback_target
 
     return next_page
+
+
+def is_public_site_access_enabled() -> bool:
+    """Return whether the shared public-site password gate is configured."""
+
+    return bool(current_app.config.get("PUBLIC_SITE_PASSWORD_HASH"))
+
+
+def has_public_site_access() -> bool:
+    """Return whether the current visitor already unlocked the public site."""
+
+    if not is_public_site_access_enabled():
+        return True
+
+    return bool(session.get(PUBLIC_SITE_ACCESS_SESSION_KEY))
+
+
+def require_public_site_access():
+    """Return a redirect or JSON response when the public site is still locked."""
+
+    if has_public_site_access():
+        return None
+
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Åtkomst nekad."}), 403
+
+    flash("Ange lösenordet för att öppna sidan.", "error")
+    return redirect(url_for("main.index"))
+
+
+def public_site_access_required(view_function):
+    """Protect one public route behind the shared site password."""
+
+    @wraps(view_function)
+    def wrapped_view(*args, **kwargs):
+        access_response = require_public_site_access()
+        if access_response is not None:
+            return access_response
+
+        return view_function(*args, **kwargs)
+
+    return wrapped_view
+
+
+@main_blueprint.before_app_request
+def enforce_public_site_access_gate():
+    """Apply the shared public-site password gate before most routes run."""
+
+    if has_public_site_access():
+        return None
+
+    allowed_endpoints = {
+        "main.index",
+        "main.unlock_public_site",
+        "static",
+    }
+    if request.endpoint in allowed_endpoints:
+        return None
+
+    return require_public_site_access()
 
 
 def get_max_canoes_per_booking() -> int:
@@ -468,13 +532,19 @@ def index():
     We also calculate how many canoes are still free and send that to the
     template for client-side dropdown limiting.
     """
+    event_settings = build_event_settings()
+
+    if not has_public_site_access():
+        return render_template("public_lock.html", event_settings=event_settings)
+
+    just_unlocked = bool(session.pop(PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY, False))
+
     # fetch all bookings for your overview panel
     alla_bokningar = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
 
     # server‐side business rule from config
     current = count_confirmed_booked_canoes()
     available_canoes = max(0, get_total_available_canoes() - current)
-    event_settings = build_event_settings()
     (
         previous_year_ribbon_image_urls,
         previous_year_gallery_image_urls,
@@ -485,13 +555,39 @@ def index():
         bokningar=alla_bokningar,
         available_canoes=available_canoes,
         event_settings=event_settings,
+        just_unlocked=just_unlocked,
         previous_year_ribbon_image_urls=previous_year_ribbon_image_urls,
         previous_year_gallery_image_urls=previous_year_gallery_image_urls,
     )
 
 
+@main_blueprint.route("/unlock", methods=["POST"])
+@rate_limiter.limit("5 per minute")
+def unlock_public_site():
+    """Unlock the public site for one browser session with the shared password."""
+
+    if not is_public_site_access_enabled():
+        return redirect(url_for("main.index"))
+
+    submitted_password = request.form.get("password", "")
+    configured_password_hash = current_app.config.get("PUBLIC_SITE_PASSWORD_HASH", "")
+
+    if not submitted_password or not configured_password_hash:
+        flash("Fel lösenord. Försök igen.", "error")
+        return redirect(url_for("main.index"))
+
+    if not check_password_hash(configured_password_hash, submitted_password):
+        flash("Fel lösenord. Försök igen.", "error")
+        return redirect(url_for("main.index"))
+
+    session[PUBLIC_SITE_ACCESS_SESSION_KEY] = True
+    session[PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY] = True
+    return redirect(url_for("main.index"))
+
+
 @main_blueprint.route("/create-checkout-session", methods=["POST"])
 @rate_limiter.limit("10 per minute")
+@public_site_access_required
 def payment():
     """Handle the checkout session for canoe rentals.
 
@@ -579,6 +675,7 @@ def payment():
 
 
 @main_blueprint.route("/payment-success")
+@public_site_access_required
 def payment_success():
     """Finalize the booking after (simulated) payment.
 
@@ -624,6 +721,7 @@ def payment_success():
 
 
 @main_blueprint.route("/api/booking-count")
+@public_site_access_required
 def get_booking_count():
     """Return the current number of bookings as JSON.
 
@@ -702,6 +800,7 @@ WEATHER_EMOJIS = {
 
 
 @main_blueprint.route("/api/forecast")
+@public_site_access_required
 def get_forecast():
     """Fetch weather forecast for a specific date.
 

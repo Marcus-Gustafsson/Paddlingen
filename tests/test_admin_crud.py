@@ -6,6 +6,16 @@ from datetime import date
 from app import BookedCanoe, BookingOrder, Event, db
 
 
+def unlock_public_site(client):
+    """Unlock the shared public-site gate for one test-client session."""
+
+    return client.post(
+        "/unlock",
+        data={"password": "eventpass"},
+        follow_redirects=True,
+    )
+
+
 def login(client):
     """Helper that logs the test client in as the administrator.
 
@@ -23,6 +33,7 @@ def login(client):
             needed.
     """
 
+    unlock_public_site(client)
     return client.post(
         "/login",
         data={"username": "admin", "password": "password"},

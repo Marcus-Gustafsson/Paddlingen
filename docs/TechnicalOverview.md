@@ -394,6 +394,7 @@ Why this matters now:
 - `PAYMENT_API_KEY`
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
+- `PUBLIC_SITE_PASSWORD_HASH`
 - `DATABASE_URL`
 - `FLASK_DEBUG`
 - `SESSION_COOKIE_SECURE`
@@ -534,6 +535,19 @@ the file is now growing large enough that it may later need to be split.
   Calls the MET Norway weather API and returns simplified forecast data.
 
 ### Authentication routes
+
+- `/`
+  Conditionally renders either the public password gate or the real homepage,
+  depending on whether the visitor already unlocked the shared public session.
+  The lock view reuses the same hero layout structure as the homepage so the
+  title, subtitle, password field, and unlock button can transition into the
+  real homepage with less visible layout shift. The lock view uses anonymized
+  placeholders instead of real homepage details so the hidden layout geometry
+  is preserved without exposing more content than necessary before unlock.
+
+- `/unlock`
+  Verifies the shared public-site password and stores one session flag when the
+  password is correct.
 
 - `/login`
   Handles admin login. It now only accepts local internal `next` redirect

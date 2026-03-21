@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="sv-SE">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ event_settings.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+</head>
+<body class="home-page public-lock-page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% set flash_state = namespace(has_errors=false) %}
+    {% for category, msg in messages %}
+      {% if category == "error" %}
+        {% set flash_state.has_errors = true %}
+      {% endif %}
+    {% endfor %}
+    {% if flash_state.has_errors %}
+      <div class="home-toast-stack" aria-live="polite">
+        {% for category, msg in messages %}
+          {% if category == "error" %}
+            <div class="home-toast home-toast-{{ category }}">{{ msg }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>
+    <section class="year-section current-year-section hero-section public-lock-section">
+      <div class="hero-shell">
+        <header class="hero-header public-lock-header" aria-hidden="true">
+          <div class="hero-utility hero-utility-left public-lock-header-spacer">
+            <div class="weather-widget weather-widget-hero">
+              <div class="public-lock-weather-placeholder">
+                <span class="public-lock-placeholder-line public-lock-placeholder-line--title"></span>
+                <span class="public-lock-placeholder-line public-lock-placeholder-line--status"></span>
+                <span class="public-lock-placeholder-line public-lock-placeholder-line--forecast"></span>
+                <span class="public-lock-placeholder-line public-lock-placeholder-line--source"></span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-utility hero-utility-right public-lock-header-spacer">
+            <div class="hero-icon-button"></div>
+            <div class="hero-icon-button"></div>
+          </div>
+        </header>
+
+        <div class="hero-center public-lock-center">
+          <h1 class="main-title no-select">{{ event_settings.title }}</h1>
+          {% if event_settings.subtitle %}
+            <h2 class="main-subtitle no-select">{{ event_settings.subtitle }}</h2>
+          {% endif %}
+
+          <form method="post" action="{{ url_for('main.unlock_public_site') }}" class="public-lock-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="hero-details no-select public-lock-details">
+              <div class="date-time public-lock-detail-placeholder" aria-hidden="true">
+                <span class="public-lock-placeholder-line public-lock-placeholder-line--date"></span>
+              </div>
+              <label class="location hero-location public-lock-password-row" for="publicSitePassword">
+                <span class="public-lock-label-sr">Lösenord</span>
+                <input
+                  id="publicSitePassword"
+                  type="password"
+                  name="password"
+                  autocomplete="current-password"
+                  placeholder="Lösenord"
+                  required
+                  autofocus
+                >
+              </label>
+            </div>
+
+            <button type="submit" class="progress-container progress-trigger public-lock-submit-trigger">
+              <div class="progress-text public-lock-submit-text">
+                <span class="progress-text-main">Öppna sidan</span>
+              </div>
+            </button>
+
+            <div class="book-btn public-lock-book-placeholder" aria-hidden="true"></div>
+          </form>
+
+          <section class="gallery-ribbon public-lock-ribbon-placeholder" aria-hidden="true"></section>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,6 +1,16 @@
 """Authentication-related tests for the application."""
 
 
+def unlock_public_site(client):
+    """Unlock the shared public-site gate for one test-client session."""
+
+    return client.post(
+        "/unlock",
+        data={"password": "eventpass"},
+        follow_redirects=True,
+    )
+
+
 def test_admin_requires_login(client):
     """Try to open the admin dashboard without logging in.
 
@@ -9,9 +19,28 @@ def test_admin_requires_login(client):
     HTTP 302 redirect. The Location header in that redirect should include
     '/login', which proves unauthenticated visitors are sent to the login page.
     """
+    unlock_public_site(client)
     response = client.get("/admin")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
+
+
+def test_locked_login_redirects_back_to_public_gate(client):
+    """Keep `/login` behind the shared public password gate."""
+
+    response = client.get("/login", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/")
+
+
+def test_locked_admin_redirects_back_to_public_gate(client):
+    """Keep `/admin` behind the shared public password gate."""
+
+    response = client.get("/admin", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/")
 
 
 def test_login_fails_with_wrong_password(client):
@@ -23,6 +52,7 @@ def test_login_fails_with_wrong_password(client):
     that the error text appears in the response body, and that we remain on the
     '/login' URL.
     """
+    unlock_public_site(client)
     response = client.post(
         "/login", data={"username": "admin", "password": "wrong"}, follow_redirects=True
     )
@@ -49,6 +79,7 @@ def test_login_rate_limit_exceeded(client):
 
     """
     test_ip = "203.0.113.1"
+    unlock_public_site(client)
     for _ in range(5):
         ok_response = client.get("/login", environ_overrides={"REMOTE_ADDR": test_ip})
         assert ok_response.status_code == 200
@@ -59,6 +90,7 @@ def test_login_rate_limit_exceeded(client):
 def test_login_rejects_external_next_redirect(client):
     """Block external `next` URLs so login cannot be used as an open redirect."""
 
+    unlock_public_site(client)
     response = client.post(
         "/login?next=http://google.com",
         data={"username": "admin", "password": "password"},
@@ -72,6 +104,7 @@ def test_login_rejects_external_next_redirect(client):
 def test_login_allows_internal_next_redirect(client):
     """Allow safe internal `next` paths after a successful login."""
 
+    unlock_public_site(client)
     response = client.post(
         "/login?next=/admin",
         data={"username": "admin", "password": "password"},

@@ -33,6 +33,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    PAYMENT_API_KEY=replace-me
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=changeme
+   PUBLIC_SITE_PASSWORD_HASH=replace-me-with-generated-hash
    FLASK_DEBUG=True
    SESSION_COOKIE_SECURE=False
    DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<database-password>@<host>:5432/postgres?sslmode=require
@@ -43,6 +44,15 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```
 
    `DATABASE_URL` controls which database is used. Leave it unset to store data in `instance/paddlingen.db` (SQLite). To test the current app against Supabase, set it to the Supabase Postgres connection string.
+
+   The public homepage access gate uses `PUBLIC_SITE_PASSWORD_HASH`, not a
+   plaintext password. Generate a new hash with:
+
+   ```bash
+   uv run flask --app wsgi generate-public-site-password-hash
+   ```
+
+   Then copy the printed hash into `.env`.
 
    ### Supabase setup for the current implementation
 

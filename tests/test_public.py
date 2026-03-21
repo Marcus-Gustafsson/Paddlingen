@@ -5,8 +5,33 @@ from app.util.db_models import BookedCanoe, BookingOrder, Event
 from app.util.helper_functions import get_previous_year_image_metadata
 
 
+def unlock_public_site(client):
+    """Unlock the shared public-site gate for one test-client session."""
+
+    return client.post(
+        "/unlock",
+        data={"password": "eventpass"},
+        follow_redirects=True,
+    )
+
+
+def test_locked_home_page_shows_password_gate(client):
+    """Show the public lock screen before the shared password is entered."""
+
+    response = client.get("/")
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Öppna sidan" in page
+    assert "Lösenord" in page
+    assert "Välkommen" not in page
+    assert "Boka kanot" not in page
+    assert "Visa bilder från tidigare år" not in page
+
+
 def test_home_page(client):
-    """Send GET '/' and verify the public landing page responds with 200."""
+    """Send GET '/' and verify the unlocked public landing page responds."""
+
+    unlock_public_site(client)
     response = client.get("/")
     assert response.status_code == 200
     page = response.get_data(as_text=True)
@@ -28,6 +53,7 @@ def test_home_page(client):
 
 def test_login_page(client):
     """Ensure the login route renders so users can start authentication."""
+    unlock_public_site(client)
     response = client.get("/login")
     assert response.status_code == 200
 
@@ -49,6 +75,7 @@ def test_booking_over_limit_shows_error(client):
 
         db.session.commit()
 
+    unlock_public_site(client)
     response = client.post(
         "/create-checkout-session",
         data={"canoeCount": "2"},
@@ -72,6 +99,7 @@ def test_booking_over_per_booking_limit_shows_error(client):
 
         db.session.commit()
 
+    unlock_public_site(client)
     response = client.post(
         "/create-checkout-session",
         data={"canoeCount": "6"},
@@ -98,6 +126,7 @@ def test_successful_booking_creates_records(client):
 
         db.session.commit()
 
+    unlock_public_site(client)
     booking_data = {
         "canoeCount": "2",
         "canoe1_fname": "Alice",
@@ -121,6 +150,7 @@ def test_successful_booking_creates_records(client):
 def test_booking_rejects_participant_names_longer_than_twenty_characters(client):
     """Reject participant names that exceed the public booking length limit."""
 
+    unlock_public_site(client)
     response = client.post(
         "/create-checkout-session",
         data={
@@ -155,6 +185,7 @@ def test_home_page_uses_database_event_values(client):
 
         db.session.commit()
 
+    unlock_public_site(client)
     response = client.get("/")
     page = response.get_data(as_text=True)
     assert "Sjöfärden 2027" in page
@@ -172,6 +203,7 @@ def test_home_page_keeps_subtitle_blank_when_event_subtitle_is_empty(client):
         active_event.subtitle = ""
         db.session.commit()
 
+    unlock_public_site(client)
     response = client.get("/")
     page = response.get_data(as_text=True)
     assert "Bästa dagen på hela året!" not in page
@@ -209,6 +241,7 @@ def test_invalid_form_data_returns_flash_error(client):
         None: This test relies on assertions instead of returning a value.
 
     """
+    unlock_public_site(client)
     response = client.post("/create-checkout-session", data={}, follow_redirects=True)
     assert response.status_code == 200
     page = response.get_data(as_text=True)
@@ -216,3 +249,19 @@ def test_invalid_form_data_returns_flash_error(client):
 
     with client.application.app_context():
         assert BookingOrder.query.count() == 0
+
+
+def test_unlock_rejects_wrong_public_password(client):
+    """Keep the homepage locked when the shared password is wrong."""
+
+    response = client.post(
+        "/unlock",
+        data={"password": "wrong-password"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Fel lösenord. Försök igen." in page
+    assert "Öppna sidan" in page
+    assert "Boka kanot" not in page

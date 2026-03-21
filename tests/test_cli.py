@@ -1,6 +1,7 @@
 """Tests for custom Flask command line interface commands."""
 
 from app import BookedCanoe, BookingOrder, Event, User, db
+from werkzeug.security import check_password_hash
 
 
 def test_init_db_command_resets_tables(client):
@@ -95,6 +96,22 @@ def test_seed_admin_command_requires_env_vars(client, monkeypatch):
             "ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required"
             in result.output
         )
+
+
+def test_generate_public_site_password_hash_command_outputs_valid_hash(client):
+    """Generate one shared public-site password hash from CLI input."""
+
+    runner = client.application.test_cli_runner()
+
+    result = runner.invoke(
+        args=["generate-public-site-password-hash"],
+        input="hemligt-losenord\nhemligt-losenord\n",
+    )
+
+    assert result.exit_code == 0
+    generated_hash = result.output.strip().splitlines()[-1]
+    assert generated_hash.startswith("scrypt:")
+    assert check_password_hash(generated_hash, "hemligt-losenord")
 
 
 def test_seed_test_bookings_command_creates_marked_bookings(client):

@@ -279,13 +279,16 @@ Goal:
 - Keep the public site limited to invited users instead of making bookings,
   participant data, and images open to anyone on the internet.
 
-### Step 1. Design the site-wide access gate
+### Step 1. Design the site-wide access gate (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
 - Decide how invited users should unlock the public site.
 - Start with one shared password for the whole event site.
 - Decide which routes stay public and which routes require the access gate.
+- Chose the same `/` route with conditional server-side rendering so locked
+  visitors only receive the password screen, not the real homepage content.
+- Chose a hashed shared password configuration instead of a plaintext password.
 
 Why:
 
@@ -298,12 +301,14 @@ How to test:
 - Visit the site in a private browser window and confirm access is blocked
   until the correct shared password is entered.
 
-### Step 2. Add a public access session after the password is entered
+### Step 2. Add a public access session after the password is entered (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
 - Store a session flag after a visitor enters the correct shared password.
 - Keep the access behavior separate from the admin login flow.
+- Added a dedicated `/unlock` route with rate limiting.
+- Added a CLI command to generate the shared password hash.
 
 Why:
 
@@ -315,12 +320,14 @@ How to test:
 - Unlock the site once and confirm the user can move around without entering
   the password again on every page refresh.
 
-### Step 3. Apply the access gate to the public routes
+### Step 3. Apply the access gate to the public routes (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
 - Protect the homepage and other public-facing routes that expose event or
   participant information.
+- Protected the homepage, booking flow, and public JSON endpoints.
+- Kept the admin login flow separate from the public access gate.
 
 Why:
 
@@ -330,6 +337,45 @@ How to test:
 
 - Confirm an unlocked session can still use the booking flow and gallery.
 - Confirm a locked session is redirected to the public access screen.
+
+### Step 4. Protect gallery and ribbon images behind Flask routes later
+
+What to do:
+
+- Stop serving protected gallery and ribbon images directly from `/static/`.
+- Add Flask routes for those image files so the same public access session can
+  protect them too.
+
+Why:
+
+- The current shared password gate now protects the homepage and APIs, but the
+  generated image files still live under public static paths.
+- Moving those files behind Flask routes is the stronger version of the same
+  access model.
+
+How to test:
+
+- Open the site in a locked browser session and confirm direct image URLs no
+  longer load.
+- Unlock the site and confirm the ribbon and gallery still work normally.
+
+### Step 5. Let admins rotate the shared public password from the admin page
+
+What to do:
+
+- Add one admin workflow for generating and saving a new shared public-site
+  password hash.
+- Keep the stored value hashed so the plaintext password is never saved.
+
+Why:
+
+- If the shared public password leaks, a non-technical admin should be able to
+  rotate it without editing source code manually.
+
+How to test:
+
+- Save a new shared public password through the admin page.
+- Confirm the old password stops working and the new one unlocks the site.
 
 ## Phase 4: Make Booking Safety Explicit
 

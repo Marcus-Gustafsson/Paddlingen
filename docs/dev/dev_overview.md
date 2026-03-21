@@ -48,6 +48,20 @@ Use the document that matches the task:
 
 ## Current Local Run Flow
 
+The public homepage can now be protected by one shared password gate.
+
+If `PUBLIC_SITE_PASSWORD_HASH` is set in `.env`:
+
+- `/` first shows the public lock screen,
+- the visitor must enter the shared password,
+- then the homepage unlocks for that browser session.
+
+Generate the hash with:
+
+```bash
+uv run flask --app wsgi generate-public-site-password-hash
+```
+
 ### Start the app locally
 
 ```bash
@@ -150,6 +164,7 @@ Example:
 ```env
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=changeme
+PUBLIC_SITE_PASSWORD_HASH=replace-me-with-generated-hash
 ```
 
 Important note:

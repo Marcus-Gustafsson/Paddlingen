@@ -17,6 +17,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import click
 import os
+from werkzeug.security import generate_password_hash
 
 # Database models and session object
 from .util.db_models import (
@@ -78,6 +79,7 @@ def create_app() -> Flask:
     flask_application.cli.add_command(init_db_command)
     flask_application.cli.add_command(seed_active_event_command)
     flask_application.cli.add_command(seed_admin_command)
+    flask_application.cli.add_command(generate_public_site_password_hash_command)
     flask_application.cli.add_command(seed_test_bookings_command)
     flask_application.cli.add_command(clear_test_bookings_command)
 
@@ -145,6 +147,20 @@ def seed_admin_command() -> None:
     db.session.add(admin_user)
     db.session.commit()
     click.echo(f"Created admin '{username}'.")
+
+
+@click.command("generate-public-site-password-hash")
+@click.option(
+    "--password",
+    prompt=True,
+    hide_input=True,
+    confirmation_prompt=True,
+    help="Shared public-site password that should be converted into a hash.",
+)
+def generate_public_site_password_hash_command(password: str) -> None:
+    """Generate a password hash for the shared public-site access gate."""
+
+    click.echo(generate_password_hash(password))
 
 
 def clear_seed_test_bookings() -> int:
@@ -254,6 +270,7 @@ __all__ = [
     "init_db_command",
     "seed_active_event_command",
     "seed_admin_command",
+    "generate_public_site_password_hash_command",
     "seed_test_bookings_command",
     "clear_test_bookings_command",
 ]
