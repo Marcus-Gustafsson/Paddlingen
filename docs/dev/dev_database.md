@@ -173,6 +173,8 @@ Important note:
 - The public homepage now prefers the active row in `events`.
 - If the event row or one of its fields is missing, the app logs a warning and
   falls back to the matching value in `config.py`.
+- `booked_canoes.picked_up` stores whether one booked canoe has been collected
+  during the event-day checklist workflow.
 
 Important `events` fields now include:
 
@@ -200,6 +202,9 @@ Important admin note:
 - If there is no source event yet, the admin dashboard uses the shared
   code-defined event template values from `config.py` instead, so the first
   editable event can still be created from the UI.
+- The admin checklist groups the UI by participant name, but the saved pickup
+  state is still tracked per `booked_canoes` row so partial pickup remains
+  accurate.
 - If you really need to change one of them, update the value directly in the
   database row in Supabase.
 - Keep the matching fallback values in `config.py` aligned as well, so the app

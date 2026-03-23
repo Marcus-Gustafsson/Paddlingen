@@ -6,6 +6,7 @@ registered by the application factory.
 """
 
 import logging
+from collections import Counter
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
@@ -63,6 +64,10 @@ from .util.db_models import (
     User,
     db,
     get_current_utc_time,
+)
+from .util.booking_groups import (
+    build_admin_checklist_rows,
+    build_grouped_booking_overview_rows,
 )
 from . import rate_limiter
 
@@ -348,6 +353,61 @@ def build_participant_names_from_form(requested_canoes: int) -> list[dict[str, s
         )
 
     return participants
+
+
+def normalize_participant_full_name(first_name: str, last_name: str) -> str:
+    """Return a normalized full name used for booking-limit comparisons."""
+
+    return f"{first_name.strip()} {last_name.strip()}".strip().casefold()
+
+
+def validate_total_canoes_per_name(
+    participant_names: list[dict[str, str]],
+    max_canoes_per_name: int = 5,
+) -> str | None:
+    """Reject bookings that would push one exact name above the total limit.
+
+    Args:
+        participant_names: Parsed participant rows from the current booking form.
+        max_canoes_per_name: Maximum allowed total for one exact participant name.
+
+    Returns:
+        str | None: Swedish validation error text when the limit would be
+        exceeded, otherwise ``None``.
+    """
+
+    requested_name_counts = Counter(
+        normalize_participant_full_name(
+            participant["first_name"], participant["last_name"]
+        )
+        for participant in participant_names
+    )
+    existing_name_counts = Counter(
+        normalize_participant_full_name(
+            booking.participant_first_name,
+            booking.participant_last_name,
+        )
+        for booking in get_confirmed_booked_canoes_query().all()
+    )
+
+    for participant in participant_names:
+        display_name = f"{participant['first_name']} {participant['last_name']}".strip()
+        normalized_name = normalize_participant_full_name(
+            participant["first_name"],
+            participant["last_name"],
+        )
+        if (
+            existing_name_counts[normalized_name]
+            + requested_name_counts[normalized_name]
+            > max_canoes_per_name
+        ):
+            return (
+                f"{display_name} har redan {existing_name_counts[normalized_name]} "
+                f"bokade kanoter. Samma namn kan ha högst {max_canoes_per_name} "
+                "kanoter totalt."
+            )
+
+    return None
 
 
 def build_event_settings() -> dict[str, object]:
@@ -654,10 +714,12 @@ def index():
         previous_year_ribbon_image_urls,
         previous_year_gallery_image_urls,
     ) = build_previous_year_gallery_data()
+    grouped_booking_overview_rows = build_grouped_booking_overview_rows(alla_bokningar)
 
     return render_template(
         "index.html",
         bokningar=alla_bokningar,
+        grouped_booking_overview_rows=grouped_booking_overview_rows,
         available_canoes=available_canoes,
         event_settings=event_settings,
         just_unlocked=just_unlocked,
@@ -776,6 +838,12 @@ def payment():
     except ValueError as error:
         flash(str(error), "error")
         return redirect(url_for("main.index"))
+
+    same_name_limit_error = validate_total_canoes_per_name(participant_names)
+    if same_name_limit_error is not None:
+        flash(same_name_limit_error, "error")
+        return redirect(url_for("main.index"))
+
     active_event = get_active_event()
     if active_event is None:
         current_app.logger.warning(
@@ -847,6 +915,20 @@ def payment_success():
     )
     if current + requested > available_canoes_for_event:
         flash("Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.", "error")
+        db.session.delete(pending_order)
+        db.session.commit()
+        return redirect(url_for("main.index"))
+
+    pending_participant_names = [
+        {
+            "first_name": booked_canoe.participant_first_name,
+            "last_name": booked_canoe.participant_last_name,
+        }
+        for booked_canoe in pending_order.booked_canoes
+    ]
+    same_name_limit_error = validate_total_canoes_per_name(pending_participant_names)
+    if same_name_limit_error is not None:
+        flash(same_name_limit_error, "error")
         db.session.delete(pending_order)
         db.session.commit()
         return redirect(url_for("main.index"))
@@ -1040,6 +1122,7 @@ def admin_dashboard():
     confirmed_booking_count = len(bookings)
     available_canoes_total = get_total_available_canoes()
     public_site_access_setting = get_public_site_access_setting()
+    checklist_rows = build_admin_checklist_rows(bookings) if active_event else []
 
     return render_template(
         "admin.html",
@@ -1050,6 +1133,7 @@ def admin_dashboard():
         selected_event=selected_event,
         confirmed_booking_count=confirmed_booking_count,
         available_canoes_total=available_canoes_total,
+        checklist_rows=checklist_rows,
         create_event_defaults=build_admin_event_copy_defaults(selected_event),
         public_site_password_managed_in_database=public_site_access_setting is not None,
         public_site_password_updated_at=(
@@ -1059,6 +1143,40 @@ def admin_dashboard():
         ),
         open_admin_panel=request.args.get("panel", ""),
     )
+
+
+@main_blueprint.route("/admin/checklist", methods=["POST"])
+@login_required
+def admin_update_checklist():
+    """Save the event-day pickup checklist for the active event."""
+
+    active_event = get_active_event()
+    if active_event is None:
+        flash("Det finns inget aktivt event att checka av ännu.", "error")
+        return redirect(url_for("main.admin_dashboard", panel="checklist"))
+
+    checked_booking_ids: set[int] = set()
+    for booking_id_raw in request.form.getlist("picked_up_booking_ids"):
+        try:
+            checked_booking_ids.add(int(booking_id_raw))
+        except ValueError:
+            flash("Checklistan innehöll ett ogiltigt boknings-id.", "error")
+            return redirect(url_for("main.admin_dashboard", panel="checklist"))
+
+    active_event_bookings = (
+        BookedCanoe.query.filter_by(status="confirmed")
+        .join(BookingOrder)
+        .filter(BookingOrder.event_id == active_event.id)
+        .order_by(BookedCanoe.id)
+        .all()
+    )
+
+    for booked_canoe in active_event_bookings:
+        booked_canoe.picked_up = booked_canoe.id in checked_booking_ids
+
+    db.session.commit()
+    flash("Checklistan uppdaterades.", "success")
+    return redirect(url_for("main.admin_dashboard", panel="checklist"))
 
 
 @main_blueprint.route("/admin/public-site-password", methods=["POST"])

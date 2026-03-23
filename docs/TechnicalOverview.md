@@ -210,12 +210,19 @@ This is the current role of the main files and folders.
 - `app/util/db_models.py`
   Defines the SQLAlchemy models, including `Event`, `EventWeatherCache`,
   `BookingOrder`, `BookedCanoe`, `PublicSiteAccessSetting`, and `User`.
+  `BookedCanoe` now also stores a `picked_up` flag used by the admin
+  event-day checklist.
 
 - `app/util/event_settings.py`
   Contains shared helper logic for reading the active event, falling back to
   `config.py`, and seeding the first active event row. It now covers both
   display fields and yearly operational values such as canoe price, booking
   limit, forecast window, and weather coordinates.
+
+- `app/util/booking_groups.py`
+  Prepares grouped rows for the public participant overview and the admin
+  event-day checklist so the route handlers do not have to duplicate grouping
+  logic.
 
 - `app/util/helper_functions.py`
   Contains helper logic, including image lookup and stable image metadata for
@@ -523,7 +530,8 @@ the file is now growing large enough that it may later need to be split.
 
 - `/create-checkout-session`
   Handles booking submission and creates a pending booking order plus reserved
-  canoe rows.
+  canoe rows. It also rejects requests that would push one exact participant
+  name above five total booked canoes for the active event.
 
 - `/payment-success`
   Finalizes a booking after the current simulated payment flow.

@@ -175,6 +175,51 @@ def test_booking_rejects_participant_names_longer_than_twenty_characters(client)
         assert BookingOrder.query.count() == 0
 
 
+def test_booking_rejects_same_name_above_total_canoe_limit(client):
+    """Reject bookings that would push one exact name above five total canoes."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        booking_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-TEST-NAME-LIMIT",
+            status="paid",
+            canoe_count=5,
+            total_amount=6000,
+            currency="sek",
+            payment_provider="simulated",
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        for _ in range(5):
+            db.session.add(
+                BookedCanoe(
+                    booking_order_id=booking_order.id,
+                    participant_first_name="Marcus",
+                    participant_last_name="Gustafsson",
+                    status="confirmed",
+                )
+            )
+        db.session.commit()
+
+    unlock_public_site(client)
+    response = client.post(
+        "/create-checkout-session",
+        data={
+            "canoeCount": "1",
+            "canoe1_fname": "Marcus",
+            "canoe1_lname": "Gustafsson",
+        },
+        follow_redirects=True,
+    )
+    page = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert "Marcus Gustafsson har redan 5 bokade kanoter." in page
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 1
+
+
 def test_home_page_uses_database_event_values(client):
     """Render the homepage using values from the active event row."""
 
@@ -213,6 +258,56 @@ def test_home_page_keeps_subtitle_blank_when_event_subtitle_is_empty(client):
     page = response.get_data(as_text=True)
     assert "Bästa dagen på hela året!" not in page
     assert 'class="main-subtitle no-select"' not in page
+
+
+def test_home_page_groups_participant_overview_by_name(client):
+    """Show grouped canoe counts in the public participant overview."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        booking_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-TEST-OVERVIEW",
+            status="paid",
+            canoe_count=3,
+            total_amount=3600,
+            currency="sek",
+            payment_provider="simulated",
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        db.session.add_all(
+            [
+                BookedCanoe(
+                    booking_order_id=booking_order.id,
+                    participant_first_name="Saga",
+                    participant_last_name="Svensson",
+                    status="confirmed",
+                ),
+                BookedCanoe(
+                    booking_order_id=booking_order.id,
+                    participant_first_name="Saga",
+                    participant_last_name="Svensson",
+                    status="confirmed",
+                ),
+                BookedCanoe(
+                    booking_order_id=booking_order.id,
+                    participant_first_name="Olle",
+                    participant_last_name="Olsson",
+                    status="confirmed",
+                ),
+            ]
+        )
+        db.session.commit()
+
+    unlock_public_site(client)
+    response = client.get("/")
+    page = response.get_data(as_text=True)
+    assert "participant-overview-modal-card" in page
+    assert page.count("Saga Svensson") == 1
+    assert page.count("Olle Olsson") == 1
+    assert 'participant-overview-count">2<' in page
+    assert 'participant-overview-count">1<' in page
 
 
 def test_previous_year_image_metadata_has_stable_ids(client):

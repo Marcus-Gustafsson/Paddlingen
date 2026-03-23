@@ -107,10 +107,14 @@
         </span>
       </button>
 
-      <button class="admin-support-card admin-support-card--placeholder" type="button" disabled>
-        <strong>Kommande: Checklista</strong>
+      <button
+        class="admin-support-card"
+        type="button"
+        data-open-admin-panel="checklistPanel"
+      >
+        <strong>Checklista</strong>
         <span>
-          Här kommer en funktion för avprickning på plats och PDF-utskrift.
+          Markera vilka kanoter som har hämtats ut och spara statusen direkt.
         </span>
       </button>
     </section>
@@ -724,6 +728,106 @@
   </div>
 
   <div
+    id="checklistPanel"
+    class="admin-panel-overlay"
+    {% if open_admin_panel not in ["checklist", "checklistPanel"] %}hidden{% endif %}
+  >
+    <section
+      class="admin-panel admin-panel--wide admin-panel--checklist"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="checklistPanelTitle"
+    >
+      <button
+        class="admin-panel-close"
+        type="button"
+        data-close-admin-panel
+        aria-label="Stäng checklistan"
+      >
+        ×
+      </button>
+
+      <div class="admin-panel-header">
+        <p class="admin-panel-kicker">Eventdagens checklista</p>
+        <h2 id="checklistPanelTitle">Avprickning för uthämtade kanoter</h2>
+        <p class="admin-panel-copy">
+          Varje ruta motsvarar en bokad kanot. Bocka i de kanoter som har
+          hämtats ut och spara listan när du är klar.
+        </p>
+      </div>
+
+      <section class="admin-subcard">
+        {% if active_event %}
+          <div class="admin-checklist-summary">
+            <div class="admin-checklist-summary-card">
+              <span class="admin-summary-label">Aktivt event</span>
+              <strong>{{ active_event.event_date.strftime('%Y-%m-%d') }}</strong>
+            </div>
+            <div class="admin-checklist-summary-card">
+              <span class="admin-summary-label">Bokade kanoter</span>
+              <strong>{{ confirmed_booking_count }}</strong>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if checklist_rows %}
+          <form
+            action="{{ url_for('main.admin_update_checklist') }}"
+            method="post"
+            class="admin-form admin-checklist-form"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="admin-checklist-board" aria-label="Checklista för bokade kanoter">
+              <div class="admin-checklist-head">
+                <span>Namn</span>
+                <span>Kanoter</span>
+              </div>
+
+              <div class="admin-checklist-list">
+                {% for checklist_row in checklist_rows %}
+                  <div class="admin-checklist-row{% if checklist_row.all_canoes_picked_up %} admin-checklist-row--complete{% endif %}">
+                    <div class="admin-checklist-person">
+                      <strong>{{ checklist_row.name }}</strong>
+                      <span>{{ checklist_row.picked_up_count }}/{{ checklist_row.total_canoes }} kanoter avprickade</span>
+                    </div>
+
+                    <div class="admin-checklist-boxes" aria-label="Avprickning för {{ checklist_row.name }}">
+                      {% for canoe_entry in checklist_row.canoe_entries %}
+                        <label class="admin-checklist-box">
+                          <input
+                            type="checkbox"
+                            name="picked_up_booking_ids"
+                            value="{{ canoe_entry.id }}"
+                            {% if canoe_entry.picked_up %}checked{% endif %}
+                          >
+                          <span>{{ loop.index }}</span>
+                        </label>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="admin-form-actions">
+              <button type="submit" class="admin-primary-button">Spara checklistan</button>
+            </div>
+          </form>
+        {% elif active_event %}
+          <p class="admin-empty-state">
+            Det finns inga bekräftade bokningar att checka av för det aktiva eventet ännu.
+          </p>
+        {% else %}
+          <p class="admin-empty-state">
+            Det finns inget aktivt event ännu. Aktivera eller skapa ett event först.
+          </p>
+        {% endif %}
+      </section>
+    </section>
+  </div>
+
+  <div
     id="adminAccountPasswordPanel"
     class="admin-panel-overlay"
     {% if open_admin_panel not in ["adminAccountPassword", "adminAccountPasswordPanel"] %}hidden{% endif %}
@@ -851,6 +955,7 @@
     </section>
   </div>
 
+  <script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
   <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
 </body>
 </html>

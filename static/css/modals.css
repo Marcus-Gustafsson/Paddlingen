@@ -228,8 +228,8 @@ Why it is separate:
   line-height: 1.5;
 }
 
-.home-page .overview-modal-content {
-  max-width: 680px;
+.home-page .participant-overview-modal-card {
+  max-width: 700px;
 }
 
 .home-page .overview-description {
@@ -238,27 +238,60 @@ Why it is separate:
   text-align: center;
 }
 
-.home-page .overview-table {
-  width: 100%;
-  border-collapse: collapse;
+.home-page .participant-overview-board {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.home-page .participant-overview-head,
+.home-page .participant-overview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.home-page .participant-overview-head {
+  padding: 0 0.2rem;
+  color: rgba(244, 241, 234, 0.62);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-page .participant-overview-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.home-page .participant-overview-row {
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(10, 28, 35, 0.82);
+  box-shadow: 0 16px 34px rgba(4, 12, 16, 0.18);
+}
+
+.home-page .participant-overview-name {
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f4f1ea;
+}
+
+.home-page .participant-overview-count {
+  justify-self: end;
+  min-width: 3.4rem;
+  padding: 0.48rem 0.72rem;
+  border-radius: 999px;
+  background: rgba(238, 229, 195, 0.14);
+  color: #fff3b6;
+  font-size: 0.96rem;
+  font-weight: 700;
   text-align: center;
-  font-size: 0.9rem;
-  color: white;
-}
-
-.home-page .overview-table th {
-  padding: 0.5rem;
-  border-bottom: 2px solid #162938;
-  font-size: 1.1rem;
-}
-
-.home-page .overview-table td {
-  padding: 0.5rem;
-  border-bottom: 1px solid #ccc;
-}
-
-.home-page .overview-table-modal {
-  margin-top: 0.5rem;
 }
 
 .home-page .overview-empty {
@@ -318,5 +351,25 @@ Why it is separate:
   .info-card-grid,
   .contact-card-grid {
     gap: 0.8rem;
+  }
+
+  .home-page .participant-overview-head,
+  .home-page .participant-overview-row {
+    grid-template-columns: minmax(0, 1fr) 84px;
+    gap: 0.65rem;
+  }
+
+  .home-page .participant-overview-row {
+    padding: 0.82rem 0.85rem;
+  }
+
+  .home-page .participant-overview-name {
+    font-size: 0.94rem;
+  }
+
+  .home-page .participant-overview-count {
+    min-width: 2.8rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.88rem;
   }
 }

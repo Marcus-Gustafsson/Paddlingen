@@ -32,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
     eventsPanel: "eventsPanel",
     publicSitePassword: "publicSitePasswordPanel",
     publicSitePasswordPanel: "publicSitePasswordPanel",
+    checklist: "checklistPanel",
+    checklistPanel: "checklistPanel",
     adminAccountPassword: "adminAccountPasswordPanel",
     adminAccountPasswordPanel: "adminAccountPasswordPanel",
   };

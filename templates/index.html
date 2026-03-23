@@ -157,28 +157,27 @@ Why it’s here:
   </main>
 
   <div id="overviewModal" class="modal overview-modal" role="dialog" aria-modal="true" aria-labelledby="overviewTitle">
-    <div class="modal-content modal-content--dark overview-modal-content">
+    <div class="modal-content modal-content--dark participant-overview-modal-card">
       <button class="modal-close" aria-label="Stäng deltagarlistan">&times;</button>
       <h2 id="overviewTitle">Deltagarlista</h2>
       <p class="overview-description">Här ser du de bokningar som just nu är bekräftade.</p>
 
-      {% if bokningar %}
-        <table class="overview-table overview-table-modal">
-          <thead>
-            <tr>
-              <th>Namn</th>
-              <th>Kanotnr.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for bokning in bokningar %}
-              <tr>
-                <td>{{ bokning.name }}</td>
-                <td>{{ bokning.id }}</td>
-              </tr>
+      {% if grouped_booking_overview_rows %}
+        <div class="participant-overview-board" aria-label="Bekräftade bokningar">
+          <div class="participant-overview-head">
+            <span>Namn</span>
+            <span>Kanoter</span>
+          </div>
+
+          <div class="participant-overview-list">
+            {% for booking_row in grouped_booking_overview_rows %}
+              <div class="participant-overview-row">
+                <span class="participant-overview-name">{{ booking_row.name }}</span>
+                <span class="participant-overview-count">{{ booking_row.canoe_count }}</span>
+              </div>
             {% endfor %}
-          </tbody>
-        </table>
+          </div>
+        </div>
       {% else %}
         <p class="overview-empty">Inga bekräftade bokningar ännu.</p>
       {% endif %}
@@ -415,6 +414,7 @@ Why it’s here:
   <script src="{{ url_for('static', filename='js/modals.js') }}"></script>
   <script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
   <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

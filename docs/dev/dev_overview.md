@@ -189,12 +189,16 @@ Current admin dashboard behavior:
   - event management.
 - The dashboard also now includes smaller utility actions for:
   - rotating the shared public-site password,
-  - a future event-day checklist slot.
+  - an event-day checklist for marking which booked canoes have been picked up.
 - Booking management currently supports:
   - adding one manual booking,
   - choosing the manual payment method,
   - editing participant names,
   - deleting bookings.
+- The public participant overview now groups matching names and shows the canoe
+  count on the right instead of listing every canoe row separately.
+- The public booking flow now also rejects a new booking if one exact
+  participant name would end up above five total canoes for the active event.
 - Event management currently supports:
   - selecting an existing event,
   - editing the selected event,
@@ -216,6 +220,10 @@ Current admin dashboard behavior:
   - adding extra named admin users from a prompted CLI command,
   - changing the password for the currently logged-in admin from the admin
     dashboard.
+- Event-day checklist support currently allows:
+  - opening a grouped checklist from the admin dashboard,
+  - saving which booked canoes have been picked up,
+  - reopening the checklist later with the saved state still visible.
 - Both `/unlock` and `/login` are rate limited already, but the current
   limiter storage is still the simple in-memory development setup.
 

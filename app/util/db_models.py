@@ -241,6 +241,7 @@ class BookedCanoe(db.Model):
     participant_first_name = db.Column(db.String(120), nullable=False)
     participant_last_name = db.Column(db.String(120), nullable=False)
     status = db.Column(db.String(30), nullable=False, default="reserved")
+    picked_up = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(
         db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
     )

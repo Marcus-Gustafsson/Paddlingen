@@ -64,6 +64,21 @@ body.public-lock-page {
   box-shadow: 0 18px 40px rgba(4, 12, 16, 0.24);
   font-size: 0.95rem;
   line-height: 1.45;
+  cursor: pointer;
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s ease,
+    box-shadow 0.26s ease;
+}
+
+.home-toast:hover,
+.home-toast:focus-visible {
+  box-shadow: 0 22px 42px rgba(4, 12, 16, 0.28);
+}
+
+.home-toast.toast-is-hiding {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
 }
 
 .home-toast-error {
@@ -659,19 +674,19 @@ body.public-lock-page {
   }
 
   .home-page .progress-trigger {
-    min-height: 4rem;
-    height: 4rem;
+    min-height: 3.55rem;
+    height: 3.55rem;
     background-color: rgba(255, 255, 255, 0.18);
     backdrop-filter: none;
     box-shadow: 0 12px 24px rgba(4, 11, 16, 0.2);
   }
 
   .home-page .progress-text-main {
-    font-size: 0.94rem;
+    font-size: 0.91rem;
   }
 
   .home-page .progress-text-hint {
-    font-size: 0.64rem;
+    font-size: 0.62rem;
   }
 
   .public-lock-page .public-lock-password-row {

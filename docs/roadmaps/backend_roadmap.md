@@ -418,6 +418,8 @@ What to do:
 
 - Add one admin workflow for checking off booked canoes during the event.
 - Support both an in-site checklist view and a printable PDF export.
+- The in-site checklist now stores pickup state per `booked_canoes` row.
+- Printable export is still pending.
 
 Why:
 

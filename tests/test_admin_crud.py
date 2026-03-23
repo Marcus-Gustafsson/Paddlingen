@@ -227,3 +227,90 @@ def test_admin_can_create_first_event_from_code_template_when_db_is_empty(client
         created_event.available_canoes == client.application.config["AVAILABLE_CANOES"]
     )
     assert created_event.is_active is False
+
+
+def test_admin_checklist_persists_partial_pickup_status_and_sorts_checked_first(client):
+    """Persist checklist state and render checked canoes before unchecked ones."""
+
+    login(client)
+
+    active_event = Event.query.filter_by(is_active=True).first()
+    assert active_event is not None
+
+    booking_order = BookingOrder(
+        event_id=active_event.id,
+        public_booking_reference="PAD-TEST-CHECKLIST",
+        status="paid",
+        canoe_count=3,
+        total_amount=3600,
+        currency="sek",
+        payment_provider="simulated",
+    )
+    db.session.add(booking_order)
+    db.session.flush()
+
+    first_canoe = BookedCanoe(
+        booking_order_id=booking_order.id,
+        participant_first_name="Klara",
+        participant_last_name="Karlsson",
+        status="confirmed",
+    )
+    second_canoe = BookedCanoe(
+        booking_order_id=booking_order.id,
+        participant_first_name="Klara",
+        participant_last_name="Karlsson",
+        status="confirmed",
+    )
+    third_canoe = BookedCanoe(
+        booking_order_id=booking_order.id,
+        participant_first_name="Klara",
+        participant_last_name="Karlsson",
+        status="confirmed",
+    )
+    db.session.add_all([first_canoe, second_canoe, third_canoe])
+    db.session.commit()
+    first_canoe_id = first_canoe.id
+    second_canoe_id = second_canoe.id
+    third_canoe_id = third_canoe.id
+
+    partial_response = client.post(
+        "/admin/checklist",
+        data={
+            "picked_up_booking_ids": [str(first_canoe_id), str(second_canoe_id)],
+        },
+        follow_redirects=True,
+    )
+    assert partial_response.status_code == 200
+    assert "Checklistan uppdaterades." in partial_response.get_data(as_text=True)
+
+    db.session.expire_all()
+    refreshed_first_canoe = db.session.get(BookedCanoe, first_canoe_id)
+    refreshed_second_canoe = db.session.get(BookedCanoe, second_canoe_id)
+    refreshed_third_canoe = db.session.get(BookedCanoe, third_canoe_id)
+    assert refreshed_first_canoe.picked_up is True
+    assert refreshed_second_canoe.picked_up is True
+    assert refreshed_third_canoe.picked_up is False
+
+    partial_page = partial_response.get_data(as_text=True)
+    first_checked_position = partial_page.index(f'value="{first_canoe_id}"')
+    second_checked_position = partial_page.index(f'value="{second_canoe_id}"')
+    third_unchecked_position = partial_page.index(f'value="{third_canoe_id}"')
+    assert first_checked_position < third_unchecked_position
+    assert second_checked_position < third_unchecked_position
+    assert "2/3 kanoter avprickade" in partial_page
+
+    complete_response = client.post(
+        "/admin/checklist",
+        data={
+            "picked_up_booking_ids": [
+                str(first_canoe_id),
+                str(second_canoe_id),
+                str(third_canoe_id),
+            ],
+        },
+        follow_redirects=True,
+    )
+    assert complete_response.status_code == 200
+    complete_page = complete_response.get_data(as_text=True)
+    assert "3/3 kanoter avprickade" in complete_page
+    assert "admin-checklist-row--complete" in complete_page

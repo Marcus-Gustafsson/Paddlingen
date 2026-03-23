@@ -377,6 +377,25 @@ button.admin-session-link {
   border: 1px solid transparent;
   font-size: 0.94rem;
   line-height: 1.45;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s ease,
+    box-shadow 0.26s ease;
+}
+
+.login-toast:hover,
+.login-toast:focus-visible,
+.admin-toast:hover,
+.admin-toast:focus-visible {
+  box-shadow: 0 18px 34px rgba(4, 12, 16, 0.24);
+}
+
+.login-toast.toast-is-hiding,
+.admin-toast.toast-is-hiding {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
 }
 
 .login-toast-error,
@@ -1000,6 +1019,184 @@ button.admin-session-link {
   line-height: 1.55;
 }
 
+.admin-panel--checklist {
+  width: min(100%, 860px);
+  --admin-checklist-head-left-shift: 0.45rem;
+  --admin-checklist-head-right-shift: 0.5rem;
+}
+
+.admin-checklist-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+}
+
+.admin-checklist-summary-card {
+  padding: 0.72rem 0.82rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  display: grid;
+  gap: 0.18rem;
+  text-align: center;
+}
+
+.admin-checklist-summary-card strong {
+  font-size: 1rem;
+  color: #f5f2eb;
+}
+
+.admin-checklist-form {
+  gap: 0.95rem;
+}
+
+.admin-checklist-board {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-checklist-head,
+.admin-checklist-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.admin-checklist-head {
+  padding: 0 0.2rem;
+  color: rgba(241, 244, 241, 0.68);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-checklist-head span:first-child {
+  padding-left: var(--admin-checklist-head-left-shift);
+}
+
+.admin-checklist-head span:last-child {
+  justify-self: end;
+  padding-right: var(--admin-checklist-head-right-shift);
+}
+
+.admin-checklist-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.admin-checklist-row {
+  padding: 0.9rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(10, 28, 35, 0.8);
+  box-shadow: 0 16px 34px rgba(4, 12, 16, 0.14);
+}
+
+.admin-checklist-row--complete {
+  opacity: 0.76;
+}
+
+.admin-checklist-row--complete .admin-checklist-person strong,
+.admin-checklist-row--complete .admin-checklist-person span {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.admin-checklist-person {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.admin-checklist-person strong {
+  font-size: 1.05rem;
+  color: #f5f2eb;
+}
+
+.admin-checklist-person span {
+  color: rgba(241, 244, 241, 0.72);
+  font-size: 0.84rem;
+}
+
+.admin-checklist-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.admin-checklist-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.admin-checklist-box input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.admin-checklist-box span {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(241, 244, 241, 0.84);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.admin-checklist-box input:checked + span {
+  background: linear-gradient(135deg, #fff0a3, #e8b856);
+  border-color: #ffe7a1;
+  box-shadow:
+    0 0 0 2px rgba(255, 240, 163, 0.26),
+    0 10px 20px rgba(232, 184, 86, 0.26);
+  color: #10252d;
+  transform: translateY(-1px);
+}
+
+.admin-checklist-box input:checked + span::after {
+  content: "✓";
+  position: absolute;
+  top: -0.28rem;
+  right: -0.22rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: #10252d;
+  color: #fff6d1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(4, 12, 16, 0.22);
+}
+
+.admin-checklist-box input:focus-visible + span {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+}
+
 /* -----------------------------------------------------------------------------
    6) RESPONSIVE ADJUSTMENTS
    --------------------------------------------------------------------------- */
@@ -1007,6 +1204,15 @@ button.admin-session-link {
   .admin-panel-grid--bookings,
   .admin-panel-grid--events {
     grid-template-columns: 1fr;
+  }
+
+  .admin-checklist-head,
+  .admin-checklist-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-checklist-boxes {
+    justify-content: center;
   }
 }
 
@@ -1159,6 +1365,58 @@ button.admin-session-link {
   .admin-inline-fields,
   .name-cell .inline-form {
     grid-template-columns: 1fr;
+  }
+
+  .admin-checklist-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .admin-checklist-summary-card {
+    padding: 0.62rem 0.55rem;
+  }
+
+  .admin-checklist-summary-card strong {
+    font-size: 0.9rem;
+  }
+
+  .admin-checklist-row {
+    padding: 0.82rem 0.85rem;
+  }
+
+  .admin-checklist-head {
+    display: none;
+  }
+
+  .admin-checklist-person {
+    text-align: left;
+    /* Change to center if you want the mobile checklist names centered. */
+  }
+
+  .admin-checklist-person strong {
+    font-size: 0.98rem;
+  }
+
+  .admin-checklist-person span {
+    font-size: 0.8rem;
+  }
+
+  .admin-checklist-box span {
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 0.78rem;
+  }
+
+  .admin-bookings-table td[data-label="ID"] {
+    display: flex;
+    align-items: center;
+    gap: 0.32rem;
+  }
+
+  .admin-bookings-table td[data-label="ID"]::before {
+    content: attr(data-label) ":";
+    display: inline;
+    margin-bottom: 0;
   }
 
   .admin-panel-overlay {

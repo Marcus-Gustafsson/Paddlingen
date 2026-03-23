@@ -236,8 +236,9 @@ What to do:
 
 - Turn the reserved checklist action into a real admin tool.
 - Support both on-screen check-off and printable export (.pdf to start with).
-- Should see the name of the person for the canoe to the left and number of canoes to the right, with one small clickable checkbox (and also rendered checkbox for the printable export for manual filling with e.g. pen)
-- A confirm button, which uk
+- The on-screen checklist is now implemented with grouped names on the left and
+  one checkbox per canoe on the right.
+- Printable export is still pending.
 
 Why:
 
