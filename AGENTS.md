@@ -105,6 +105,12 @@ Avoid:
 - Prefer designs that will work correctly under concurrent access.
 - Be explicit about booking rules, availability checks, and payment state.
 - If database behavior changes, document the reason in the technical overview.
+- Do not run database-changing commands automatically in a Codex session.
+- This includes migrations, seed commands, reset commands, manual SQL, or any
+  script that inserts, updates, or deletes database rows, unless the user has
+  explicitly asked for that exact command to be run.
+- When database changes are needed, explain the reason and provide step-by-step
+  instructions so the user can run the command manually.
 
 ## Frontend Guidelines
 

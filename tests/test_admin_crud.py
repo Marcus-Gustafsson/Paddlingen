@@ -196,3 +196,34 @@ def test_admin_can_create_update_and_activate_events(client):
     refreshed_updated_event = db.session.get(Event, created_event.id)
     assert refreshed_updated_event.is_active is True
     assert refreshed_original_event.is_active is False
+
+
+def test_admin_can_create_first_event_from_code_template_when_db_is_empty(client):
+    """Allow the admin dashboard to create the first event without a source row."""
+
+    login(client)
+
+    for existing_event in Event.query.all():
+        db.session.delete(existing_event)
+    db.session.commit()
+
+    create_response = client.post(
+        "/admin/events/create",
+        data={
+            "new_event_date": "2028-03-17",
+        },
+        follow_redirects=True,
+    )
+    assert create_response.status_code == 200
+    assert "Nytt event skapades från den valda mallen." in create_response.get_data(
+        as_text=True
+    )
+
+    created_event = Event.query.filter_by(event_date=date(2028, 3, 17)).first()
+    assert created_event is not None
+    assert created_event.title == client.application.config["EVENT_TITLE"]
+    assert created_event.subtitle == client.application.config["EVENT_SUBTITLE"]
+    assert (
+        created_event.available_canoes == client.application.config["AVAILABLE_CANOES"]
+    )
+    assert created_event.is_active is False

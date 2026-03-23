@@ -54,6 +54,16 @@ A small Flask application for managing canoe rentals. The app lets visitors book
 
    Then copy the printed hash into `.env`.
 
+   If the shared public-site password was rotated in the admin page and later
+   forgotten, reset it directly in the database with:
+
+   ```bash
+   uv run flask --app wsgi reset-public-site-password
+   ```
+
+   That command prints the new plaintext password once and stores only its hash
+   in the database.
+
    ### Supabase setup for the current implementation
 
    1. **Open your Supabase project dashboard**
@@ -102,6 +112,12 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    uv run flask --app wsgi seed-active-event
    uv run flask --app wsgi seed-admin
    ```
+
+   To add more admin users later without relying on `.env`, use:
+   ```bash
+   uv run flask --app wsgi add-admin-user
+   ```
+   The command prompts for the username and password interactively.
 
    The active event seed currently includes:
 

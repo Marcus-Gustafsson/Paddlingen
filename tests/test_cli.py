@@ -1,6 +1,7 @@
 """Tests for custom Flask command line interface commands."""
 
 from app import BookedCanoe, BookingOrder, Event, User, db
+from app.util.db_models import PublicSiteAccessSetting
 from werkzeug.security import check_password_hash
 
 
@@ -98,6 +99,40 @@ def test_seed_admin_command_requires_env_vars(client, monkeypatch):
         )
 
 
+def test_add_admin_user_command_prompts_and_creates_user(client):
+    """Create an extra admin user through the interactive CLI prompts."""
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        result = runner.invoke(
+            args=["add-admin-user"],
+            input="new-admin-user\nNew-admin-pass-123!\nNew-admin-pass-123!\n",
+        )
+
+        assert result.exit_code == 0
+        assert "Created admin 'new-admin-user'." in result.output
+
+        created_admin = User.query.filter_by(username="new-admin-user").first()
+        assert created_admin is not None
+        assert created_admin.check_password("New-admin-pass-123!")
+
+
+def test_add_admin_user_command_rejects_duplicate_username(client):
+    """Fail clearly when the requested admin username already exists."""
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        result = runner.invoke(
+            args=["add-admin-user"],
+            input="admin\nAnother-admin-pass-123!\nAnother-admin-pass-123!\n",
+        )
+
+        assert result.exit_code != 0
+        assert "Admin 'admin' already exists." in result.output
+
+
 def test_generate_public_site_password_hash_command_outputs_valid_hash(client):
     """Generate one shared public-site password hash from CLI input."""
 
@@ -112,6 +147,58 @@ def test_generate_public_site_password_hash_command_outputs_valid_hash(client):
     generated_hash = result.output.strip().splitlines()[-1]
     assert generated_hash.startswith("scrypt:")
     assert check_password_hash(generated_hash, "hemligt-losenord")
+
+
+def test_reset_public_site_password_command_generates_and_saves_password(client):
+    """Generate a new shared password, store its hash, and print it once."""
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        result = runner.invoke(args=["reset-public-site-password", "--length", "16"])
+
+        assert result.exit_code == 0
+        assert (
+            "Saved a new shared public-site password in the database." in result.output
+        )
+
+        printed_password_line = [
+            line
+            for line in result.output.splitlines()
+            if line.startswith("New password: ")
+        ][0]
+        printed_password = printed_password_line.removeprefix("New password: ")
+
+        assert len(printed_password) == 16
+
+        password_setting = PublicSiteAccessSetting.query.first()
+        assert password_setting is not None
+        assert check_password_hash(password_setting.password_hash, printed_password)
+
+
+def test_reset_public_site_password_command_uses_explicit_password(client):
+    """Allow a developer to set one chosen shared public-site password."""
+
+    runner = client.application.test_cli_runner()
+
+    with client.application.app_context():
+        result = runner.invoke(
+            args=[
+                "reset-public-site-password",
+                "--password",
+                "Vald-public-pass-123!",
+            ]
+        )
+
+        assert result.exit_code == 0
+        assert "New password: Vald-public-pass-123!" in result.output
+
+        password_setting = PublicSiteAccessSetting.query.first()
+        assert password_setting is not None
+        assert check_password_hash(
+            password_setting.password_hash,
+            "Vald-public-pass-123!",
+        )
 
 
 def test_seed_test_bookings_command_creates_marked_bookings(client):

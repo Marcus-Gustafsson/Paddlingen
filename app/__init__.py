@@ -9,6 +9,7 @@ than importing a global ``app`` object.
 from __future__ import annotations
 
 from datetime import timedelta
+import secrets
 
 from flask import Flask
 from flask_wtf import CSRFProtect  # type: ignore[import-untyped]
@@ -25,6 +26,7 @@ from .util.db_models import (
     BookingOrder,
     Event,
     EventWeatherCache,
+    PublicSiteAccessSetting,
     User,
     db,
     get_current_utc_time,
@@ -62,6 +64,8 @@ def create_app() -> Flask:
     csrf_protect.init_app(flask_application)
     login_manager.init_app(flask_application)
     login_manager.login_view = "main.login"
+    login_manager.login_message = "Du måste logga in för att öppna den här sidan."
+    login_manager.login_message_category = "error"
     rate_limiter.init_app(flask_application)
 
     # Import and register blueprints containing route definitions.
@@ -79,7 +83,9 @@ def create_app() -> Flask:
     flask_application.cli.add_command(init_db_command)
     flask_application.cli.add_command(seed_active_event_command)
     flask_application.cli.add_command(seed_admin_command)
+    flask_application.cli.add_command(add_admin_user_command)
     flask_application.cli.add_command(generate_public_site_password_hash_command)
+    flask_application.cli.add_command(reset_public_site_password_command)
     flask_application.cli.add_command(seed_test_bookings_command)
     flask_application.cli.add_command(clear_test_bookings_command)
 
@@ -142,11 +148,45 @@ def seed_admin_command() -> None:
         click.echo(f"Admin '{username}' already exists.")
         return
 
+    create_admin_user(username=username, password=password)
+    click.echo(f"Created admin '{username}'.")
+
+
+def create_admin_user(username: str, password: str) -> User:
+    """Create and store one admin user with a hashed password."""
+
     admin_user = User(username=username)
     admin_user.set_password(password)
     db.session.add(admin_user)
     db.session.commit()
-    click.echo(f"Created admin '{username}'.")
+    return admin_user
+
+
+@click.command("add-admin-user")
+@click.option(
+    "--username",
+    prompt="New admin username",
+    help="Username for the new admin account.",
+)
+@click.option(
+    "--password",
+    prompt=True,
+    hide_input=True,
+    confirmation_prompt=True,
+    help="Password for the new admin account.",
+)
+def add_admin_user_command(username: str, password: str) -> None:
+    """Create one additional admin user through interactive prompts."""
+
+    normalized_username = username.strip()
+    if not normalized_username:
+        raise click.ClickException("Admin username cannot be empty.")
+
+    if User.query.filter_by(username=normalized_username).first():
+        raise click.ClickException(f"Admin '{normalized_username}' already exists.")
+
+    create_admin_user(username=normalized_username, password=password)
+    click.echo(f"Created admin '{normalized_username}'.")
 
 
 @click.command("generate-public-site-password-hash")
@@ -161,6 +201,66 @@ def generate_public_site_password_hash_command(password: str) -> None:
     """Generate a password hash for the shared public-site access gate."""
 
     click.echo(generate_password_hash(password))
+
+
+def generate_random_public_site_password(length: int = 20) -> str:
+    """Return a strong random password for the shared public-site gate.
+
+    The character set avoids the most visually ambiguous characters so the
+    printed password is easier to read and share safely with event staff.
+    """
+
+    alphabet = (
+        "ABCDEFGHJKLMNPQRSTUVWXYZ" "abcdefghijkmnopqrstuvwxyz" "23456789" "!@$%*+-_=?"
+    )
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+@click.command("reset-public-site-password")
+@click.option(
+    "--password",
+    help=(
+        "Specific shared public-site password to store. "
+        "If omitted, the command generates one automatically."
+    ),
+)
+@click.option(
+    "--length",
+    default=20,
+    type=click.IntRange(min=12, max=128),
+    show_default=True,
+    help="Length for the generated password when --password is omitted.",
+)
+def reset_public_site_password_command(password: str | None, length: int) -> None:
+    """Store a new shared public-site password hash in the database.
+
+    This command is the recovery path when the shared public-site password was
+    rotated and later forgotten, which can otherwise block access to both the
+    public page and the admin area.
+    """
+
+    new_password = password or generate_random_public_site_password(length)
+
+    PublicSiteAccessSetting.__table__.create(bind=db.engine, checkfirst=True)
+    password_setting = PublicSiteAccessSetting.query.order_by(
+        PublicSiteAccessSetting.id.asc()
+    ).first()
+
+    if password_setting is None:
+        password_setting = PublicSiteAccessSetting(
+            password_hash=generate_password_hash(new_password)
+        )
+        db.session.add(password_setting)
+    else:
+        password_setting.password_hash = generate_password_hash(new_password)
+
+    db.session.commit()
+    click.echo("Saved a new shared public-site password in the database.")
+    click.echo(
+        "Store this password safely. The admin page cannot show it later "
+        "because only the hash is stored."
+    )
+    click.echo(f"New password: {new_password}")
 
 
 def clear_seed_test_bookings() -> int:

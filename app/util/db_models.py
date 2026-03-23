@@ -202,6 +202,33 @@ class EventWeatherCache(db.Model):
         )
 
 
+class PublicSiteAccessSetting(db.Model):
+    """Store the shared public-site password hash in the database.
+
+    This table keeps the public access password editable through the admin
+    dashboard without requiring shell access or manual `.env` updates.
+    """
+
+    __tablename__ = "public_site_access_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=get_current_utc_time
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=get_current_utc_time,
+        onupdate=get_current_utc_time,
+    )
+
+    def __repr__(self) -> str:
+        """Return a readable representation for debugging."""
+
+        return f"<PublicSiteAccessSetting id={self.id}>"
+
+
 class BookedCanoe(db.Model):
     """Store one participant name for one canoe booking."""
 

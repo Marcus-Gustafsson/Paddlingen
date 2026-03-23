@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Mapping
 
 from flask import current_app
 
@@ -46,16 +46,40 @@ def format_swedish_date_display(event_date: date, include_year: bool = False) ->
     return base_display
 
 
-def build_config_fallback_event_values(configuration: Any) -> dict[str, Any]:
-    """Build the event values currently stored in ``config.py``.
+EVENT_TEMPLATE_FIELD_NAMES = (
+    "title",
+    "subtitle",
+    "start_time",
+    "starting_location_name",
+    "starting_location_url",
+    "end_location_name",
+    "end_location_url",
+    "available_canoes",
+    "price_per_canoe_sek",
+    "max_canoes_per_booking",
+    "weather_forecast_days_before_event",
+    "weather_latitude",
+    "weather_longitude",
+    "faq_booking_text",
+    "faq_changes_and_questions_text",
+    "rules_on_the_water_text",
+    "rules_after_paddling_text",
+    "contact_email",
+    "contact_phone",
+)
+
+
+def build_config_event_template_values(configuration: Any) -> dict[str, Any]:
+    """Build the code-defined event template values from ``config.py``.
 
     Args:
         configuration: Flask configuration mapping, usually
             ``current_app.config``.
 
     Returns:
-        dict[str, Any]: Default event values used when the database row is
-        missing or incomplete.
+        dict[str, Any]: Default event-template values used both as fallback
+        event data and as the starting point when creating the first event
+        from the admin dashboard.
     """
 
     event_date = datetime.strptime(configuration["EVENT_DATE_ISO"], "%Y-%m-%d").date()
@@ -90,6 +114,41 @@ def build_config_fallback_event_values(configuration: Any) -> dict[str, Any]:
         "contact_email": configuration["CONTACT_EMAIL"],
         "contact_phone": configuration.get("CONTACT_PHONE"),
     }
+
+
+def build_event_template_values(source_event: Event | None) -> dict[str, Any]:
+    """Return event-template values from a source event or config defaults.
+
+    Args:
+        source_event: Existing event row used as the template. If ``None``,
+            the code-defined template values from ``config.py`` are used.
+
+    Returns:
+        dict[str, Any]: Event values that can be copied into a new event row.
+    """
+
+    if source_event is None:
+        return build_config_event_template_values(current_app.config)
+
+    return {
+        field_name: getattr(source_event, field_name)
+        for field_name in EVENT_TEMPLATE_FIELD_NAMES
+    }
+
+
+def apply_event_template_values(
+    event: Event, template_values: Mapping[str, Any]
+) -> None:
+    """Copy shared template fields into an ``Event`` model instance.
+
+    Args:
+        event: Event row to update in memory.
+        template_values: Template values returned by one of the helper
+            functions in this module.
+    """
+
+    for field_name in EVENT_TEMPLATE_FIELD_NAMES:
+        setattr(event, field_name, template_values[field_name])
 
 
 def split_info_text_into_items(info_text: str) -> list[str]:
@@ -156,7 +215,7 @@ def build_event_settings_with_fallback() -> dict[str, Any]:
     """
 
     configuration = current_app.config
-    fallback_values = build_config_fallback_event_values(configuration)
+    fallback_values = build_config_event_template_values(configuration)
     active_event = get_active_event()
     fallback_warnings: list[str] = []
 
@@ -381,7 +440,7 @@ def create_or_update_active_event_from_config() -> tuple[Event, int]:
     """
 
     configuration = current_app.config
-    fallback_values = build_config_fallback_event_values(configuration)
+    fallback_values = build_config_event_template_values(configuration)
     event_date = fallback_values["event_date"]
 
     active_event = Event.query.filter_by(event_date=event_date).first()
@@ -389,32 +448,8 @@ def create_or_update_active_event_from_config() -> tuple[Event, int]:
         active_event = Event(event_date=event_date)
         db.session.add(active_event)
 
-    active_event.title = fallback_values["title"]
-    active_event.subtitle = fallback_values["subtitle"]
     active_event.event_date = event_date
-    active_event.start_time = fallback_values["start_time"]
-    active_event.starting_location_name = fallback_values["starting_location_name"]
-    active_event.starting_location_url = fallback_values["starting_location_url"]
-    active_event.end_location_name = fallback_values["end_location_name"]
-    active_event.end_location_url = fallback_values["end_location_url"]
-    active_event.available_canoes = fallback_values["available_canoes"]
-    active_event.price_per_canoe_sek = fallback_values["price_per_canoe_sek"]
-    active_event.max_canoes_per_booking = fallback_values["max_canoes_per_booking"]
-    active_event.weather_forecast_days_before_event = fallback_values[
-        "weather_forecast_days_before_event"
-    ]
-    active_event.weather_latitude = fallback_values["weather_latitude"]
-    active_event.weather_longitude = fallback_values["weather_longitude"]
-    active_event.faq_booking_text = fallback_values["faq_booking_text"]
-    active_event.faq_changes_and_questions_text = fallback_values[
-        "faq_changes_and_questions_text"
-    ]
-    active_event.rules_on_the_water_text = fallback_values["rules_on_the_water_text"]
-    active_event.rules_after_paddling_text = fallback_values[
-        "rules_after_paddling_text"
-    ]
-    active_event.contact_email = fallback_values["contact_email"]
-    active_event.contact_phone = fallback_values["contact_phone"]
+    apply_event_template_values(active_event, fallback_values)
     active_event.is_active = True
 
     db.session.flush()

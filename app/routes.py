@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
+import re
 from urllib.parse import urlsplit
 import requests
 from flask import (
@@ -31,9 +32,13 @@ from flask_login import (  # type: ignore[import-untyped]
     login_user,
     logout_user,
 )
-from werkzeug.security import check_password_hash
+from sqlalchemy import inspect
+from sqlalchemy.exc import OperationalError, ProgrammingError
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from .util.event_settings import (
+    apply_event_template_values,
+    build_event_template_values,
     build_event_settings_with_fallback,
     format_swedish_date_display,
     get_active_event,
@@ -54,6 +59,7 @@ from .util.db_models import (
     BookedCanoe,
     BookingOrder,
     Event,
+    PublicSiteAccessSetting,
     User,
     db,
     get_current_utc_time,
@@ -122,7 +128,57 @@ def get_safe_login_redirect_target() -> str:
 def is_public_site_access_enabled() -> bool:
     """Return whether the shared public-site password gate is configured."""
 
-    return bool(current_app.config.get("PUBLIC_SITE_PASSWORD_HASH"))
+    return bool(get_public_site_password_hash())
+
+
+def get_public_site_access_setting() -> PublicSiteAccessSetting | None:
+    """Return the current database-backed public access setting, if one exists."""
+    try:
+        return PublicSiteAccessSetting.query.order_by(
+            PublicSiteAccessSetting.id.asc()
+        ).first()
+    except (ProgrammingError, OperationalError):
+        current_app.logger.warning(
+            "public_site_access_settings table is missing. "
+            "Run `uv run alembic upgrade head` to add it. "
+            "Falling back to PUBLIC_SITE_PASSWORD_HASH."
+        )
+        db.session.rollback()
+        return None
+
+
+def get_public_site_password_hash() -> str:
+    """Return the active shared public-site password hash.
+
+    The database-managed setting takes precedence so admins can rotate the
+    password without shell access. If no database value exists yet, the app
+    falls back to the existing environment-based hash.
+    """
+
+    public_access_setting = get_public_site_access_setting()
+    if public_access_setting and public_access_setting.password_hash:
+        return public_access_setting.password_hash
+
+    return str(current_app.config.get("PUBLIC_SITE_PASSWORD_HASH", ""))
+
+
+def ensure_public_site_access_settings_table_exists() -> None:
+    """Create the password-settings table on older local databases when needed.
+
+    The new shared-password feature was added after some development databases
+    already existed. Querying can safely fall back to the environment value, but
+    saving a new password needs the table to exist first.
+    """
+
+    inspector = inspect(db.engine)
+    if inspector.has_table(PublicSiteAccessSetting.__tablename__):
+        return
+
+    current_app.logger.warning(
+        "public_site_access_settings table is missing during password rotation. "
+        "Creating it now so the admin request can complete."
+    )
+    PublicSiteAccessSetting.__table__.create(bind=db.engine, checkfirst=True)
 
 
 def has_public_site_access() -> bool:
@@ -418,17 +474,12 @@ def build_admin_event_copy_defaults(source_event: Event | None) -> dict[str, str
         dict[str, str]: Simple string values that work directly in form inputs.
     """
 
-    if source_event is None:
-        return {
-            "new_event_date": "",
-            "title": "",
-            "subtitle": "",
-        }
+    template_values = build_event_template_values(source_event)
 
     return {
         "new_event_date": "",
-        "title": source_event.title,
-        "subtitle": source_event.subtitle,
+        "title": str(template_values["title"]),
+        "subtitle": str(template_values["subtitle"]),
     }
 
 
@@ -624,7 +675,7 @@ def unlock_public_site():
         return redirect(url_for("main.index"))
 
     submitted_password = request.form.get("password", "")
-    configured_password_hash = current_app.config.get("PUBLIC_SITE_PASSWORD_HASH", "")
+    configured_password_hash = get_public_site_password_hash()
 
     if not submitted_password or not configured_password_hash:
         flash("Fel lösenord. Försök igen.", "error")
@@ -637,6 +688,42 @@ def unlock_public_site():
     session[PUBLIC_SITE_ACCESS_SESSION_KEY] = True
     session[PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY] = True
     return redirect(url_for("main.index"))
+
+
+def validate_new_password(new_password: str, confirmed_password: str) -> str | None:
+    """Return a Swedish validation error message for password changes.
+
+    Args:
+        new_password: New password from the admin form.
+        confirmed_password: Confirmation field from the admin form.
+
+    Returns:
+        str | None: A human-readable validation message, or ``None`` when the
+        password is acceptable.
+    """
+
+    if not new_password or not confirmed_password:
+        return "Båda lösenordsfälten måste fyllas i."
+
+    if new_password != confirmed_password:
+        return "Lösenorden matchar inte."
+
+    if len(new_password) < 8:
+        return "Det nya lösenordet måste vara minst 8 tecken långt."
+
+    if len(new_password) > 255:
+        return "Det nya lösenordet får vara högst 255 tecken långt."
+
+    if not re.search(r"[A-ZÅÄÖ]", new_password):
+        return "Det nya lösenordet måste innehålla minst en versal."
+
+    if not re.search(r"\d", new_password):
+        return "Det nya lösenordet måste innehålla minst en siffra."
+
+    if not re.search(r"[^A-Za-z0-9ÅÄÖåäö]", new_password):
+        return "Det nya lösenordet måste innehålla minst ett specialtecken."
+
+    return None
 
 
 @main_blueprint.route("/create-checkout-session", methods=["POST"])
@@ -951,10 +1038,8 @@ def admin_dashboard():
     active_event = get_active_event()
     selected_event = get_selected_admin_event(request.args.get("event_id", type=int))
     confirmed_booking_count = len(bookings)
-    available_canoes_total = (
-        active_event.available_canoes if active_event is not None else 0
-    )
-    remaining_canoes = max(0, available_canoes_total - confirmed_booking_count)
+    available_canoes_total = get_total_available_canoes()
+    public_site_access_setting = get_public_site_access_setting()
 
     return render_template(
         "admin.html",
@@ -964,10 +1049,77 @@ def admin_dashboard():
         format_swedish_date_display=format_swedish_date_display,
         selected_event=selected_event,
         confirmed_booking_count=confirmed_booking_count,
-        remaining_canoes=remaining_canoes,
+        available_canoes_total=available_canoes_total,
         create_event_defaults=build_admin_event_copy_defaults(selected_event),
+        public_site_password_managed_in_database=public_site_access_setting is not None,
+        public_site_password_updated_at=(
+            public_site_access_setting.updated_at
+            if public_site_access_setting is not None
+            else None
+        ),
         open_admin_panel=request.args.get("panel", ""),
     )
+
+
+@main_blueprint.route("/admin/public-site-password", methods=["POST"])
+@login_required
+def admin_update_public_site_password():
+    """Rotate the shared public-site password from the admin dashboard."""
+
+    new_password = request.form.get("new_public_site_password", "")
+    confirmed_password = request.form.get("confirm_public_site_password", "")
+
+    validation_error = validate_new_password(new_password, confirmed_password)
+    if validation_error is not None:
+        flash(validation_error, "error")
+        return redirect(url_for("main.admin_dashboard", panel="publicSitePassword"))
+
+    try:
+        ensure_public_site_access_settings_table_exists()
+
+        public_access_setting = get_public_site_access_setting()
+        if public_access_setting is None:
+            public_access_setting = PublicSiteAccessSetting(
+                password_hash=generate_password_hash(new_password)
+            )
+            db.session.add(public_access_setting)
+        else:
+            public_access_setting.password_hash = generate_password_hash(new_password)
+
+        db.session.commit()
+    except (ProgrammingError, OperationalError):
+        db.session.rollback()
+        current_app.logger.exception(
+            "Failed to save the shared public-site password from the admin page."
+        )
+        flash(
+            "Det gick inte att spara lösenordet just nu. Försök igen eller kör "
+            "`uv run alembic upgrade head` om databasen är gammal.",
+            "error",
+        )
+        return redirect(url_for("main.admin_dashboard", panel="publicSitePassword"))
+
+    flash("Hemsidans gemensamma lösenord har uppdaterats.", "success")
+    return redirect(url_for("main.admin_dashboard"))
+
+
+@main_blueprint.route("/admin/account-password", methods=["POST"])
+@login_required
+def admin_update_account_password():
+    """Allow the logged-in admin to change their own login password."""
+
+    new_password = request.form.get("new_admin_password", "")
+    confirmed_password = request.form.get("confirm_admin_password", "")
+
+    validation_error = validate_new_password(new_password, confirmed_password)
+    if validation_error is not None:
+        flash(validation_error, "error")
+        return redirect(url_for("main.admin_dashboard", panel="adminAccountPassword"))
+
+    current_user.set_password(new_password)
+    db.session.commit()
+    flash("Ditt adminlösenord har uppdaterats.", "success")
+    return redirect(url_for("main.admin_dashboard"))
 
 
 @main_blueprint.route("/admin/add", methods=["POST"])
@@ -1072,60 +1224,35 @@ def admin_delete(id):
 @main_blueprint.route("/admin/events/create", methods=["POST"])
 @login_required
 def admin_create_event():
-    """Create a new event by copying the currently selected event."""
+    """Create a new event from the selected event or the code template."""
 
     source_event = get_selected_admin_event(
         request.form.get("source_event_id", type=int)
     )
+    template_values = build_event_template_values(source_event)
     if source_event is None:
-        flash("Det gick inte att hitta ett event att kopiera från.", "error")
-        return redirect(url_for("main.admin_dashboard", panel="events"))
+        redirect_values = {"panel": "events"}
+    else:
+        redirect_values = {"panel": "events", "event_id": source_event.id}
 
     new_event_date_raw = request.form.get("new_event_date", "").strip()
     try:
         new_event_date = datetime.strptime(new_event_date_raw, "%Y-%m-%d").date()
     except ValueError:
         flash("Ange ett giltigt datum för det nya eventet.", "error")
-        return redirect(
-            url_for(
-                "main.admin_dashboard",
-                panel="events",
-                event_id=source_event.id,
-            )
-        )
+        return redirect(url_for("main.admin_dashboard", **redirect_values))
 
     if Event.query.filter_by(event_date=new_event_date).first() is not None:
         flash("Det finns redan ett event med det datumet.", "error")
-        return redirect(
-            url_for(
-                "main.admin_dashboard",
-                panel="events",
-                event_id=source_event.id,
-            )
-        )
+        return redirect(url_for("main.admin_dashboard", **redirect_values))
 
-    created_event = Event(
-        title=request.form.get("new_title", "").strip() or source_event.title,
-        subtitle=request.form.get("new_subtitle", "").strip() or source_event.subtitle,
-        event_date=new_event_date,
-        start_time=source_event.start_time,
-        starting_location_name=source_event.starting_location_name,
-        starting_location_url=source_event.starting_location_url,
-        end_location_name=source_event.end_location_name,
-        end_location_url=source_event.end_location_url,
-        available_canoes=source_event.available_canoes,
-        price_per_canoe_sek=source_event.price_per_canoe_sek,
-        max_canoes_per_booking=source_event.max_canoes_per_booking,
-        weather_forecast_days_before_event=source_event.weather_forecast_days_before_event,
-        weather_latitude=source_event.weather_latitude,
-        weather_longitude=source_event.weather_longitude,
-        faq_booking_text=source_event.faq_booking_text,
-        faq_changes_and_questions_text=source_event.faq_changes_and_questions_text,
-        rules_on_the_water_text=source_event.rules_on_the_water_text,
-        rules_after_paddling_text=source_event.rules_after_paddling_text,
-        contact_email=source_event.contact_email,
-        contact_phone=source_event.contact_phone,
-        is_active=False,
+    created_event = Event(event_date=new_event_date, is_active=False)
+    apply_event_template_values(created_event, template_values)
+    created_event.title = request.form.get("new_title", "").strip() or str(
+        template_values["title"]
+    )
+    created_event.subtitle = request.form.get("new_subtitle", "").strip() or str(
+        template_values["subtitle"]
     )
     db.session.add(created_event)
     db.session.commit()

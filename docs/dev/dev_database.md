@@ -131,15 +131,42 @@ Why this order:
   backfills older booking rows that still have no `event_id`.
 - `seed-admin` creates the login account for the admin area.
 
+To add more named admin users later without editing `.env`, run:
+
+```bash
+uv run flask --app wsgi add-admin-user
+```
+
+Why:
+
+- Prompts for the new admin username and password.
+- Makes it easier to keep one distinct login per admin person.
+- Prepares the project for later admin-attributed logging.
+
 ## Current Schema Reminder
 
 The current main tables are:
 
 - `events`
 - `event_weather_cache`
+- `public_site_access_settings`
 - `booking_orders`
 - `booked_canoes`
 - `admin_users`
+
+Important access-setting note:
+
+- `public_site_access_settings` stores the shared public-site password hash
+  when an admin rotates it from the dashboard.
+- If this table has no row yet, the app falls back to
+  `PUBLIC_SITE_PASSWORD_HASH` from the environment.
+- If an older local database is missing this table entirely, the first
+  successful password rotation request creates it automatically. You should
+  still run `uv run alembic upgrade head` so the migration history stays in
+  sync.
+- If the shared public-site password is forgotten later, use
+  `uv run flask --app wsgi reset-public-site-password` to save a new one
+  directly in this table.
 
 Important note:
 
@@ -170,6 +197,9 @@ Important admin note:
   - `weather_longitude`
 - When a new event is created, these values are copied from the selected source
   event automatically.
+- If there is no source event yet, the admin dashboard uses the shared
+  code-defined event template values from `config.py` instead, so the first
+  editable event can still be created from the UI.
 - If you really need to change one of them, update the value directly in the
   database row in Supabase.
 - Keep the matching fallback values in `config.py` aligned as well, so the app
@@ -189,6 +219,24 @@ Why:
   `config.py`.
 - Safe to run more than once.
 - Also backfills older `booking_orders` rows whose `event_id` is still empty.
+
+### Recover a forgotten shared public-site password
+
+```bash
+uv run flask --app wsgi reset-public-site-password
+```
+
+Why:
+
+- Generates a new shared public-site password.
+- Stores only the hash in `public_site_access_settings`.
+- Prints the plaintext password once so you can save it somewhere safe.
+
+If you want to choose the new password yourself instead of generating one:
+
+```bash
+uv run flask --app wsgi reset-public-site-password --password "Choose-your-own-123!"
+```
 
 ### Fresh local reset
 

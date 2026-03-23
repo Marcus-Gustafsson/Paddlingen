@@ -1,7 +1,12 @@
 """Tests for public-facing routes and booking flow."""
 
 from app import db
-from app.util.db_models import BookedCanoe, BookingOrder, Event
+from app.util.db_models import (
+    BookedCanoe,
+    BookingOrder,
+    Event,
+    PublicSiteAccessSetting,
+)
 from app.util.helper_functions import get_previous_year_image_metadata
 
 
@@ -322,3 +327,16 @@ def test_unlock_rate_limit_exceeded(client):
         follow_redirects=False,
     )
     assert limited_response.status_code == 429
+
+
+def test_public_site_gate_falls_back_when_access_settings_table_is_missing(client):
+    """Keep the public gate working if the new settings table is not migrated yet."""
+
+    with client.application.app_context():
+        PublicSiteAccessSetting.__table__.drop(db.engine)
+
+    response = client.get("/")
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Öppna sidan" in page
+    assert "Boka kanot" not in page

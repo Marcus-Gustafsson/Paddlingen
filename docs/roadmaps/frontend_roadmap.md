@@ -211,6 +211,59 @@ How to test:
 
 - Review the new layout and confirm it can grow without another redesign.
 
+### Step 5. Add secondary admin utility actions
+
+What to do:
+
+- Add smaller secondary admin actions below the main booking and event cards.
+- Start with:
+  - shared public-password rotation,
+  - one reserved checklist action slot for later.
+
+Why:
+
+- Some admin workflows are important but should not compete visually with the
+  two primary actions.
+
+How to test:
+
+- Confirm the new utility actions are easy to find without overpowering the
+  main booking and event actions.
+
+### Step 6. Add an event-day checklist tool later
+
+What to do:
+
+- Turn the reserved checklist action into a real admin tool.
+- Support both on-screen check-off and printable export (.pdf to start with).
+- Should see the name of the person for the canoe to the left and number of canoes to the right, with one small clickable checkbox (and also rendered checkbox for the printable export for manual filling with e.g. pen)
+- A confirm button, which uk
+
+Why:
+
+- The event staff still need a practical replacement for the older paper-based
+  check-off workflow.
+
+How to test:
+
+- Open the checklist tool from the admin page and confirm it works both on
+  screen and for print/PDF use.
+
+### Step 7. Refine the public participant overview for grouped canoe counts
+
+What to do:
+
+- Show the participant name on the left and the canoe count on the right once
+  grouped multi-canoe bookings are supported.
+
+Why:
+
+- The current overview is still built around one row per canoe.
+
+How to test:
+
+- Confirm the overview stays readable when one person holds multiple canoes.
+
 ## Phase 4: Re-test The Full Frontend On Real Layouts
 
 Goal:

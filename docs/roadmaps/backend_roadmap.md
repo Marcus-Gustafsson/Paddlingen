@@ -235,7 +235,10 @@ What to do:
 - Record more detail for manual admin changes, including:
   - which payment method was used for a manual booking,
   - which admin user created or changed the record,
-  - what type of admin action happened.
+  - what type of admin action happened,
+  - which admin changed the shared public-site password,
+  - which admin added, updated, or removed a canoe booking,
+  - which admin changed event settings or activated an event.
 - Store this in a clear audit-friendly structure instead of relying only on
   free-form notes.
 
@@ -359,7 +362,7 @@ How to test:
   longer load.
 - Unlock the site and confirm the ribbon and gallery still work normally.
 
-### Step 5. Let admins rotate the shared public password from the admin page
+### Step 5. Let admins rotate the shared public password from the admin page (Completed 2026-03-21)
 
 What to do:
 
@@ -376,6 +379,17 @@ How to test:
 
 - Save a new shared public password through the admin page.
 - Confirm the old password stops working and the new one unlocks the site.
+
+Implementation note:
+
+- The admin page now writes the shared public-site password hash to the
+  `public_site_access_settings` table.
+- The app uses that database-backed value first and only falls back to
+  `PUBLIC_SITE_PASSWORD_HASH` from the environment when no database value
+  exists yet.
+- A `reset-public-site-password` CLI command now acts as the manual recovery
+  path if the shared password is forgotten and the admin page cannot be
+  reached.
 
 ### Step 6. Use a production-grade rate-limit storage backend
 
@@ -397,6 +411,42 @@ How to test:
 - Trigger the `/unlock` and `/login` limits from the same IP address.
 - Confirm the limit still applies correctly after an app restart or when using
   multiple app workers.
+
+### Step 7. Add event-day checklist and PDF export support
+
+What to do:
+
+- Add one admin workflow for checking off booked canoes during the event.
+- Support both an in-site checklist view and a printable PDF export.
+
+Why:
+
+- The old manual paper workflow should be replaced by something easier to use
+  and easier to print when needed.
+
+How to test:
+
+- Generate the checklist from the admin page.
+- Confirm the list can be used on screen and exported to PDF.
+
+### Step 8. Support grouped participant overviews for multi-canoe bookings
+
+What to do:
+
+- Update the booking model and overview queries so one lead person can hold
+  multiple canoes in the public participant view.
+- Show the person name on the left and the canoe count on the right.
+
+Why:
+
+- The current participant list is still oriented toward one row per canoe.
+- A grouped overview will matter once one person can book several canoes under
+  their own name.
+
+How to test:
+
+- Create a booking where one person holds multiple canoes.
+- Confirm the overview shows the grouped name plus canoe count correctly.
 
 ## Phase 4: Make Booking Safety Explicit
 

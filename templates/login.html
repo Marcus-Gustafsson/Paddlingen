@@ -43,7 +43,28 @@
 
           <label class="login-field" for="password">
             <span>Lösenord</span>
-            <input id="password" type="password" name="password" required>
+            <div class="password-input-shell">
+              <input id="password" type="password" name="password" required>
+              <button
+                type="button"
+                class="password-visibility-toggle"
+                data-password-toggle
+                data-show-label="Visa lösenord"
+                data-hide-label="Dölj lösenord"
+                aria-label="Visa lösenord"
+                aria-pressed="false"
+              >
+                <svg class="password-visibility-icon password-visibility-icon--password-hidden" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M10.7 5.3A11 11 0 0 1 12 5.2c6.4 0 10 6 10 6a18.1 18.1 0 0 1-4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6.2 6.2C3.6 8 2 11.2 2 11.2s3.6 6 10 6c1.3 0 2.4-.2 3.5-.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg class="password-visibility-icon password-visibility-icon--password-visible" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                  <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
           </label>
 
           <button type="submit" class="login-submit">Logga in</button>
@@ -53,5 +74,6 @@
       </div>
     </section>
   </main>
+  <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
 </body>
 </html>

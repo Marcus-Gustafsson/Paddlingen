@@ -62,6 +62,13 @@ Generate the hash with:
 uv run flask --app wsgi generate-public-site-password-hash
 ```
 
+If the shared public-site password was rotated and later forgotten, recover by
+generating and saving a new one with:
+
+```bash
+uv run flask --app wsgi reset-public-site-password
+```
+
 ### Start the app locally
 
 ```bash
@@ -180,6 +187,9 @@ Current admin dashboard behavior:
 - `/admin` opens a dashboard with two main actions:
   - booking management,
   - event management.
+- The dashboard also now includes smaller utility actions for:
+  - rotating the shared public-site password,
+  - a future event-day checklist slot.
 - Booking management currently supports:
   - adding one manual booking,
   - choosing the manual payment method,
@@ -188,8 +198,24 @@ Current admin dashboard behavior:
 - Event management currently supports:
   - selecting an existing event,
   - editing the selected event,
-  - creating a new event by copying an existing one,
+  - creating a new event from the selected event, or from the code-defined
+    event template values when the database is still empty,
   - activating the selected event.
+- Shared public-site password management currently supports:
+  - saving a new shared password through the admin dashboard,
+  - warning admins to write down the new password because it cannot be shown
+    again later,
+  - storing only the hash in the `public_site_access_settings` table,
+  - falling back to `PUBLIC_SITE_PASSWORD_HASH` only when the database has no
+    admin-managed value yet,
+  - creating the table automatically on the first successful save if an older
+    local database does not have it yet,
+  - resetting the password from the CLI if it was forgotten and the admin page
+    is no longer reachable.
+- Admin account management currently supports:
+  - adding extra named admin users from a prompted CLI command,
+  - changing the password for the currently logged-in admin from the admin
+    dashboard.
 - Both `/unlock` and `/login` are rate limited already, but the current
   limiter storage is still the simple in-memory development setup.
 

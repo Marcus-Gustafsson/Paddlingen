@@ -187,7 +187,9 @@ This is the current role of the main files and folders.
 
 - `config.py`
   Central place for configuration values and fallback defaults used if the
-  active database event row is missing.
+  active database event row is missing. These same values also act as the
+  shared event-template defaults when the admin dashboard creates the first
+  event while the database is still empty.
 
 - `wsgi.py`
   Production-style entrypoint that exposes the Flask application object.
@@ -207,7 +209,7 @@ This is the current role of the main files and folders.
 
 - `app/util/db_models.py`
   Defines the SQLAlchemy models, including `Event`, `EventWeatherCache`,
-  `BookingOrder`, `BookedCanoe`, and `User`.
+  `BookingOrder`, `BookedCanoe`, `PublicSiteAccessSetting`, and `User`.
 
 - `app/util/event_settings.py`
   Contains shared helper logic for reading the active event, falling back to
@@ -577,6 +579,15 @@ the file is now growing large enough that it may later need to be split.
 - `/admin/delete/<id>`
   Deletes a booking.
 
+- `/admin/public-site-password`
+  Lets an authenticated admin replace the shared public-site password hash from
+  the admin dashboard and warns that the plaintext password cannot be shown
+  again after saving.
+
+- `/admin/account-password`
+  Lets the logged-in admin replace their own admin-login password from the
+  dashboard.
+
 ## Booking Logic And Business Rules
 
 The main business rule is simple:
@@ -750,6 +761,30 @@ Why it exists:
 
 - It gives a quick way to bootstrap admin access without manually editing the
   database.
+
+### `add-admin-user`
+
+What it does:
+
+- Prompts for a username and password.
+- Creates one additional admin user in the database.
+
+Why it exists:
+
+- The project will likely need multiple named admin accounts so later logs can
+  be tied to the person who performed each admin action.
+
+### `reset-public-site-password`
+
+What it does:
+
+- Saves a new shared public-site password hash in the database.
+- Prints the new plaintext password once so it can be stored safely.
+
+Why it exists:
+
+- It is the recovery path when the shared public-site password was forgotten
+  and the admin page can no longer be reached.
 
 ### `seed-test-bookings`
 

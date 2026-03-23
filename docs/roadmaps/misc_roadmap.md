@@ -156,10 +156,18 @@ Goal:
 What to do:
 
 - Improve logging for important app events and errors.
+- Make sure later admin actions can be attributed to the logged-in admin user,
+  including:
+  - public-site password changes,
+  - manual booking creation,
+  - booking updates and deletions,
+  - event edits and event activation.
 
 Why:
 
 - Logs help explain what went wrong later.
+- Named admin accounts make those logs much more useful once several admins use
+  the dashboard.
 
 How to test:
 

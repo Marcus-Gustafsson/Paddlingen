@@ -287,6 +287,19 @@ What it does:
 - prints one password hash,
 - lets you store that hash in `.env` as `PUBLIC_SITE_PASSWORD_HASH`.
 
+If the shared password has already been moved into the database and later gets
+forgotten, reset it with:
+
+```bash
+uv run flask --app wsgi reset-public-site-password
+```
+
+What it does:
+
+- generates a new shared public-site password,
+- stores only the hash in the database,
+- prints the plaintext password once so you can save it safely.
+
 ## Previous-Years Image Asset Sync
 
 Run this whenever you add, remove, or rename files in:

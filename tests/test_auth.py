@@ -1,5 +1,10 @@
 """Authentication-related tests for the application."""
 
+from sqlalchemy import inspect
+from werkzeug.security import check_password_hash
+
+from app.util.db_models import PublicSiteAccessSetting, db
+
 
 def unlock_public_site(client):
     """Unlock the shared public-site gate for one test-client session."""
@@ -7,6 +12,17 @@ def unlock_public_site(client):
     return client.post(
         "/unlock",
         data={"password": "eventpass"},
+        follow_redirects=True,
+    )
+
+
+def login_admin(client):
+    """Unlock the public site and log in as the seeded admin user."""
+
+    unlock_public_site(client)
+    return client.post(
+        "/login",
+        data={"username": "admin", "password": "password"},
         follow_redirects=True,
     )
 
@@ -113,3 +129,130 @@ def test_login_allows_internal_next_redirect(client):
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/admin")
+
+
+def test_admin_can_rotate_public_site_password(client):
+    """Allow the admin dashboard to replace the shared public-site password."""
+
+    login_admin(client)
+    response = client.post(
+        "/admin/public-site-password",
+        data={
+            "new_public_site_password": "New-event-pass-123",
+            "confirm_public_site_password": "New-event-pass-123",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Hemsidans gemensamma lösenord har uppdaterats." in response.get_data(
+        as_text=True
+    )
+
+    with client.application.app_context():
+        password_setting = PublicSiteAccessSetting.query.first()
+        assert password_setting is not None
+        assert check_password_hash(
+            password_setting.password_hash,
+            "New-event-pass-123",
+        )
+
+    with client.application.test_client() as new_browser_session:
+        wrong_password_response = new_browser_session.post(
+            "/unlock",
+            data={"password": "eventpass"},
+            follow_redirects=True,
+        )
+        assert "Fel lösenord. Försök igen." in wrong_password_response.get_data(
+            as_text=True
+        )
+
+        correct_password_response = new_browser_session.post(
+            "/unlock",
+            data={"password": "New-event-pass-123"},
+            follow_redirects=True,
+        )
+        assert "Boka kanot" in correct_password_response.get_data(as_text=True)
+
+
+def test_admin_public_site_password_rejects_mismatched_confirmation(client):
+    """Require the confirmation field to match the new shared password."""
+
+    login_admin(client)
+    response = client.post(
+        "/admin/public-site-password",
+        data={
+            "new_public_site_password": "Another-pass-123!",
+            "confirm_public_site_password": "Different-pass-123!",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Lösenorden matchar inte." in response.get_data(as_text=True)
+
+
+def test_admin_public_site_password_recreates_missing_table(client):
+    """Keep password rotation working on an older database that lacks the table."""
+
+    with client.application.app_context():
+        PublicSiteAccessSetting.__table__.drop(db.engine)
+
+    login_admin(client)
+    response = client.post(
+        "/admin/public-site-password",
+        data={
+            "new_public_site_password": "Recreated-pass-123!",
+            "confirm_public_site_password": "Recreated-pass-123!",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Hemsidans gemensamma lösenord har uppdaterats." in response.get_data(
+        as_text=True
+    )
+
+    with client.application.app_context():
+        assert inspect(db.engine).has_table(PublicSiteAccessSetting.__tablename__)
+        password_setting = PublicSiteAccessSetting.query.first()
+        assert password_setting is not None
+        assert check_password_hash(
+            password_setting.password_hash,
+            "Recreated-pass-123!",
+        )
+
+
+def test_admin_can_change_own_login_password(client):
+    """Allow a logged-in admin to update their own login password."""
+
+    login_admin(client)
+    response = client.post(
+        "/admin/account-password",
+        data={
+            "new_admin_password": "Updated-admin-pass-123!",
+            "confirm_admin_password": "Updated-admin-pass-123!",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Ditt adminlösenord har uppdaterats." in response.get_data(as_text=True)
+
+    client.get("/logout", follow_redirects=True)
+    wrong_password_response = client.post(
+        "/login",
+        data={"username": "admin", "password": "password"},
+        follow_redirects=True,
+    )
+    assert "Felaktigt användarnamn eller lösenord" in wrong_password_response.get_data(
+        as_text=True
+    )
+
+    correct_password_response = client.post(
+        "/login",
+        data={"username": "admin", "password": "Updated-admin-pass-123!"},
+        follow_redirects=False,
+    )
+    assert correct_password_response.status_code == 302
+    assert correct_password_response.headers["Location"].endswith("/admin")

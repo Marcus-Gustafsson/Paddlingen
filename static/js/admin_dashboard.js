@@ -13,9 +13,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageBody = document.body;
   const panelOverlays = Array.from(document.querySelectorAll(".admin-panel-overlay"));
   const openPanelButtons = document.querySelectorAll(
-    ".admin-action-card[data-open-admin-panel]"
+    ".admin-action-card[data-open-admin-panel], " +
+      ".admin-support-card[data-open-admin-panel], " +
+      ".admin-session-link[data-open-admin-panel]"
   );
   const closePanelButtons = document.querySelectorAll("[data-close-admin-panel]");
+  const passwordToggleButtons = document.querySelectorAll("[data-password-toggle]");
   const validatedInputs = Array.from(
     document.querySelectorAll(
       ".admin-form input, .admin-form textarea, .admin-form select"
@@ -27,12 +30,17 @@ document.addEventListener("DOMContentLoaded", () => {
     bookingsPanel: "bookingsPanel",
     events: "eventsPanel",
     eventsPanel: "eventsPanel",
+    publicSitePassword: "publicSitePasswordPanel",
+    publicSitePasswordPanel: "publicSitePasswordPanel",
+    adminAccountPassword: "adminAccountPasswordPanel",
+    adminAccountPasswordPanel: "adminAccountPasswordPanel",
   };
 
   function closeAllPanels() {
     panelOverlays.forEach((panelOverlay) => {
       panelOverlay.hidden = true;
     });
+    pageBody.dataset.openAdminPanel = "";
   }
 
   function openPanel(panelNameOrId) {
@@ -48,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     targetPanel.hidden = false;
+    pageBody.dataset.openAdminPanel = targetPanelId;
   }
 
   openPanelButtons.forEach((openButton) => {
@@ -59,6 +68,57 @@ document.addEventListener("DOMContentLoaded", () => {
   closePanelButtons.forEach((closeButton) => {
     closeButton.addEventListener("click", () => {
       closeAllPanels();
+    });
+  });
+
+  function applyPasswordVisibilityState(toggleButton, isPasswordVisible) {
+    const hiddenPasswordIcon = toggleButton.querySelector(
+      ".password-visibility-icon--password-hidden"
+    );
+    const visiblePasswordIcon = toggleButton.querySelector(
+      ".password-visibility-icon--password-visible"
+    );
+
+    function setIconVisibility(iconElement, shouldShow) {
+      if (!iconElement) {
+        return;
+      }
+
+      iconElement.hidden = !shouldShow;
+      iconElement.style.display = shouldShow ? "block" : "none";
+    }
+
+    setIconVisibility(hiddenPasswordIcon, !isPasswordVisible);
+    setIconVisibility(visiblePasswordIcon, isPasswordVisible);
+
+    toggleButton.setAttribute("aria-pressed", String(isPasswordVisible));
+    toggleButton.setAttribute(
+      "aria-label",
+      isPasswordVisible
+        ? toggleButton.dataset.hideLabel || "Dölj lösenord"
+        : toggleButton.dataset.showLabel || "Visa lösenord"
+    );
+  }
+
+  passwordToggleButtons.forEach((toggleButton) => {
+    const inputShell = toggleButton.closest(".password-input-shell");
+    const passwordInput = inputShell?.querySelector("input");
+    if (passwordInput) {
+      passwordInput.type = "password";
+    }
+
+    applyPasswordVisibilityState(toggleButton, false);
+
+    toggleButton.addEventListener("click", () => {
+      const buttonInputShell = toggleButton.closest(".password-input-shell");
+      const passwordInput = buttonInputShell?.querySelector("input");
+      if (!passwordInput) {
+        return;
+      }
+
+      const isCurrentlyHidden = passwordInput.type === "password";
+      passwordInput.type = isCurrentlyHidden ? "text" : "password";
+      applyPasswordVisibilityState(toggleButton, isCurrentlyHidden);
     });
   });
 
@@ -76,9 +136,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  closeAllPanels();
-
   const panelToOpenOnLoad = pageBody.dataset.openAdminPanel;
+  closeAllPanels();
   if (panelToOpenOnLoad) {
     openPanel(panelToOpenOnLoad);
   }
@@ -112,6 +171,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
   }
 
+  function isStrongSharedPassword(value) {
+    return (
+      value.length >= 8 &&
+      /[A-ZÅÄÖ]/.test(value) &&
+      /\d/.test(value) &&
+      /[^A-Za-z0-9ÅÄÖåäö]/.test(value)
+    );
+  }
+
   function getCustomValidationMessage(inputElement) {
     const trimmedValue = inputElement.value.trim();
     if (!trimmedValue) {
@@ -122,6 +190,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       return "";
+    }
+
+    if (inputElement.type === "email" && inputElement.validity.typeMismatch) {
+      return "Ange en giltig e-postadress.";
+    }
+
+    if (inputElement.type === "url" && inputElement.validity.typeMismatch) {
+      return "Ange en giltig webbadress.";
+    }
+
+    if (inputElement.type === "number") {
+      const numericValue = Number(trimmedValue);
+      if (Number.isNaN(numericValue)) {
+        return "Ange ett giltigt tal.";
+      }
+
+      if (inputElement.min && numericValue < Number(inputElement.min)) {
+        return `Värdet måste vara minst ${inputElement.min}.`;
+      }
     }
 
     if (inputElement.dataset.validationType === "date") {
@@ -138,6 +225,31 @@ document.addEventListener("DOMContentLoaded", () => {
             "Ange tid i 24-timmarsformatet TT:MM.";
     }
 
+    if (inputElement.dataset.validationType === "password-strength") {
+      return isStrongSharedPassword(trimmedValue)
+        ? ""
+        : "Ange minst 8 tecken, minst en versal, en siffra och ett specialtecken.";
+    }
+
+    if (inputElement.dataset.validationType === "password-confirmation") {
+      const matchingFieldName = inputElement.dataset.matchField;
+      const matchingInput = matchingFieldName
+        ? inputElement.form?.querySelector(`[name="${matchingFieldName}"]`)
+        : null;
+
+      return matchingInput && trimmedValue !== matchingInput.value.trim()
+        ? "Bekräftelsen måste matcha det nya lösenordet."
+        : "";
+    }
+
+    if (
+      inputElement.dataset.minLengthMessage &&
+      inputElement.minLength > 0 &&
+      trimmedValue.length < inputElement.minLength
+    ) {
+      return inputElement.dataset.minLengthMessage;
+    }
+
     return "";
   }
 
@@ -149,4 +261,23 @@ document.addEventListener("DOMContentLoaded", () => {
     inputElement.addEventListener("input", applyValidationMessage);
     inputElement.addEventListener("invalid", applyValidationMessage);
   });
+
+  document
+    .querySelectorAll("[data-password-rotation-form]")
+    .forEach((passwordForm) => {
+      passwordForm.addEventListener("submit", (event) => {
+        const passwordInputs = Array.from(
+          passwordForm.querySelectorAll("input")
+        );
+
+        passwordInputs.forEach((inputElement) => {
+          inputElement.setCustomValidity(getCustomValidationMessage(inputElement));
+        });
+
+        if (!passwordForm.checkValidity()) {
+          event.preventDefault();
+          passwordForm.reportValidity();
+        }
+      });
+    });
 });

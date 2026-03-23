@@ -18,7 +18,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
-<body class="admin-page" data-open-admin-panel="{{ open_admin_panel }}">
+{% set flashed_messages = get_flashed_messages(with_categories=true) %}
+<body class="admin-page{% if flashed_messages %} admin-page--with-toast{% endif %}" data-open-admin-panel="{{ open_admin_panel }}">
   <div class="admin-top-row" aria-label="Adminöversikt">
     <a class="admin-home-link" href="{{ url_for('main.index') }}">← Till hemsidan</a>
 
@@ -38,11 +39,7 @@
           </div>
           <div class="admin-header-meta-item">
             <span class="admin-summary-label">Bokade kanoter</span>
-            <strong>{{ confirmed_booking_count }}</strong>
-          </div>
-          <div class="admin-header-meta-item">
-            <span class="admin-summary-label">Lediga kanoter</span>
-            <strong>{{ remaining_canoes }}</strong>
+            <strong>{{ confirmed_booking_count }}/{{ available_canoes_total }}</strong>
           </div>
         </div>
       </div>
@@ -51,19 +48,26 @@
     <div class="admin-session-card">
       <span class="admin-summary-label">Inloggad som</span>
       <strong>{{ current_user.username }}</strong>
-      <a class="admin-session-link" href="{{ url_for('main.logout') }}">Logga ut</a>
+      <div class="admin-session-actions">
+        <button
+          class="admin-session-link"
+          type="button"
+          data-open-admin-panel="adminAccountPasswordPanel"
+        >
+          Byt adminlösenord
+        </button>
+        <a class="admin-session-link" href="{{ url_for('main.logout') }}">Logga ut</a>
+      </div>
     </div>
   </div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="admin-toast-stack" aria-live="polite">
-        {% for category, msg in messages %}
-          <div class="admin-toast admin-toast-{{ category }}">{{ msg }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+  {% if flashed_messages %}
+    <div class="admin-toast-stack" aria-live="polite">
+      {% for category, msg in flashed_messages %}
+        <div class="admin-toast admin-toast-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
   <main class="admin-container">
     <section class="admin-action-grid" aria-label="Huvudåtgärder">
@@ -90,9 +94,33 @@
         </span>
       </button>
     </section>
+
+    <section class="admin-support-grid" aria-label="Fler adminverktyg">
+      <button
+        class="admin-support-card"
+        type="button"
+        data-open-admin-panel="publicSitePasswordPanel"
+      >
+        <strong>Byt hemsidans lösenord</strong>
+        <span>
+          Uppdatera det gemensamma lösenordet som krävs för att öppna hemsidan.
+        </span>
+      </button>
+
+      <button class="admin-support-card admin-support-card--placeholder" type="button" disabled>
+        <strong>Kommande: Checklista</strong>
+        <span>
+          Här kommer en funktion för avprickning på plats och PDF-utskrift.
+        </span>
+      </button>
+    </section>
   </main>
 
-  <div id="bookingsPanel" class="admin-panel-overlay" hidden>
+  <div
+    id="bookingsPanel"
+    class="admin-panel-overlay"
+    {% if open_admin_panel not in ["bookings", "bookingsPanel"] %}hidden{% endif %}
+  >
     <section
       class="admin-panel"
       role="dialog"
@@ -246,7 +274,11 @@
     </section>
   </div>
 
-  <div id="eventsPanel" class="admin-panel-overlay" hidden>
+  <div
+    id="eventsPanel"
+    class="admin-panel-overlay"
+    {% if open_admin_panel not in ["events", "eventsPanel"] %}hidden{% endif %}
+  >
     <section
       class="admin-panel admin-panel--wide"
       role="dialog"
@@ -313,8 +345,9 @@
 
           <h3>Skapa nytt event</h3>
           <p class="admin-subcard-copy">
-            Skapa nästa års event genom att kopiera det valda eventet och ange
-            ett nytt datum.
+            Skapa nästa års event från det valda eventet. Om det inte finns
+            något event i databasen ännu används kodens mallvärden som
+            startpunkt.
           </p>
 
           <form action="{{ url_for('main.admin_create_event') }}" method="post" class="admin-form">
@@ -340,7 +373,7 @@
               <small class="admin-field-hint">Ange datum som YYYY-MM-DD.</small>
             </label>
 
-            <button type="submit" class="admin-primary-button">Skapa ny kopia</button>
+            <button type="submit" class="admin-primary-button">Skapa en ny mall</button>
           </form>
         </aside>
 
@@ -550,6 +583,271 @@
           {% endif %}
         </section>
       </div>
+    </section>
+  </div>
+
+  <div
+    id="publicSitePasswordPanel"
+    class="admin-panel-overlay"
+    {% if open_admin_panel not in ["publicSitePassword", "publicSitePasswordPanel"] %}hidden{% endif %}
+  >
+    <section
+      class="admin-panel admin-panel--compact"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="publicSitePasswordPanelTitle"
+    >
+      <button
+        class="admin-panel-close"
+        type="button"
+        data-close-admin-panel
+        aria-label="Stäng panelen för hemsidans lösenord"
+      >
+        ×
+      </button>
+
+      <div class="admin-panel-header">
+        <p class="admin-panel-kicker">Hemsidans lösenord</p>
+        <h2 id="publicSitePasswordPanelTitle">Byt gemensamt lösenord</h2>
+        <p class="admin-panel-copy">
+          Använd detta när det gemensamma lösenordet behöver bytas för alla
+          besökare. Det nya lösenordet lagras som en hash i databasen.
+        </p>
+      </div>
+
+      <section class="admin-subcard admin-subcard--single">
+        <div class="admin-password-status">
+          <p class="admin-subcard-copy">
+            {% if public_site_password_managed_in_database %}
+              Lösenordet hanteras just nu från databasen.
+            {% else %}
+              Lösenordet använder fortfarande miljövariabeln som reservkälla.
+              Första ändringen här flyttar hanteringen till databasen.
+            {% endif %}
+          </p>
+          {% if public_site_password_updated_at %}
+            <p class="admin-password-status-meta">
+              Senast uppdaterat: {{ public_site_password_updated_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+          {% endif %}
+        </div>
+
+        <form
+          action="{{ url_for('main.admin_update_public_site_password') }}"
+          method="post"
+          class="admin-form"
+          data-password-rotation-form
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <label class="admin-form-field">
+            <span>Nytt lösenord</span>
+            <div class="password-input-shell">
+              <input
+                type="password"
+                name="new_public_site_password"
+                maxlength="255"
+                data-required-message="Det nya lösenordet måste fyllas i."
+                data-validation-type="password-strength"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="password-visibility-toggle"
+                data-password-toggle
+                data-show-label="Visa lösenord"
+                data-hide-label="Dölj lösenord"
+                aria-label="Visa lösenord"
+                aria-pressed="false"
+              >
+                <svg class="password-visibility-icon password-visibility-icon--password-hidden" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M10.7 5.3A11 11 0 0 1 12 5.2c6.4 0 10 6 10 6a18.1 18.1 0 0 1-4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6.2 6.2C3.6 8 2 11.2 2 11.2s3.6 6 10 6c1.3 0 2.4-.2 3.5-.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg class="password-visibility-icon password-visibility-icon--password-visible" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                  <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+            <small class="admin-field-hint">
+              Minst 8 tecken, minst en versal, en siffra och ett specialtecken.
+            </small>
+          </label>
+
+          <label class="admin-form-field">
+            <span>Bekräfta lösenordet</span>
+            <div class="password-input-shell">
+              <input
+                type="password"
+                name="confirm_public_site_password"
+                maxlength="255"
+                data-required-message="Bekräftelsen måste fyllas i."
+                data-validation-type="password-confirmation"
+                data-match-field="new_public_site_password"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="password-visibility-toggle"
+                data-password-toggle
+                data-show-label="Visa lösenord"
+                data-hide-label="Dölj lösenord"
+                aria-label="Visa lösenord"
+                aria-pressed="false"
+              >
+                <svg class="password-visibility-icon password-visibility-icon--password-hidden" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M10.7 5.3A11 11 0 0 1 12 5.2c6.4 0 10 6 10 6a18.1 18.1 0 0 1-4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6.2 6.2C3.6 8 2 11.2 2 11.2s3.6 6 10 6c1.3 0 2.4-.2 3.5-.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg class="password-visibility-icon password-visibility-icon--password-visible" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                  <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+
+          <p class="admin-field-hint admin-field-hint--warning">
+            Skriv ner det nya lösenordet direkt innan du sparar. Efter att det
+            har bytts kan det inte visas igen från adminpanelen.
+          </p>
+
+          <button type="submit" class="admin-primary-button">Byt lösenord</button>
+        </form>
+      </section>
+    </section>
+  </div>
+
+  <div
+    id="adminAccountPasswordPanel"
+    class="admin-panel-overlay"
+    {% if open_admin_panel not in ["adminAccountPassword", "adminAccountPasswordPanel"] %}hidden{% endif %}
+  >
+    <section
+      class="admin-panel admin-panel--compact"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminAccountPasswordPanelTitle"
+    >
+      <button
+        class="admin-panel-close"
+        type="button"
+        data-close-admin-panel
+        aria-label="Stäng panelen för adminlösenord"
+      >
+        ×
+      </button>
+
+      <div class="admin-panel-header">
+        <p class="admin-panel-kicker">Ditt adminkonto</p>
+        <h2 id="adminAccountPasswordPanelTitle">Byt ditt adminlösenord</h2>
+        <p class="admin-panel-copy">
+          Använd detta för att uppdatera lösenordet till ditt eget
+          administratörskonto. Det nya lösenordet lagras som en hash och kan
+          inte visas igen efter att det sparats.
+        </p>
+      </div>
+
+      <section class="admin-subcard admin-subcard--single">
+        <div class="admin-password-status">
+          <p class="admin-subcard-copy">
+            Inloggad som: <strong>{{ current_user.username }}</strong>
+          </p>
+        </div>
+
+        <form
+          action="{{ url_for('main.admin_update_account_password') }}"
+          method="post"
+          class="admin-form"
+          data-password-rotation-form
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <label class="admin-form-field">
+            <span>Nytt adminlösenord</span>
+            <div class="password-input-shell">
+              <input
+                type="password"
+                name="new_admin_password"
+                maxlength="255"
+                data-required-message="Det nya adminlösenordet måste fyllas i."
+                data-validation-type="password-strength"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="password-visibility-toggle"
+                data-password-toggle
+                data-show-label="Visa lösenord"
+                data-hide-label="Dölj lösenord"
+                aria-label="Visa lösenord"
+                aria-pressed="false"
+              >
+                <svg class="password-visibility-icon password-visibility-icon--password-hidden" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M10.7 5.3A11 11 0 0 1 12 5.2c6.4 0 10 6 10 6a18.1 18.1 0 0 1-4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6.2 6.2C3.6 8 2 11.2 2 11.2s3.6 6 10 6c1.3 0 2.4-.2 3.5-.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg class="password-visibility-icon password-visibility-icon--password-visible" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                  <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+            <small class="admin-field-hint">
+              Minst 8 tecken, minst en versal, en siffra och ett specialtecken.
+            </small>
+          </label>
+
+          <label class="admin-form-field">
+            <span>Bekräfta adminlösenordet</span>
+            <div class="password-input-shell">
+              <input
+                type="password"
+                name="confirm_admin_password"
+                maxlength="255"
+                data-required-message="Bekräftelsen måste fyllas i."
+                data-validation-type="password-confirmation"
+                data-match-field="new_admin_password"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="password-visibility-toggle"
+                data-password-toggle
+                data-show-label="Visa lösenord"
+                data-hide-label="Dölj lösenord"
+                aria-label="Visa lösenord"
+                aria-pressed="false"
+              >
+                <svg class="password-visibility-icon password-visibility-icon--password-hidden" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M10.7 5.3A11 11 0 0 1 12 5.2c6.4 0 10 6 10 6a18.1 18.1 0 0 1-4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6.2 6.2C3.6 8 2 11.2 2 11.2s3.6 6 10 6c1.3 0 2.4-.2 3.5-.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg class="password-visibility-icon password-visibility-icon--password-visible" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                  <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+
+          <p class="admin-field-hint admin-field-hint--warning">
+            Skriv ner det nya adminlösenordet innan du sparar. Efter att det
+            har bytts kan det inte visas igen från adminpanelen.
+          </p>
+
+          <button type="submit" class="admin-primary-button">Byt adminlösenord</button>
+        </form>
+      </section>
     </section>
   </div>
 
