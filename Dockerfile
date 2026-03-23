@@ -3,6 +3,9 @@ FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
+ENV GUNICORN_WORKERS=2
+ENV GUNICORN_THREADS=2
+ENV GUNICORN_TIMEOUT=60
 ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
@@ -21,4 +24,4 @@ COPY config.py alembic.ini init_db.py wsgi.py ./
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "flask --app wsgi run --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers ${GUNICORN_WORKERS} --threads ${GUNICORN_THREADS} --timeout ${GUNICORN_TIMEOUT} --access-logfile - --error-logfile - wsgi:application"]

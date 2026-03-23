@@ -254,6 +254,13 @@ SESSION_COOKIE_HTTPONLY = True
 # 'Lax' is a great, secure default.
 SESSION_COOKIE_SAMESITE = "Lax"
 
+# Reverse-proxy header trust should stay disabled by default.
+# Enable this in a controlled deployment behind a trusted proxy such as
+# Coolify/Traefik so Flask reads the original HTTPS scheme and client IP.
+TRUST_REVERSE_PROXY_HEADERS = _bool_from_env(
+    "TRUST_REVERSE_PROXY_HEADERS", default=False
+)
+
 
 # --- Development Settings ---
 

@@ -22,6 +22,10 @@ Right now, Docker only runs the Flask app container.
 The database is not running inside Docker for this project.
 The app connects to Supabase instead.
 
+The production-oriented Docker image now starts Gunicorn rather than Flask's
+development server. This makes the same image suitable for platforms such as
+Coolify while still being easy to run locally.
+
 ## Build the Flask app image
 
 ```bash

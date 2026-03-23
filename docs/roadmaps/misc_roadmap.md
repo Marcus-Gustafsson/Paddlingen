@@ -215,47 +215,57 @@ How to test:
 
 - Trigger a test alert and confirm it arrives.
 
-## Phase 5: Test Deployment On Google Cloud Run
+## Phase 5: Test Deployment On Hetzner + Coolify + Cloudflare
 
 Goal:
 
-- Verify that the app can run safely in a cloud environment close to the
-  planned production setup.
+- Verify that the app can run safely in the planned first production setup
+  after Stripe payment has been implemented and tested.
 
-### Step 1. Prepare the app for Cloud Run
+Current note:
 
-What to do:
+- The likely first real deployment path is now:
+  - Hetzner VPS,
+  - Coolify,
+  - Cloudflare in front of the public domains,
+  - Supabase as managed Postgres.
 
-- Confirm the container, startup command, and environment variables work for
-  Cloud Run.
-
-Why:
-
-- Cloud Run expects clear container runtime behavior.
-
-How to test:
-
-- Deploy a test version and confirm the app starts.
-
-### Step 2. Connect Cloud Run to Supabase
+### Step 1. Prepare the app container for the real deployment path
 
 What to do:
 
-- Connect the deployed app to Supabase.
+- Confirm the Docker image, startup command, and environment variables work for
+  the Coolify deployment path.
 
 Why:
 
-- This tests the planned deployment path end to end.
+- The deployment path should be verified locally before a VPS is involved.
 
 How to test:
 
-- Create and read data through the deployed app.
+- Run the production-like container locally and confirm the app starts.
+
+### Step 2. Connect the production config to Supabase
+
+What to do:
+
+- Prepare the production `DATABASE_URL` and confirm the deployed app will use
+  Supabase.
+
+Why:
+
+- The app should use managed Postgres before the hosting side is introduced.
+
+How to test:
+
+- Confirm the app can create and read data against the production-like
+  database settings.
 
 ### Step 3. Apply migrations in the deployed environment
 
 What to do:
 
-- Make sure the deployed environment uses the correct schema.
+- Make sure the planned production database uses the correct schema.
 
 Why:
 
@@ -263,23 +273,92 @@ Why:
 
 How to test:
 
-- Confirm the deployed app works against the migrated database.
+- Confirm the migrated database is usable before the VPS deployment starts.
 
-### Step 4. Review public HTTPS access and basic security
+### Step 4. Seed the first production event and admin access manually
 
 What to do:
 
-- Check HTTPS, secret handling, and admin access behavior.
+- Seed the active event and the first admin account into the production
+  database.
 
 Why:
 
-- A public deployment should not go live without a basic security review.
+- The deployed app should not come up against an empty production database by
+  surprise.
 
 How to test:
 
-- Verify HTTPS works and secrets are not exposed.
+- Confirm the event and the first admin user exist before deployment.
 
-### Step 5. Review Supabase exposure settings and Row Level Security
+### Step 5. Create the Hetzner VPS and install Coolify
+
+What to do:
+
+- Create the VPS, add SSH access, and install Coolify.
+
+Why:
+
+- This is the actual hosting base for the first production route.
+
+How to test:
+
+- Confirm the VPS is reachable and the Coolify dashboard opens correctly.
+
+### Step 6. Put Cloudflare in front of the public domains
+
+What to do:
+
+- Move DNS to Cloudflare.
+- Put Cloudflare proxying in front of the public app domain.
+- Keep Coolify reachable through its own controlled domain as well.
+
+Why:
+
+- Cloudflare adds DNS management, basic CDN behavior, and useful DDoS
+  protection in front of a small VPS deployment.
+
+How to test:
+
+- Confirm the app domain resolves through Cloudflare and still reaches the
+  origin correctly.
+
+### Step 7. Deploy the app through Coolify
+
+What to do:
+
+- Connect the repo to Coolify.
+- Configure environment variables.
+- Deploy the application container to the Hetzner VPS.
+
+Why:
+
+- This is the first full end-to-end deployment step.
+
+How to test:
+
+- Confirm the deployed app starts and serves the site correctly through the
+  real domain.
+
+### Step 8. Review HTTPS, firewall, and origin exposure
+
+What to do:
+
+- Verify HTTPS behavior across Cloudflare and Coolify.
+- Lock down the VPS firewall.
+- Minimize direct exposure of the origin server.
+
+Why:
+
+- A public deployment should not go live without a basic network and security
+  review.
+
+How to test:
+
+- Verify HTTPS works, the expected ports are open, and the old temporary access
+  path is no longer needed.
+
+### Step 9. Review Supabase exposure settings and Row Level Security
 
 What to do:
 

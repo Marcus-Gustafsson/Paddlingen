@@ -18,6 +18,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import click
 import os
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
 
 # Database models and session object
@@ -58,6 +59,14 @@ def create_app() -> Flask:
 
     # Load configuration values from the repository's ``config.py`` module.
     flask_application.config.from_object("config")
+
+    if flask_application.config.get("TRUST_REVERSE_PROXY_HEADERS"):
+        flask_application.wsgi_app = ProxyFix(  # type: ignore[assignment]
+            flask_application.wsgi_app,
+            x_for=1,
+            x_proto=1,
+            x_host=1,
+        )
 
     # Initialize extensions with this specific app instance.
     db.init_app(flask_application)

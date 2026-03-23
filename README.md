@@ -34,6 +34,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=changeme
    PUBLIC_SITE_PASSWORD_HASH=replace-me-with-generated-hash
+   TRUST_REVERSE_PROXY_HEADERS=False
    FLASK_DEBUG=True
    SESSION_COOKIE_SECURE=False
    DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<database-password>@<host>:5432/postgres?sslmode=require
@@ -158,6 +159,8 @@ What to expect:
 - The app logs will appear in your terminal because this runs in attached mode.
 - Docker Desktop will show the same logs because it reads the same container
   output.
+- The container now serves the app through Gunicorn, which is the same runtime
+  path intended for Coolify or other production-like container platforms.
 - Press `Ctrl+C` to stop the container.
 
 If you want your terminal back immediately, run it in the background:
@@ -220,6 +223,7 @@ For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en
 - [docs/roadmaps/README.md](docs/roadmaps/README.md) explains which detailed roadmap to read first.
 - [docs/dev/dev_overview.md](docs/dev/dev_overview.md) is the main development overview.
 - [docs/dev/dev_docker.md](docs/dev/dev_docker.md) covers Docker commands and workflow.
+- [docs/dev/dev_coolify.md](docs/dev/dev_coolify.md) covers the staged Hetzner + Coolify deployment path.
 - [docs/dev/dev_database.md](docs/dev/dev_database.md) covers Supabase, migrations, and schema setup.
 - [docs/dev/dev_testing.md](docs/dev/dev_testing.md) covers tests, checks, and development seed commands.
 

@@ -37,12 +37,14 @@ Use the document that matches the task:
    Read this first for the general workflow.
 2. `docs/dev/dev_docker.md`
    Read this when working with Docker and containers.
-3. `docs/dev/dev_ngrok.md`
+3. `docs/dev/dev_coolify.md`
+   Read this when preparing the Hetzner + Coolify deployment path.
+4. `docs/dev/dev_ngrok.md`
    Read this when exposing the local site through ngrok for testers or real
    phones.
-4. `docs/dev/dev_database.md`
+5. `docs/dev/dev_database.md`
    Read this when working with Supabase, migrations, or schema setup.
-5. `docs/dev/dev_testing.md`
+6. `docs/dev/dev_testing.md`
    Read this when running tests, linting, formatting, or using development seed
    commands.
 

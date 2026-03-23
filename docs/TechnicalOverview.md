@@ -980,12 +980,15 @@ Planned improvement:
 
 Current state:
 
-- Early container support now exists through the root `Dockerfile`, but the
-  full local Docker stack is not finished yet.
+- Early container support now exists through the root `Dockerfile`, and the
+  container now starts the app with Gunicorn instead of Flask's development
+  server. This makes the image more suitable for a first self-hosted path such
+  as Hetzner + Coolify.
 
 Planned improvement:
 
-- Test a Cloud Run deployment with Supabase.
+- Document and test a staged Hetzner + Coolify + Cloudflare deployment with
+  Supabase.
 
 ## What Someone New Should Understand First
 
