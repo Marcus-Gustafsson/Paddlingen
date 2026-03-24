@@ -141,7 +141,13 @@ def test_successful_booking_creates_records(client):
     }
     client.post("/create-checkout-session", data=booking_data)
 
-    client.get("/payment-success")
+    response = client.get("/payment-success")
+
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Din bokning är registrerad" in page
+    assert "Till startsidan" in page
+    assert "css/stripe.css" in page
 
     with client.application.app_context():
         names = [r.name for r in BookedCanoe.query.order_by(BookedCanoe.id)]
@@ -176,6 +182,88 @@ def test_successful_booking_stores_optional_rider_names(client):
         assert booked_canoe.passenger_two_last_name == "Axelsson"
         assert booked_canoe.passenger_three_first_name == "Tom"
         assert booked_canoe.passenger_three_last_name == "Lundberg"
+
+
+def test_booking_ignores_browser_sent_price_fields(client):
+    """Store the local order total from the event row, not from form data."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.price_per_canoe_sek = 1500
+        db.session.commit()
+
+    unlock_public_site(client)
+    response = client.post(
+        "/create-checkout-session",
+        data={
+            "canoeCount": "2",
+            "canoe1_fname": "Alice",
+            "canoe1_lname": "Andersson",
+            "canoe2_fname": "Bob",
+            "canoe2_lname": "Berg",
+            "totalAmount": "1",
+            "unitAmount": "1",
+            "currency": "usd",
+        },
+    )
+
+    assert response.status_code == 302
+
+    with client.application.app_context():
+        booking_order = BookingOrder.query.one()
+        assert float(booking_order.total_amount) == 3000.0
+        assert booking_order.currency == "sek"
+
+
+def test_payment_cancel_removes_pending_booking_and_renders_return_page(client):
+    """Delete the temporary pending booking when the visitor cancels payment."""
+
+    unlock_public_site(client)
+    booking_data = {
+        "canoeCount": "1",
+        "canoe1_fname": "Alice",
+        "canoe1_lname": "Andersson",
+    }
+
+    client.post("/create-checkout-session", data=booking_data)
+    response = client.get("/payment-cancel")
+
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Ingen bokning bekräftades" in page
+    assert "Betalningen slutfördes inte." in page
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 0
+        assert BookedCanoe.query.count() == 0
+
+
+def test_booking_requires_active_database_event_for_checkout(client):
+    """Block checkout creation when no active event row exists."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        active_event.is_active = False
+        db.session.commit()
+
+    unlock_public_site(client)
+    response = client.post(
+        "/create-checkout-session",
+        data={
+            "canoeCount": "1",
+            "canoe1_fname": "Alice",
+            "canoe1_lname": "Andersson",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Det finns inget aktivt event att boka just nu." in response.get_data(
+        as_text=True
+    )
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 0
 
 
 def test_grouped_overview_renders_hidden_canoe_detail_rows(client):

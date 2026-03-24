@@ -1,6 +1,6 @@
 # Backend Roadmap
 
-Last updated: 2026-03-20
+Last updated: 2026-03-24
 
 ## Goal
 
@@ -571,100 +571,110 @@ Goal:
 
 - Make bookings depend on verified real payment.
 
-### Step 1. Choose Stripe-hosted Checkout as the first payment UI
+### Step 1. Choose Stripe-hosted Checkout as the first payment UI (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Use Stripe Checkout, where the user is redirected to a payment page hosted by
-  Stripe.
-- Do not start with a custom in-app card form.
-- Keep the project open to a later upgrade to Stripe Elements or Payment
-  Element only if the project later needs a more custom payment UI.
+- Chose Stripe-hosted Checkout as the first real payment UI.
+- Kept the public booking modal focused on booking details and summary instead
+  of adding an in-app card form.
+- Added clear public return pages for:
+  - successful return,
+  - canceled return.
 
-Why:
+### Step 2. Design the real booking and payment state flow (Completed 2026-03-24)
 
-- This keeps card-entry handling on Stripe's side instead of inside the app.
-- It reduces implementation complexity and lowers the payment risk surface for
-  the project.
-- It matches Stripe's own beginner-friendly Checkout examples.
+Completed work:
 
-How to test:
+- Chose the app database as the first place where a real booking attempt is
+  stored. In this project, "local" means the project's own database tables in
+  Supabase/Postgres, not browser session data and not temporary memory.
+- Chose this exact first safe Stripe flow:
+  1. Validate the booking request on the server.
+  2. Check availability using confirmed bookings plus any still-active unpaid
+     reservation holds for the same event.
+  3. Create one local `BookingOrder` row with a pending payment state.
+  4. Create one local `BookedCanoe` row per canoe with a temporary reserved
+     state.
+  5. Set a short expiration time for that temporary reservation hold.
+  6. Create the Stripe Checkout Session from server-validated event and price
+     data.
+  7. Save the Stripe Checkout Session ID on the local booking order before
+     redirecting.
+  8. Redirect the visitor to Stripe Checkout.
+  9. Treat the return to `/payment-success` as informational only. It means the
+     visitor came back from Stripe, not that the app has proof of payment.
+  10. Treat `/payment-cancel` as informational plus local cleanup or release of
+      the still-unpaid reservation.
+  11. Treat the verified Stripe webhook as the final source of truth for
+      payment success.
+  12. Only after that verified webhook should the booking order become paid and
+      the reserved canoe rows become confirmed.
+- Chose these first payment-state meanings for the local order:
+  - `pending_payment`: the booking intent exists locally, but Stripe Checkout
+    has not yet been created successfully.
+  - `checkout_session_created`: Stripe Checkout was created and the session ID
+    was saved locally.
+  - `paid`: a verified Stripe event confirmed the payment.
+  - `canceled`: the checkout was canceled and the reservation was released.
+  - `expired`: the unpaid reservation or Stripe Checkout session expired.
+  - `payment_failed`: Stripe reported a failed payment attempt and the booking
+    was not confirmed.
+- Chose these first canoe-state meanings:
+  - `reserved`: the canoe is held temporarily for an unpaid checkout attempt.
+  - `confirmed`: payment was verified and the canoe booking is final.
+  - `canceled`: the temporary hold was released after a canceled checkout.
+  - `expired`: the temporary hold timed out before payment was confirmed.
+- Chose the webhook-first safety rule explicitly:
+  - the success redirect is never proof of payment,
+  - the webhook is the real payment confirmation step.
+- Chose the first cleanup rule:
+  - unpaid reservations must be released when checkout is canceled or expires,
+    so canoe availability does not stay blocked by abandoned payment attempts.
 
-- Review the planned payment UX and confirm the public site only needs:
-  - one booking summary step,
-  - one redirect to Stripe,
-  - one success return page,
-  - one cancel return page.
+### Step 3. Add Stripe configuration and dependency (Completed 2026-03-24)
 
-### Step 2. Design the real booking and payment state flow
+Completed work:
 
-What to do:
-
-- Define the exact order of:
-  - availability check,
-  - booking intent creation,
-  - Stripe Checkout Session creation,
-  - redirect to Stripe,
-  - Stripe webhook confirmation,
-  - final booking confirmation.
-- Keep the redirect back from Stripe separate from the real payment
-  confirmation logic.
-
-Why:
-
-- The app must not treat the success redirect alone as proof of payment.
-- The flow needs to be explicit before the code changes start.
-
-How to test:
-
-- Review the flow and confirm each state is understandable and that the webhook
-  is the final confirmation source.
-
-### Step 3. Add Stripe configuration and dependency
-
-What to do:
-
-- Add the Stripe SDK.
-- Add the required environment variables, starting with:
+- Added the Stripe Python SDK as a project dependency.
+- Replaced the older generic payment-key placeholder with explicit Stripe
+  configuration names:
   - `STRIPE_SECRET_KEY`
   - `STRIPE_WEBHOOK_SECRET`
-  - one base public site URL for success and cancel redirects
-- Keep all Stripe secrets server-side only.
+  - `STRIPE_PUBLIC_BASE_URL`
+- Added a dedicated Stripe helper module so later Checkout and webhook code can
+  read one validated configuration object instead of touching environment
+  variables directly in route functions.
+- Kept the first Checkout integration server-driven so the initial version does
+  not need a client-side publishable key just to redirect users to Stripe.
+- Kept Stripe secrets server-side only.
+- Added a beginner-friendly Stripe development guide with:
+  - dashboard setup steps,
+  - CLI setup steps,
+  - local `.env` guidance,
+  - later webhook-testing commands.
 
-Why:
+### Step 4. Keep price, quantity, and booking rules on the server (Completed 2026-03-24)
 
-- The backend needs a clear integration point for Stripe before any payment
-  routes are changed.
+Completed work:
 
-How to test:
-
-- Start the app and confirm the Stripe configuration loads correctly without
-  exposing secrets to the client.
-
-### Step 4. Keep price, quantity, and booking rules on the server
-
-What to do:
-
-- Build the Stripe line item data from the server-side event settings and the
-  validated canoe count.
-- Do not trust price, currency, or final amount from the browser.
-- Keep the existing booking rules in force before a Checkout Session is created,
-  including:
+- Added a dedicated server-side checkout-preparation helper for:
+  - total amount calculation,
+  - Stripe-ready line-item building,
+  - currency handling in SEK.
+- Kept price, currency, and total amount fully server-controlled instead of
+  trusting browser-submitted fields.
+- Tightened the public checkout route so real checkout preparation now requires
+  one active database event row.
+- Kept the existing booking rules in force before checkout preparation:
   - active event requirement,
   - canoe availability,
-  - maximum five canoes in one booking,
+  - maximum canoes per booking from the active event,
   - maximum five canoes for the same participant name.
-
-Why:
-
-- Stripe should charge only for a server-validated booking attempt.
-- This prevents client-side price manipulation and keeps the payment flow easy
-  to reason about.
-
-How to test:
-
-- Try to start checkout with valid and invalid booking inputs and confirm only
-  valid server-approved bookings can proceed.
+- Added tests that confirm:
+  - browser-sent amount fields are ignored,
+  - checkout is blocked when no active event exists,
+  - Stripe-ready line items are built from the event price.
 
 ### Step 5. Create a real Stripe Checkout Session
 
@@ -672,6 +682,10 @@ What to do:
 
 - Replace the fake redirect step with a server-created Stripe Checkout Session.
 - Use `mode=payment`.
+- Include the local booking reference in Stripe metadata so webhook handling can
+  match the Stripe session back to the correct booking order safely.
+- Keep the Stripe Checkout expiration aligned with the local reservation hold
+  when practical, so abandoned sessions are easier to clean up consistently.
 - Redirect the user to the Stripe-hosted Checkout URL returned by Stripe.
 
 Why:
@@ -695,6 +709,8 @@ What to do:
   - payment confirmed,
   - payment canceled,
   - payment failed or expired.
+- Keep the local reservation expiration timestamp on the order so later cleanup
+  logic can tell whether the unpaid hold should still block availability.
 
 Why:
 
@@ -714,6 +730,9 @@ What to do:
   Checkout flow.
 - Add a cancel path for users who return without completing payment.
 - Keep these pages informational only.
+- Let the success page explain that payment is being verified.
+- Let the cancel flow release or mark the unpaid reservation so inventory does
+  not stay blocked.
 - Do not finalize bookings from the success redirect alone.
 
 Why:
@@ -738,6 +757,8 @@ What to do:
   the event.
 - Start with the events needed for the first real payment flow, especially:
   - `checkout.session.completed`
+- Also handle expiration cleanup events needed for reservation release, such as
+  `checkout.session.expired`, as soon as the local hold logic depends on them.
 - Keep the webhook logic idempotent so a duplicate event does not duplicate the
   booking finalization.
 
@@ -763,6 +784,8 @@ What to do:
 - Only mark the reserved canoe rows as confirmed after that verified event.
 - Keep the success page as a user-facing confirmation page, not the backend's
   final source of truth.
+- Before final confirmation, confirm the local order is still in a state that
+  can become paid and that the webhook matches the stored Stripe session.
 
 Why:
 

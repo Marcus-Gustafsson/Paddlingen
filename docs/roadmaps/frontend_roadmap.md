@@ -213,6 +213,20 @@ How to test:
 
 ### Step 5. Prepare the public booking flow for Stripe-hosted Checkout
 
+Implementation note:
+
+- Backend Phase 4 Step 1 has already chosen Stripe-hosted Checkout as the
+  first real payment UI.
+- The remaining frontend work in this step is to make the public return states
+  clear and consistent once the real Stripe redirect is connected.
+- Backend Phase 4 Step 2 has also chosen the meaning of those return states:
+  - `/payment-success` should confirm only that the visitor returned from
+    Stripe,
+  - `/payment-cancel` should explain that payment was not completed and the
+    unpaid reservation was released,
+  - neither page should claim the booking is fully paid until webhook
+    verification has happened.
+
 What to do:
 
 - Keep the public booking modal focused on booking review and participant

@@ -1,0 +1,72 @@
+/*
+File: static/css/stripe.css
+
+What it does:
+  - Styles the public Stripe return pages such as payment success and cancel.
+
+Why it is separate:
+  - These styles belong only to the Stripe-related return pages.
+  - Keeping them outside the template makes later payment-page changes easier
+    to find and safer to maintain.
+*/
+
+body {
+  background: #f4efe5;
+  color: #1f2a2e;
+}
+
+.payment-return-layout {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(210, 223, 217, 0.95), transparent 42%),
+    linear-gradient(180deg, #f7f2e8 0%, #ece2d1 100%);
+}
+
+.payment-return-card {
+  width: min(100%, 560px);
+  padding: 32px;
+  border-radius: 24px;
+  background: rgba(255, 252, 246, 0.92);
+  box-shadow: 0 18px 40px rgba(42, 53, 57, 0.14);
+  text-align: center;
+}
+
+.payment-return-kicker {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #556b68;
+}
+
+.payment-return-card h1 {
+  margin: 0 0 16px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+}
+
+.payment-return-card p {
+  margin: 0 0 28px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.payment-return-link {
+  display: inline-block;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: #204b57;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.payment-return-link:focus-visible,
+.payment-return-link:hover {
+  background: #163841;
+}

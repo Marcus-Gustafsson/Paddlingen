@@ -137,7 +137,9 @@ At minimum, set these in the Coolify application environment:
 ```env
 FLASK_ENV=production
 SECRET_KEY=replace-with-a-long-random-secret
-PAYMENT_API_KEY=replace-for-now-even-if-payment-is-still-simulated
+STRIPE_SECRET_KEY=sk_live_replace_me
+STRIPE_WEBHOOK_SECRET=whsec_replace_me
+STRIPE_PUBLIC_BASE_URL=https://your-public-domain.example
 ADMIN_USERNAME=your-bootstrap-admin-username
 ADMIN_PASSWORD=your-bootstrap-admin-password
 PUBLIC_SITE_PASSWORD_HASH=the-fallback-shared-password-hash
@@ -152,6 +154,12 @@ GUNICORN_TIMEOUT=60
 
 Notes:
 
+- `STRIPE_SECRET_KEY` is the server-side Stripe API key. Never expose it in
+  client-side code or public repositories.
+- `STRIPE_WEBHOOK_SECRET` will come from Stripe after you create a webhook
+  endpoint later in the payment implementation.
+- `STRIPE_PUBLIC_BASE_URL` should be the public HTTPS root URL of the site, not
+  a deeper path.
 - `ADMIN_USERNAME` and `ADMIN_PASSWORD` are still required by the current
   production config validation, even if you later add more admin users through
   the CLI.

@@ -122,12 +122,17 @@ Current homepage note:
 13. The user is redirected to `/payment-success`.
 14. The app reads the pending order from the database and marks the order as
    `paid` and the canoe rows as `confirmed`.
+15. The app renders a simple payment return page with a link back to the
+   homepage.
 
 Important note:
 
 - This is currently a placeholder flow.
 - It simulates successful payment instead of using a real payment provider.
-- The roadmap already plans to replace this with Stripe.
+- The roadmap already plans to replace this with Stripe-hosted Checkout plus
+  webhook-based payment confirmation.
+- The public route shape now also includes `/payment-cancel` so the later real
+  Stripe flow can return through separate success and cancel pages.
 
 ### Admin flow
 
@@ -355,8 +360,8 @@ This is the current role of the main files and folders.
   Ground-up explanation of how the current application is built.
 
 - `docs/dev/`
-  Split development documents for overview, Docker, ngrok, database work, and
-  testing.
+  Split development documents for overview, Docker, ngrok, Stripe setup,
+  database work, and testing.
 
 ## How The Flask App Is Created
 
@@ -413,7 +418,9 @@ Why this matters now:
 
 - event date, time, location, canoe count, and price
 - `SECRET_KEY`
-- `PAYMENT_API_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PUBLIC_BASE_URL`
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
 - `PUBLIC_SITE_PASSWORD_HASH`
@@ -550,11 +557,19 @@ the file is now growing large enough that it may later need to be split.
 
 - `/create-checkout-session`
   Handles booking submission and creates a pending booking order plus reserved
-  canoe rows. It also rejects requests that would push one exact participant
-  name above five total booked canoes for the active event.
+  canoe rows. It now also requires one active event row and prepares
+  Stripe-ready line-item and total-amount data from server-side event settings
+  instead of trusting browser-sent amount fields. It also rejects requests that
+  would push one exact participant name above five total booked canoes for the
+  active event.
 
 - `/payment-success`
-  Finalizes a booking after the current simulated payment flow.
+  Finalizes a booking after the current simulated payment flow and renders the
+  placeholder success return page.
+
+- `/payment-cancel`
+  Renders the placeholder cancel return page and removes any still-pending
+  temporary booking from the current session.
 
 ### API routes
 
@@ -962,7 +977,41 @@ Current state:
 
 Planned improvement:
 
-- Replace with Stripe Checkout and Stripe webhooks.
+- Replace with Stripe-hosted Checkout and Stripe webhooks.
+- Keep the public payment UX to:
+  - one booking summary step,
+  - one redirect to Stripe,
+  - one success return page,
+  - one cancel return page.
+- Use the project database as the first place where a booking attempt is saved.
+- Treat the Stripe webhook, not the success redirect, as the final proof of
+  payment.
+- Use temporary `reserved` canoe rows plus an expiration time so abandoned
+  unpaid checkouts can be released safely.
+- Only after a verified webhook should the booking order become `paid` and the
+  canoe rows become `confirmed`.
+
+Planned first safe Stripe flow:
+
+1. Flask validates the booking request.
+2. Flask checks availability against confirmed bookings and still-active unpaid
+   reservation holds.
+3. Flask creates one local `BookingOrder` row in the project database.
+4. Flask creates the matching temporary `BookedCanoe` reservation rows.
+5. Flask creates a Stripe Checkout Session from server-side event data.
+6. Flask stores the Stripe session ID on the local order.
+7. The browser is redirected to Stripe Checkout.
+8. `/payment-success` only tells the user that the return from Stripe was
+   received.
+9. `/payment-cancel` releases the unpaid reservation.
+10. A verified Stripe webhook confirms payment and finalizes the booking.
+
+Current progress note:
+
+- The app still uses a simulated payment finish, but it now already prepares
+  Stripe-ready line-item data from the active event row on the server.
+- Browser-sent amount fields are ignored.
+- Checkout preparation is blocked when no active event row exists.
 
 ### Booking data model
 
@@ -1020,7 +1069,8 @@ If you are new to the project, focus on these ideas first:
    same Flask application.
 3. The database currently stores booking orders, canoe participant rows, and
    admin users.
-4. The payment system is not real yet and should be treated as temporary.
+4. The payment system is not real yet and should be treated as temporary, even
+   though the first real UI direction is now chosen: Stripe-hosted Checkout.
 5. The project already has a good foundation, but the roadmap is about making it
    more production-ready step by step.
 
@@ -1040,6 +1090,7 @@ If you want to understand the codebase from the ground up, this is a good order:
 10. `docs/roadmaps/backend_roadmap.md`
 11. `docs/dev/dev_overview.md`
 12. `docs/dev/dev_ngrok.md`
+13. `docs/dev/dev_stripe.md`
 
 ## Summary
 

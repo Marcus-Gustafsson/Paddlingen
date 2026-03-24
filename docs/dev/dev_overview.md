@@ -1,6 +1,6 @@
 # Development Overview
 
-Last updated: 2026-03-20
+Last updated: 2026-03-24
 
 ## Purpose
 
@@ -42,12 +42,15 @@ Use the document that matches the task:
 4. `docs/dev/dev_ngrok.md`
    Read this when exposing the local site through ngrok for testers or real
    phones.
-5. `docs/dev/dev_database.md`
+5. `docs/dev/dev_stripe.md`
+   Read this when creating a Stripe account, collecting API keys, installing
+   the Stripe CLI, or preparing local webhook testing.
+6. `docs/dev/dev_database.md`
    Read this when working with Supabase, migrations, or schema setup.
-6. `docs/dev/dev_webdev_tips.md`
+7. `docs/dev/dev_webdev_tips.md`
    Read this when you inspect an element in the browser and need to find the
    correct file to change.
-7. `docs/dev/dev_testing.md`
+8. `docs/dev/dev_testing.md`
    Read this when running tests, linting, formatting, or using development seed
    commands.
 
@@ -217,6 +220,11 @@ Current admin dashboard behavior:
   canoe without losing the compact grouped default view.
 - The public booking flow now also rejects a new booking if one exact
   participant name would end up above five total canoes for the active event.
+- The public payment return surface now includes:
+  - `/payment-success` for the current placeholder success return,
+  - `/payment-cancel` for the current placeholder cancel return.
+- This keeps the public flow aligned with the planned Stripe-hosted Checkout
+  shape before the real Stripe SDK and webhooks are added.
 - Event management currently supports:
   - selecting an existing event,
   - editing the selected event,
@@ -249,5 +257,37 @@ Current admin dashboard behavior:
 
 These areas are still planned work:
 
-- Stripe is not yet integrated,
+- Stripe is not yet fully integrated. The project now has:
+  - the chosen Stripe-hosted Checkout direction,
+  - the planned webhook-first payment flow,
+  - the Stripe SDK dependency,
+  - explicit Stripe environment variables,
+  - server-side Stripe-ready checkout preparation from the active event row,
+  - a Stripe setup guide for manual dashboard and CLI work.
+- The project still needs Stripe session creation, webhook verification, and
+  real payment-state handling.
 - monitoring and alerts are not yet configured.
+
+## Planned Stripe Flow
+
+The current roadmap now defines the first safe real payment flow like this:
+
+1. Validate the booking request on the server.
+2. Check availability using both confirmed bookings and active unpaid
+   reservation holds.
+3. Create the booking attempt first in the project's own database tables.
+4. Create temporary reserved canoe rows with an expiration time.
+5. Create a Stripe Checkout Session from server-side data.
+6. Store the Stripe Checkout Session ID on the local booking order.
+7. Redirect the visitor to Stripe Checkout.
+8. Treat `/payment-success` as an informational return page only.
+9. Treat `/payment-cancel` as an informational page plus unpaid-reservation
+   cleanup.
+10. Treat the verified Stripe webhook as the final payment confirmation source.
+
+Important beginner note:
+
+- "Local booking order" means a row in this project's own database tables such
+  as `booking_orders`, not browser session data and not temporary memory.
+- The browser return from Stripe is helpful for user experience, but the
+  webhook is the real source of truth for whether payment succeeded.

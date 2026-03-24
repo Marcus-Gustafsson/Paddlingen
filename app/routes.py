@@ -56,6 +56,7 @@ from .util.helper_functions import (
     get_previous_year_variant_filename,
     get_project_root_from_static_folder,
 )
+from .util.checkout_preparation import prepare_server_side_checkout_booking
 from .util.db_models import (
     BookedCanoe,
     BookingOrder,
@@ -926,13 +927,16 @@ def payment():
     """Handle the checkout session for canoe rentals.
 
     1) Parse the requested canoe count.
-    2) Check how many are already booked.
-    3) If they ask for more than available → reject immediately.
-    4) Otherwise create a temporary booking order and proceed to
-       ``payment_success``.
+    2) Require one active database event for real checkout preparation.
+    3) Check how many are already booked.
+    4) Reject requests that break booking or availability rules.
+    5) Build server-approved order and Stripe-ready line-item data.
+    6) Create a temporary local booking order and proceed to the current
+       placeholder return flow.
 
     Storing the booking server-side means the customer cannot modify the
-    canoe count or the participant names by editing their browser cookie.
+    canoe count, total amount, or participant names by editing browser-sent
+    form fields.
     """
     # 1) get requested quantity
     try:
@@ -941,9 +945,17 @@ def payment():
         flash("Ogiltigt antal kanoter.", "error")
         return redirect(url_for("main.index"))
 
+    active_event = get_active_event()
+    if active_event is None:
+        current_app.logger.warning(
+            "Blocked checkout creation because no active database event exists."
+        )
+        flash("Det finns inget aktivt event att boka just nu.", "error")
+        return redirect(url_for("main.index"))
+
     # 2) count existing confirmed bookings
     current = count_confirmed_booked_canoes()
-    available = get_total_available_canoes() - current
+    available = active_event.available_canoes - current
 
     # 3) if they want too many, stop here
     # Log the requested and available canoe counts for debugging purposes.
@@ -957,9 +969,9 @@ def payment():
         )
         return redirect(url_for("main.index"))
 
-    if requested > get_max_canoes_per_booking():
+    if requested > active_event.max_canoes_per_booking:
         flash(
-            f"Du kan boka högst {get_max_canoes_per_booking()} kanoter åt gången.",
+            f"Du kan boka högst {active_event.max_canoes_per_booking} kanoter åt gången.",
             "error",
         )
         return redirect(url_for("main.index"))
@@ -975,20 +987,18 @@ def payment():
         flash(same_name_limit_error, "error")
         return redirect(url_for("main.index"))
 
-    active_event = get_active_event()
-    if active_event is None:
-        current_app.logger.warning(
-            "Creating a booking without an active database event. "
-            "Fallback config values were used for the public page."
-        )
+    prepared_checkout_booking = prepare_server_side_checkout_booking(
+        active_event=active_event,
+        canoe_count=requested,
+    )
 
     pending_order = BookingOrder(
-        event_id=active_event.id if active_event is not None else None,
+        event_id=prepared_checkout_booking.active_event.id,
         public_booking_reference="TEMP",
         status="pending_payment",
-        canoe_count=requested,
-        total_amount=requested * get_price_per_canoe_with_fallback(),
-        currency="sek",
+        canoe_count=prepared_checkout_booking.canoe_count,
+        total_amount=prepared_checkout_booking.total_amount,
+        currency=prepared_checkout_booking.currency,
         payment_provider="simulated",
         expires_at=get_current_utc_time() + timedelta(minutes=15),
     )
@@ -1021,12 +1031,14 @@ def payment():
 @main_blueprint.route("/payment-success")
 @public_site_access_required
 def payment_success():
-    """Finalize the booking after (simulated) payment.
+    """Finalize the booking after the current simulated payment flow.
 
     Steps:
         1. Look up the pending booking order referenced in the user's session.
         2. Re-check availability to avoid overbooking.
         3. Mark the order and its canoe rows as confirmed.
+        4. Render a return page instead of jumping straight back to the
+           homepage.
 
     By storing only the database ID in the session and the actual booking
     details on the server we prevent clients from tampering with their
@@ -1075,7 +1087,47 @@ def payment_success():
 
     db.session.commit()
 
-    return redirect(url_for("main.index"))
+    return render_template(
+        "payment_return.html",
+        page_title="Bokning mottagen",
+        return_heading="Din bokning är registrerad",
+        return_message=(
+            "Tack! Din bokning är nu sparad. Du kan gå tillbaka till startsidan "
+            "för att se den bekräftade bokningen i deltagarlistan."
+        ),
+        primary_link_url=url_for("main.index"),
+        primary_link_label="Till startsidan",
+    )
+
+
+@main_blueprint.route("/payment-cancel")
+@public_site_access_required
+def payment_cancel():
+    """Show the cancel return page and remove any temporary pending booking.
+
+    The current placeholder flow stores a pending booking before the payment
+    step. If the visitor cancels and comes back here, the temporary order
+    should be removed so it does not keep canoe rows reserved by mistake.
+    """
+
+    pending_order_id = session.pop("pending_booking_order_id", None)
+    if pending_order_id is not None:
+        pending_order = db.session.get(BookingOrder, pending_order_id)
+        if pending_order is not None and pending_order.status == "pending_payment":
+            db.session.delete(pending_order)
+            db.session.commit()
+
+    return render_template(
+        "payment_return.html",
+        page_title="Betalningen avbröts",
+        return_heading="Ingen bokning bekräftades",
+        return_message=(
+            "Betalningen slutfördes inte. Du kan gå tillbaka och prova igen "
+            "när du vill."
+        ),
+        primary_link_url=url_for("main.index"),
+        primary_link_label="Tillbaka till startsidan",
+    )
 
 
 @main_blueprint.route("/api/booking-count")

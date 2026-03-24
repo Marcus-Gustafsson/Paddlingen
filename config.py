@@ -153,10 +153,12 @@ Fråga hellre en gång extra än att chansa om något känns oklart.
 # It must be kept secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-# An example of another secret you might need. If you integrate with a payment
-# service like Stripe or PayPal, they will give you an API key. You would store it
-# here, loaded safely from your .env file.
-PAYMENT_API_KEY = os.getenv("PAYMENT_API_KEY")
+# Stripe uses separate secrets for API access, webhook verification, and the
+# public base URL that Checkout should return to after payment or cancel. These
+# values stay server-side and should come from `.env` or the hosting platform.
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+STRIPE_PUBLIC_BASE_URL = os.getenv("STRIPE_PUBLIC_BASE_URL")
 
 # Credentials for creating the first administrator account.
 # Storing them here is a simple way to get started. In a larger application,
@@ -172,7 +174,9 @@ if os.getenv("FLASK_ENV") == "production":
         name
         for name, value in {
             "SECRET_KEY": SECRET_KEY,
-            "PAYMENT_API_KEY": PAYMENT_API_KEY,
+            "STRIPE_SECRET_KEY": STRIPE_SECRET_KEY,
+            "STRIPE_WEBHOOK_SECRET": STRIPE_WEBHOOK_SECRET,
+            "STRIPE_PUBLIC_BASE_URL": STRIPE_PUBLIC_BASE_URL,
             "ADMIN_USERNAME": ADMIN_USERNAME,
             "ADMIN_PASSWORD": ADMIN_PASSWORD,
             "PUBLIC_SITE_PASSWORD_HASH": PUBLIC_SITE_PASSWORD_HASH,
