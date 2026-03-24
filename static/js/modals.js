@@ -96,6 +96,39 @@
   }
 
   /**
+   * Register expandable grouped rows that reveal hidden canoe details.
+   *
+   * Args:
+   *   rootElement: Container where grouped-row buttons should be found.
+   */
+  function registerGroupedDetailToggles(rootElement) {
+    if (!rootElement) {
+      return;
+    }
+
+    const toggleButtons = rootElement.querySelectorAll("[data-toggle-grouped-details]");
+    toggleButtons.forEach((toggleButton) => {
+      const detailsId = toggleButton.getAttribute("aria-controls");
+      const detailsElement = detailsId
+        ? rootElement.querySelector(`#${detailsId}`)
+        : null;
+
+      if (!detailsElement) {
+        return;
+      }
+
+      toggleButton.addEventListener("click", () => {
+        const shouldExpand = toggleButton.getAttribute("aria-expanded") !== "true";
+        toggleButton.setAttribute("aria-expanded", String(shouldExpand));
+        detailsElement.hidden = !shouldExpand;
+        toggleButton
+          .closest(".participant-overview-group")
+          ?.classList.toggle("participant-overview-group--expanded", shouldExpand);
+      });
+    });
+  }
+
+  /**
    * Register the shared public modals used on the homepage.
    */
   function registerPublicModals() {
@@ -150,6 +183,7 @@
     });
 
     registerFaqTabs(faqModal);
+    registerGroupedDetailToggles(overviewModal);
   }
 
   window.PaddlingenModals = {

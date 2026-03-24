@@ -104,6 +104,18 @@ class BookingOrder(db.Model):
             self.payment_provider.replace("_", " ").capitalize(),
         )
 
+    @property
+    def booking_source_label(self) -> str:
+        """Return whether the canoe came from checkout or manual admin entry."""
+
+        if self.payment_provider == "dev_seed":
+            return "Testdata"
+
+        if self.is_manual_entry:
+            return "Adminpanelen"
+
+        return "Checkout"
+
 
 class Event(db.Model):
     """Store the editable configuration for one event date.

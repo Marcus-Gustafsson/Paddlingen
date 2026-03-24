@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
   );
   const closePanelButtons = document.querySelectorAll("[data-close-admin-panel]");
   const passwordToggleButtons = document.querySelectorAll("[data-password-toggle]");
+  const groupedDetailToggleButtons = document.querySelectorAll(
+    "[data-toggle-grouped-details]"
+  );
   const validatedInputs = Array.from(
     document.querySelectorAll(
       ".admin-form input, .admin-form textarea, .admin-form select"
@@ -72,6 +75,171 @@ document.addEventListener("DOMContentLoaded", () => {
       closeAllPanels();
     });
   });
+
+  groupedDetailToggleButtons.forEach((toggleButton) => {
+    const detailsId = toggleButton.getAttribute("aria-controls");
+    const detailsElement = detailsId ? document.getElementById(detailsId) : null;
+
+    if (!detailsElement) {
+      return;
+    }
+
+    toggleButton.addEventListener("click", () => {
+      const shouldExpand = toggleButton.getAttribute("aria-expanded") !== "true";
+      toggleButton.setAttribute("aria-expanded", String(shouldExpand));
+      detailsElement.hidden = !shouldExpand;
+      toggleButton
+        .closest(".admin-checklist-row")
+        ?.classList.toggle("admin-checklist-row--expanded", shouldExpand);
+    });
+  });
+
+  const groupedChecklistCheckboxes = document.querySelectorAll(
+    "[data-booking-checkbox-id]"
+  );
+  groupedChecklistCheckboxes.forEach((checkboxElement) => {
+    checkboxElement.addEventListener("change", () => {
+      const bookingId = checkboxElement.getAttribute("data-booking-checkbox-id");
+      if (!bookingId) {
+        return;
+      }
+
+      const matchingCheckboxes = document.querySelectorAll(
+        `[data-booking-checkbox-id="${bookingId}"]`
+      );
+      matchingCheckboxes.forEach((matchingCheckbox) => {
+        if (matchingCheckbox === checkboxElement) {
+          return;
+        }
+
+        matchingCheckbox.checked = checkboxElement.checked;
+      });
+
+      matchingCheckboxes.forEach((matchingCheckbox) => {
+        const detailRow = matchingCheckbox.closest(".admin-checklist-detail-row");
+        if (detailRow) {
+          detailRow.classList.toggle(
+            "admin-checklist-detail-row--complete",
+            matchingCheckbox.checked
+          );
+        }
+      });
+    });
+  });
+
+  function setupAdminBookingEditor(bookingEditor) {
+    const secondRiderSection = bookingEditor.querySelector(
+      '[data-admin-rider-section="2"]'
+    );
+    const thirdRiderSection = bookingEditor.querySelector(
+      '[data-admin-rider-section="3"]'
+    );
+    const addRiderButton = bookingEditor.querySelector("[data-admin-add-rider]");
+    const removeSecondRiderButton = bookingEditor.querySelector(
+      '[data-admin-remove-rider="2"]'
+    );
+    const removeThirdRiderButton = bookingEditor.querySelector(
+      '[data-admin-remove-rider="3"]'
+    );
+
+    if (!secondRiderSection || !thirdRiderSection) {
+      return;
+    }
+
+    function clearSectionInputs(sectionElement) {
+      const sectionInputs = sectionElement.querySelectorAll("input");
+      sectionInputs.forEach((inputElement) => {
+        inputElement.value = "";
+      });
+    }
+
+    function getSectionInputs(sectionElement) {
+      const sectionInputs = sectionElement.querySelectorAll("input");
+      return {
+        firstNameInput: sectionInputs[0] || null,
+        lastNameInput: sectionInputs[1] || null,
+      };
+    }
+
+    function syncRiderButtons() {
+      const secondRiderVisible = !secondRiderSection.hidden;
+      const thirdRiderVisible = !thirdRiderSection.hidden;
+
+      if (addRiderButton) {
+        if (!secondRiderVisible) {
+          addRiderButton.hidden = false;
+          addRiderButton.dataset.nextRider = "2";
+        } else if (!thirdRiderVisible) {
+          addRiderButton.hidden = false;
+          addRiderButton.dataset.nextRider = "3";
+        } else {
+          addRiderButton.hidden = true;
+          addRiderButton.dataset.nextRider = "";
+        }
+      }
+
+      if (removeSecondRiderButton) {
+        removeSecondRiderButton.hidden = !secondRiderVisible;
+      }
+
+      if (removeThirdRiderButton) {
+        removeThirdRiderButton.hidden = !thirdRiderVisible;
+      }
+    }
+
+    addRiderButton?.addEventListener("click", () => {
+      const nextRiderNumber = addRiderButton.dataset.nextRider;
+      if (nextRiderNumber === "2") {
+        secondRiderSection.hidden = false;
+      } else if (nextRiderNumber === "3") {
+        thirdRiderSection.hidden = false;
+      }
+
+      syncRiderButtons();
+    });
+
+    removeThirdRiderButton?.addEventListener("click", () => {
+      thirdRiderSection.hidden = true;
+      clearSectionInputs(thirdRiderSection);
+      syncRiderButtons();
+    });
+
+    removeSecondRiderButton?.addEventListener("click", () => {
+      const thirdRiderVisible = !thirdRiderSection.hidden;
+
+      if (thirdRiderVisible) {
+        const secondRiderInputs = getSectionInputs(secondRiderSection);
+        const thirdRiderInputs = getSectionInputs(thirdRiderSection);
+
+        if (
+          secondRiderInputs.firstNameInput &&
+          secondRiderInputs.lastNameInput &&
+          thirdRiderInputs.firstNameInput &&
+          thirdRiderInputs.lastNameInput
+        ) {
+          secondRiderInputs.firstNameInput.value =
+            thirdRiderInputs.firstNameInput.value;
+          secondRiderInputs.lastNameInput.value =
+            thirdRiderInputs.lastNameInput.value;
+        }
+
+        thirdRiderSection.hidden = true;
+        clearSectionInputs(thirdRiderSection);
+        syncRiderButtons();
+        return;
+      }
+
+      secondRiderSection.hidden = true;
+      clearSectionInputs(secondRiderSection);
+      syncRiderButtons();
+    });
+
+    syncRiderButtons();
+  }
+
+  document
+    .querySelectorAll(".admin-booking-editor")
+    .forEach((bookingEditor) => setupAdminBookingEditor(bookingEditor));
 
   function applyPasswordVisibilityState(toggleButton, isPasswordVisible) {
     const hiddenPasswordIcon = toggleButton.querySelector(

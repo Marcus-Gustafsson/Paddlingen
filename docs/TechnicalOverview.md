@@ -103,17 +103,24 @@ Current homepage note:
 2. The first booking step lets the visitor choose the number of canoes.
 3. The second booking step collects first and last names for each canoe and
    shows a booking summary before submission.
-4. One booking is now limited to at most 5 canoes, so larger groups must make
+4. Each canoe now collects:
+   - one required pickup person,
+   - one optional second rider shown only when the visitor asks for that extra
+     row with the add/remove person controls,
+   - one optional third rider shown only when the visitor asks for that extra
+     row with the add/remove person controls.
+5. One booking is now limited to at most 5 canoes, so larger groups must make
    more than one booking.
-5. The form is submitted to `/create-checkout-session`.
-6. Flask checks the requested canoe count against current confirmed
+6. The form is submitted to `/create-checkout-session`.
+7. Flask checks the requested canoe count against current confirmed
    availability.
-7. Flask creates one `BookingOrder` row with status `pending_payment`.
-8. The order is linked to the active `Event` row when one exists.
-9. Flask creates one `BookedCanoe` row per participant with status `reserved`.
-10. The `pending_booking_order_id` is stored in the user session.
-11. The user is redirected to `/payment-success`.
-12. The app reads the pending order from the database and marks the order as
+8. Flask creates one `BookingOrder` row with status `pending_payment`.
+9. The order is linked to the active `Event` row when one exists.
+10. Flask creates one `BookedCanoe` row per canoe with status `reserved`.
+11. The extra rider names are stored on that canoe row when they were provided.
+12. The `pending_booking_order_id` is stored in the user session.
+13. The user is redirected to `/payment-success`.
+14. The app reads the pending order from the database and marks the order as
    `paid` and the canoe rows as `confirmed`.
 
 Important note:
@@ -133,9 +140,14 @@ Important note:
    - event management.
 6. The booking panel lets admins add manual bookings, edit names, and remove
    bookings for the active event.
-7. The event panel lets admins select an event, update its settings, create a
+7. The manual admin booking form now uses the same canoe-based rider shape as
+   the public booking form:
+   - pickup person,
+   - optional second rider shown only when the admin asks for that extra row,
+   - optional third rider shown only when the admin asks for that extra row.
+8. The event panel lets admins select an event, update its settings, create a
    new event by copying an existing one, and switch which event is active.
-8. A few low-change event settings still stay in the database only and are not
+9. A few low-change event settings still stay in the database only and are not
    shown in the admin form, so the admin UI remains simpler for non-technical
    users.
 
@@ -222,8 +234,8 @@ This is the current role of the main files and folders.
 - `app/util/booking_groups.py`
   Prepares grouped rows for the public participant overview and the admin
   event-day checklist so the route handlers do not have to duplicate grouping
-  logic. The grouped rows now also carry hidden canoe-detail data that later UI
-  steps can reveal through expandable summary rows.
+  logic. The grouped rows now also carry canoe-detail data that the overview
+  modal and checklist panel can reveal through expandable summary rows.
 
 - `app/util/helper_functions.py`
   Contains helper logic, including image lookup and stable image metadata for

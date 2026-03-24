@@ -674,8 +674,8 @@ body.public-lock-page {
   }
 
   .home-page .progress-trigger {
-    min-height: 3.55rem;
-    height: 3.55rem;
+    min-height: 3.00rem;
+    height: 3.0rem;
     background-color: rgba(255, 255, 255, 0.18);
     backdrop-filter: none;
     box-shadow: 0 12px 24px rgba(4, 11, 16, 0.2);

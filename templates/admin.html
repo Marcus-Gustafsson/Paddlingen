@@ -153,35 +153,129 @@
         <section class="admin-subcard">
           <h3>Lägg till manuell bokning</h3>
           <p class="admin-subcard-copy">
-            Lägg till en deltagare här om betalningen kom in utanför webbens
+            Lägg till en kanot här om betalningen kom in utanför webbens
             vanliga bokningsflöde.
           </p>
 
           <form action="{{ url_for('main.admin_add') }}" method="post" class="admin-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <div class="admin-inline-fields">
-              <label class="admin-form-field">
-                <span>Förnamn</span>
-                <input
-                  type="text"
-                  name="participant_first_name"
-                  placeholder="Förnamn"
-                  maxlength="20"
-                  required
-                >
-              </label>
+            <div class="admin-booking-editor admin-booking-editor--standalone">
+              <section class="admin-booking-rider">
+                <div class="admin-booking-rider-header">
+                  <strong>Ansvarig vid uthämtning</strong>
+                  <span>Denna person måste alltid anges.</span>
+                </div>
+                <div class="admin-inline-fields">
+                  <label class="admin-form-field">
+                    <input
+                      type="text"
+                      name="participant_first_name"
+                      placeholder="Förnamn"
+                      maxlength="20"
+                      required
+                    >
+                  </label>
 
-              <label class="admin-form-field">
-                <span>Efternamn</span>
-                <input
-                  type="text"
-                  name="participant_last_name"
-                  placeholder="Efternamn"
-                  maxlength="20"
-                  required
+                  <label class="admin-form-field">
+                    <input
+                      type="text"
+                      name="participant_last_name"
+                      placeholder="Efternamn"
+                      maxlength="20"
+                      required
+                    >
+                  </label>
+                </div>
+              </section>
+
+              <section
+                id="adminAddSecondRider"
+                class="admin-booking-rider"
+                data-admin-rider-section="2"
+                hidden
+              >
+                <div class="admin-booking-rider-header">
+                  <strong>Medpaddlare 2</strong>
+                  <span>Valfritt. Lämna tomt om namnet inte är bestämt ännu.</span>
+                </div>
+                <div class="admin-inline-fields">
+                  <label class="admin-form-field">
+                    <input
+                      type="text"
+                      name="passenger_two_first_name"
+                      placeholder="Förnamn"
+                      maxlength="20"
+                    >
+                  </label>
+
+                  <label class="admin-form-field">
+                    <input
+                      type="text"
+                      name="passenger_two_last_name"
+                      placeholder="Efternamn"
+                      maxlength="20"
+                    >
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  class="admin-inline-link"
+                  data-admin-remove-rider="2"
+                  hidden
                 >
-              </label>
+                  Ta bort person 2
+                </button>
+              </section>
+
+              <section
+                id="adminAddThirdRider"
+                class="admin-booking-rider"
+                data-admin-rider-section="3"
+                hidden
+              >
+                <div class="admin-booking-rider-header">
+                  <strong>Medpaddlare 3</strong>
+                  <span>Valfritt. Använd bara om tre personer sitter i kanoten.</span>
+                </div>
+                <div class="admin-inline-fields">
+                  <label class="admin-form-field">
+                    <input
+                      type="text"
+                      name="passenger_three_first_name"
+                      placeholder="Förnamn"
+                      maxlength="20"
+                    >
+                  </label>
+
+                  <label class="admin-form-field">
+                    <input
+                      type="text"
+                      name="passenger_three_last_name"
+                      placeholder="Efternamn"
+                      maxlength="20"
+                    >
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  class="admin-inline-link"
+                  data-admin-remove-rider="3"
+                  hidden
+                >
+                  Ta bort person 3
+                </button>
+              </section>
+
+              <div class="admin-booking-toggle-row">
+                <button
+                  type="button"
+                  class="admin-inline-link"
+                  data-admin-add-rider
+                >
+                  Lägg till en person
+                </button>
+              </div>
             </div>
 
             <label class="admin-form-field">
@@ -204,34 +298,46 @@
             <div>
               <h3>Nuvarande bokningar</h3>
               <p class="admin-subcard-copy">
-                Tabellen visar bokningar för det aktiva eventet. Ändra namnet i
-                raden och tryck på spara för att uppdatera.
+                Listan visar bokningar för det aktiva eventet. Varje bokning är
+                uppdelad i översikt, deltagare och åtgärder så att den blir
+                lättare att läsa och uppdatera.
               </p>
             </div>
           </div>
 
           {% if bookings %}
-            <div class="admin-table-shell">
-              <table class="overview-table admin-bookings-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Deltagare</th>
-                    <th>Betalsätt</th>
-                    <th>Åtgärd</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for booking in bookings %}
-                    <tr>
-                      <td data-label="ID">{{ booking.id }}</td>
-                      <td class="name-cell" data-label="Deltagare">
-                        <form
-                          action="{{ url_for('main.admin_update', id=booking.id) }}"
-                          method="post"
-                          class="inline-form edit-form"
-                        >
-                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="admin-bookings-list">
+              {% for booking in bookings %}
+                {% set has_second_rider = booking.passenger_two_first_name or booking.passenger_two_last_name or booking.has_third_rider %}
+                <article class="admin-bookings-card">
+                  <div class="admin-bookings-card-meta">
+                    <div class="admin-bookings-meta-item">
+                      <span>ID</span>
+                      <strong>{{ booking.id }}</strong>
+                    </div>
+                    <div class="admin-bookings-meta-item">
+                      <span>Betalsätt</span>
+                      <strong>{{ booking.booking_order.payment_method_label }}</strong>
+                    </div>
+                    <div class="admin-bookings-meta-item">
+                      <span>Källa</span>
+                      <strong>{{ booking.booking_order.booking_source_label }}</strong>
+                    </div>
+                  </div>
+
+                  <form
+                    id="adminEditBooking{{ booking.id }}"
+                    action="{{ url_for('main.admin_update', id=booking.id) }}"
+                    method="post"
+                    class="admin-booking-editor edit-form admin-bookings-card-form"
+                  >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <section class="admin-booking-rider">
+                      <div class="admin-booking-rider-header">
+                        <strong>Ansvarig vid uthämtning</strong>
+                      </div>
+                      <div class="admin-inline-fields">
+                        <label class="admin-form-field">
                           <input
                             type="text"
                             name="participant_first_name"
@@ -240,6 +346,8 @@
                             maxlength="20"
                             required
                           >
+                        </label>
+                        <label class="admin-form-field">
                           <input
                             type="text"
                             name="participant_last_name"
@@ -248,25 +356,121 @@
                             maxlength="20"
                             required
                           >
-                          <button type="submit">Spara</button>
-                        </form>
-                      </td>
-                      <td data-label="Betalsätt">{{ booking.booking_order.payment_method_label }}</td>
-                      <td class="actions-cell" data-label="Åtgärd">
-                        <form
-                          action="{{ url_for('main.admin_delete', id=booking.id) }}"
-                          method="post"
-                          onsubmit="return confirm('Ta bort bokning #{{ booking.id }}?');"
-                          class="inline-form delete-form"
-                        >
-                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                          <button type="submit">Ta bort</button>
-                        </form>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+                        </label>
+                      </div>
+                    </section>
+
+                    <section
+                      id="adminEditSecondRider{{ booking.id }}"
+                      class="admin-booking-rider"
+                      data-admin-rider-section="2"
+                      {% if not has_second_rider %}hidden{% endif %}
+                    >
+                      <div class="admin-booking-rider-header">
+                        <strong>Medpaddlare 2</strong>
+                      </div>
+                      <div class="admin-inline-fields">
+                        <label class="admin-form-field">
+                          <input
+                            type="text"
+                            name="passenger_two_first_name"
+                            value="{{ booking.passenger_two_first_name or '' }}"
+                            placeholder="Förnamn"
+                            maxlength="20"
+                          >
+                        </label>
+                        <label class="admin-form-field">
+                          <input
+                            type="text"
+                            name="passenger_two_last_name"
+                            value="{{ booking.passenger_two_last_name or '' }}"
+                            placeholder="Efternamn"
+                            maxlength="20"
+                          >
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        class="admin-inline-link"
+                        data-admin-remove-rider="2"
+                        {% if not has_second_rider %}hidden{% endif %}
+                      >
+                        Ta bort person 2
+                      </button>
+                    </section>
+
+                    <section
+                      id="adminEditThirdRider{{ booking.id }}"
+                      class="admin-booking-rider"
+                      data-admin-rider-section="3"
+                      {% if not booking.has_third_rider %}hidden{% endif %}
+                    >
+                      <div class="admin-booking-rider-header">
+                        <strong>Medpaddlare 3</strong>
+                      </div>
+                      <div class="admin-inline-fields">
+                        <label class="admin-form-field">
+                          <input
+                            type="text"
+                            name="passenger_three_first_name"
+                            value="{{ booking.passenger_three_first_name or '' }}"
+                            placeholder="Förnamn"
+                            maxlength="20"
+                          >
+                        </label>
+                        <label class="admin-form-field">
+                          <input
+                            type="text"
+                            name="passenger_three_last_name"
+                            value="{{ booking.passenger_three_last_name or '' }}"
+                            placeholder="Efternamn"
+                            maxlength="20"
+                          >
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        class="admin-inline-link"
+                        data-admin-remove-rider="3"
+                        {% if not booking.has_third_rider %}hidden{% endif %}
+                      >
+                        Ta bort person 3
+                      </button>
+                    </section>
+
+                    <div class="admin-booking-toggle-row">
+                      <button
+                        type="button"
+                        class="admin-inline-link"
+                        data-admin-add-rider
+                        {% if has_second_rider and booking.has_third_rider %}hidden{% endif %}
+                      >
+                        Lägg till en person
+                      </button>
+                    </div>
+                  </form>
+
+                  <div class="admin-bookings-card-actions">
+                    <button
+                      type="submit"
+                      class="admin-booking-save-button"
+                      form="adminEditBooking{{ booking.id }}"
+                    >
+                      Spara
+                    </button>
+
+                    <form
+                      action="{{ url_for('main.admin_delete', id=booking.id) }}"
+                      method="post"
+                      onsubmit="return confirm('Ta bort bokning #{{ booking.id }}?');"
+                      class="inline-form delete-form"
+                    >
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit">Ta bort</button>
+                    </form>
+                  </div>
+                </article>
+              {% endfor %}
             </div>
           {% else %}
             <p class="admin-empty-state">
@@ -787,22 +991,63 @@
               <div class="admin-checklist-list">
                 {% for checklist_row in checklist_rows %}
                   <div class="admin-checklist-row{% if checklist_row.all_canoes_picked_up %} admin-checklist-row--complete{% endif %}">
-                    <div class="admin-checklist-person">
-                      <strong>{{ checklist_row.name }}</strong>
-                      <span>{{ checklist_row.picked_up_count }}/{{ checklist_row.total_canoes }} kanoter avprickade</span>
+                    <div class="admin-checklist-row-main">
+                      <button
+                        type="button"
+                        class="admin-checklist-summary-button"
+                        data-toggle-grouped-details
+                        aria-expanded="false"
+                        aria-controls="checklistRowDetails{{ loop.index }}"
+                      >
+                        <div class="admin-checklist-person">
+                          <strong>{{ checklist_row.name }}</strong>
+                          <span>{{ checklist_row.picked_up_count }}/{{ checklist_row.total_canoes }} kanoter avprickade</span>
+                        </div>
+                      </button>
+
+                      <div class="admin-checklist-boxes" aria-label="Avprickning för {{ checklist_row.name }}">
+                        {% for canoe_entry in checklist_row.canoe_entries %}
+                          <label class="admin-checklist-box">
+                            <input
+                              type="checkbox"
+                              name="picked_up_booking_ids"
+                              value="{{ canoe_entry.id }}"
+                              data-booking-checkbox-id="{{ canoe_entry.id }}"
+                              {% if canoe_entry.picked_up %}checked{% endif %}
+                            >
+                            <span>{{ loop.index }}</span>
+                          </label>
+                        {% endfor %}
+                      </div>
                     </div>
 
-                    <div class="admin-checklist-boxes" aria-label="Avprickning för {{ checklist_row.name }}">
-                      {% for canoe_entry in checklist_row.canoe_entries %}
-                        <label class="admin-checklist-box">
-                          <input
-                            type="checkbox"
-                            name="picked_up_booking_ids"
-                            value="{{ canoe_entry.id }}"
-                            {% if canoe_entry.picked_up %}checked{% endif %}
-                          >
-                          <span>{{ loop.index }}</span>
-                        </label>
+                    <div
+                      id="checklistRowDetails{{ loop.index }}"
+                      class="admin-checklist-details"
+                      hidden
+                    >
+                      {% for canoe_detail in checklist_row.canoe_details %}
+                        <div class="admin-checklist-detail-row{% if canoe_detail.picked_up %} admin-checklist-detail-row--complete{% endif %}">
+                          <div class="admin-checklist-detail-copy">
+                            <span class="admin-checklist-detail-label">
+                              {{ canoe_detail.canoe_label }}
+                            </span>
+                            <span class="admin-checklist-detail-value">
+                              {{ canoe_detail.display_rider_names }}
+                            </span>
+                          </div>
+
+                          <label class="admin-checklist-box admin-checklist-box--detail">
+                            <input
+                              type="checkbox"
+                              name="picked_up_booking_ids"
+                              value="{{ canoe_detail.booked_canoe_id }}"
+                              data-booking-checkbox-id="{{ canoe_detail.booked_canoe_id }}"
+                              {% if canoe_detail.picked_up %}checked{% endif %}
+                            >
+                            <span>✓</span>
+                          </label>
+                        </div>
                       {% endfor %}
                     </div>
                   </div>

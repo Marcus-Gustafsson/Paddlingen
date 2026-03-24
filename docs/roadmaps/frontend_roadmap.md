@@ -292,74 +292,46 @@ How to test:
 
 - Confirm the overview stays readable when one person holds multiple canoes.
 
-### Step 9. Extend the booking modal for named riders inside each canoe
+### Step 9. Extend the booking modal for named riders inside each canoe (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Keep the current canoe-card layout in the public booking modal.
-- For each canoe card, collect:
+- Kept the current canoe-card layout in the public booking modal.
+- Updated each canoe card to collect:
   - one required pickup person,
-  - one visible second rider field pair by default,
-  - one optional third rider field pair shown by a small add button.
-- Treat rider two and rider three as optional for now so the booking can still
-  proceed before every name is known.
+  - one optional second rider field pair shown by a small add/remove button,
+  - one optional third rider field pair shown by a small add/remove button.
+- Kept rider two and rider three optional, but now require complete first- and
+  last-name pairs when either optional rider is used.
+- Updated the booking summary so it shows the pickup person first and the
+  optional riders below.
 
-Why:
+### Step 10. Keep grouped overview and checklist rows expandable (Completed 2026-03-24)
 
-- This matches the real event usage better than forcing one displayed name per
-  canoe.
-- It keeps the visual structure familiar instead of redesigning the booking
-  modal from scratch.
+Completed work:
 
-How to test:
-
-- Open the booking modal and confirm each canoe card can collect one pickup
-  person, one optional second rider, and one optional third rider.
-
-### Step 10. Keep grouped overview and checklist rows expandable
-
-What to do:
-
-- Keep the grouped row summary in both:
+- Kept the grouped row summary in both:
   - the public participant overview,
   - the admin event-day checklist.
-- Let the admin or visitor expand a grouped row to inspect the individual
-  canoes booked under that pickup person's name.
-- Make the entire grouped summary row a button instead of making only the name
-  clickable.
+- Added expandable canoe-detail rows under each grouped pickup person.
+- Made the public grouped overview row a full-width button.
+- Made the checklist summary area a button while keeping the per-canoe
+  checkboxes separate and clickable.
+- Added the canoe-detail text to the rendered HTML so later UI styling and
+  interaction work stays simpler.
 
-Why:
+### Step 11. Extend manual admin booking and editing to match the canoe layout (Completed 2026-03-24)
 
-- The grouped summary keeps the interface compact.
-- The expanded detail view shows who sits in each canoe without overloading the
-  default state.
-- A full-row button is better for mobile use, creates a larger click target,
-  and is easier to use with a keyboard.
+Completed work:
 
-How to test:
-
-- Open the overview and checklist views with grouped bookings and confirm the
-  grouped row expands and collapses cleanly on both desktop and mobile.
-
-### Step 11. Extend manual admin booking and editing to match the canoe layout
-
-What to do:
-
-- Make the admin manual-booking form use the same canoe-based layout as the
-  public booking flow.
-- Allow admins to edit the pickup person, second rider, and optional third
-  rider on one canoe row.
-
-Why:
-
-- The public and admin flows should describe the same booking unit.
-- Admin corrections become clearer when one row means one canoe instead of one
-  displayed name.
-
-How to test:
-
-- Add a manual booking with multiple named riders and confirm the names can
-  later be edited from the admin panel.
+- Updated the admin manual-booking form to use the same canoe-based shape as
+  the public booking flow.
+- Added support for:
+  - pickup person,
+  - optional second rider shown by a small add/remove button,
+  - optional third rider behind a small add/remove button.
+- Updated the admin edit form so the same canoe row can be corrected later
+  without leaving the dashboard.
 
 ## Phase 4: Re-test The Full Frontend On Real Layouts
 

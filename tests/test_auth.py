@@ -4,6 +4,7 @@ from sqlalchemy import inspect
 from werkzeug.security import check_password_hash
 
 from app.util.db_models import PublicSiteAccessSetting, db
+from app.util.db_models import BookedCanoe, BookingOrder, Event
 
 
 def unlock_public_site(client):
@@ -39,6 +40,44 @@ def test_admin_requires_login(client):
     response = client.get("/admin")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
+
+
+def test_admin_checklist_renders_hidden_canoe_detail_rows(client):
+    """Render grouped canoe-detail text in the admin checklist panel."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        booking_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-TEST-CHECKLIST-DETAILS",
+            status="paid",
+            canoe_count=1,
+            total_amount=1200,
+            currency="sek",
+            payment_provider="simulated",
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=booking_order.id,
+                participant_first_name="Marcus",
+                participant_last_name="Gustafsson",
+                passenger_two_first_name="Mathias",
+                passenger_two_last_name="Axelsson",
+                status="confirmed",
+            )
+        )
+        db.session.commit()
+
+    login_admin(client)
+    response = client.get("/admin?panel=checklist")
+    page = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "data-toggle-grouped-details" in page
+    assert "Kanot 1" in page
+    assert "Marcus Gustafsson &amp; Mathias Axelsson" in page
 
 
 def test_locked_login_redirects_back_to_public_gate(client):

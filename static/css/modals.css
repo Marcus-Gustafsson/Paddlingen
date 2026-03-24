@@ -265,6 +265,11 @@ Why it is separate:
   gap: 0.65rem;
 }
 
+.home-page .participant-overview-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
 .home-page .participant-overview-row {
   padding: 0.95rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -273,6 +278,27 @@ Why it is separate:
     linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
     rgba(10, 28, 35, 0.82);
   box-shadow: 0 16px 34px rgba(4, 12, 16, 0.18);
+}
+
+.home-page .participant-overview-toggle {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.home-page .participant-overview-toggle:hover,
+.home-page .participant-overview-toggle:focus-visible {
+  border-color: rgba(159, 209, 222, 0.45);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(12, 33, 41, 0.92);
+  transform: translateY(-1px);
+  outline: none;
 }
 
 .home-page .participant-overview-name {
@@ -292,6 +318,46 @@ Why it is separate:
   font-size: 0.96rem;
   font-weight: 700;
   text-align: center;
+}
+
+.home-page .participant-overview-details {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0 0.2rem;
+}
+
+.home-page .participant-overview-details[hidden] {
+  display: none;
+}
+
+.home-page .participant-overview-detail-row {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.72rem 0.85rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.home-page .participant-overview-detail-label {
+  color: #fff3b6;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-page .participant-overview-detail-value {
+  color: #f4f1ea;
+  font-size: 0.93rem;
+  line-height: 1.45;
+}
+
+.home-page .participant-overview-group--expanded .participant-overview-toggle {
+  border-color: rgba(159, 209, 222, 0.5);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(12, 33, 41, 0.92);
 }
 
 .home-page .overview-empty {
@@ -370,6 +436,14 @@ Why it is separate:
   .home-page .participant-overview-count {
     min-width: 2.8rem;
     padding: 0.4rem 0.6rem;
+    font-size: 0.88rem;
+  }
+
+  .home-page .participant-overview-detail-row {
+    padding: 0.68rem 0.72rem;
+  }
+
+  .home-page .participant-overview-detail-value {
     font-size: 0.88rem;
   }
 }

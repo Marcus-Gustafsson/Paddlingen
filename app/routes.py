@@ -313,25 +313,41 @@ def build_public_booking_reference(booking_order_id: int) -> str:
     return f"PAD-{event_year}-{booking_order_id:05d}"
 
 
-def build_participant_names_from_form(requested_canoes: int) -> list[dict[str, str]]:
-    """Parse participant first and last names from the booking form.
+def build_canoe_rider_data_from_form(
+    requested_canoes: int,
+) -> list[dict[str, str | None]]:
+    """Parse pickup-person and optional rider names from the booking form.
 
     Args:
         requested_canoes: Number of canoe rows expected from the booking form.
 
     Returns:
-        list[dict[str, str]]: One dictionary per canoe with separate first and
-        last name fields.
+        list[dict[str, str | None]]: One dictionary per canoe containing the
+        required pickup person plus optional second- and third-rider fields.
     """
 
-    participants: list[dict[str, str]] = []
+    canoe_rider_rows: list[dict[str, str | None]] = []
     for canoe_number in range(1, requested_canoes + 1):
         first_name = request.form.get(f"canoe{canoe_number}_fname", "").strip()
         last_name = request.form.get(f"canoe{canoe_number}_lname", "").strip()
+        passenger_two_first_name = request.form.get(
+            f"canoe{canoe_number}_passenger2_fname", ""
+        ).strip()
+        passenger_two_last_name = request.form.get(
+            f"canoe{canoe_number}_passenger2_lname", ""
+        ).strip()
+        passenger_three_first_name = request.form.get(
+            f"canoe{canoe_number}_passenger3_fname", ""
+        ).strip()
+        passenger_three_last_name = request.form.get(
+            f"canoe{canoe_number}_passenger3_lname", ""
+        ).strip()
 
-        if not first_name and not last_name:
-            first_name = "Unnamed"
-            last_name = f"participant {canoe_number}"
+        if not first_name or not last_name:
+            raise ValueError(
+                f"Kanot {canoe_number} måste ha ett för- och efternamn för den "
+                "person som hämtar ut kanoten."
+            )
 
         if len(first_name) > MAX_PARTICIPANT_NAME_LENGTH:
             raise ValueError(
@@ -345,14 +361,54 @@ def build_participant_names_from_form(requested_canoes: int) -> list[dict[str, s
                 f"{MAX_PARTICIPANT_NAME_LENGTH} tecken."
             )
 
-        participants.append(
+        if bool(passenger_two_first_name) != bool(passenger_two_last_name):
+            raise ValueError(
+                f"Andra personen i kanot {canoe_number} måste ha både för- och "
+                "efternamn om namnet fylls i."
+            )
+
+        if bool(passenger_three_first_name) != bool(passenger_three_last_name):
+            raise ValueError(
+                f"Tredje personen i kanot {canoe_number} måste ha både för- och "
+                "efternamn om namnet fylls i."
+            )
+
+        for optional_rider_value, optional_rider_label in (
+            (
+                passenger_two_first_name,
+                f"Andra personens förnamn i kanot {canoe_number}",
+            ),
+            (
+                passenger_two_last_name,
+                f"Andra personens efternamn i kanot {canoe_number}",
+            ),
+            (
+                passenger_three_first_name,
+                f"Tredje personens förnamn i kanot {canoe_number}",
+            ),
+            (
+                passenger_three_last_name,
+                f"Tredje personens efternamn i kanot {canoe_number}",
+            ),
+        ):
+            if len(optional_rider_value) > MAX_PARTICIPANT_NAME_LENGTH:
+                raise ValueError(
+                    f"{optional_rider_label} får vara högst "
+                    f"{MAX_PARTICIPANT_NAME_LENGTH} tecken."
+                )
+
+        canoe_rider_rows.append(
             {
                 "first_name": first_name,
                 "last_name": last_name,
+                "passenger_two_first_name": passenger_two_first_name or None,
+                "passenger_two_last_name": passenger_two_last_name or None,
+                "passenger_three_first_name": passenger_three_first_name or None,
+                "passenger_three_last_name": passenger_three_last_name or None,
             }
         )
 
-    return participants
+    return canoe_rider_rows
 
 
 def normalize_participant_full_name(first_name: str, last_name: str) -> str:
@@ -362,14 +418,18 @@ def normalize_participant_full_name(first_name: str, last_name: str) -> str:
 
 
 def validate_total_canoes_per_name(
-    participant_names: list[dict[str, str]],
+    participant_names: list[dict[str, str | None]],
     max_canoes_per_name: int = 5,
+    excluded_booking_ids: set[int] | None = None,
 ) -> str | None:
     """Reject bookings that would push one exact name above the total limit.
 
     Args:
         participant_names: Parsed participant rows from the current booking form.
         max_canoes_per_name: Maximum allowed total for one exact participant name.
+        excluded_booking_ids: Optional canoe row IDs that should be ignored when
+            counting existing bookings, for example while editing one existing
+            admin booking row in place.
 
     Returns:
         str | None: Swedish validation error text when the limit would be
@@ -378,23 +438,25 @@ def validate_total_canoes_per_name(
 
     requested_name_counts = Counter(
         normalize_participant_full_name(
-            participant["first_name"], participant["last_name"]
+            str(participant["first_name"]), str(participant["last_name"])
         )
         for participant in participant_names
     )
+    excluded_booking_ids = excluded_booking_ids or set()
     existing_name_counts = Counter(
         normalize_participant_full_name(
             booking.participant_first_name,
             booking.participant_last_name,
         )
         for booking in get_confirmed_booked_canoes_query().all()
+        if booking.id not in excluded_booking_ids
     )
 
     for participant in participant_names:
         display_name = f"{participant['first_name']} {participant['last_name']}".strip()
         normalized_name = normalize_participant_full_name(
-            participant["first_name"],
-            participant["last_name"],
+            str(participant["first_name"]),
+            str(participant["last_name"]),
         )
         if (
             existing_name_counts[normalized_name]
@@ -573,6 +635,75 @@ def get_admin_participant_name_parts() -> tuple[str, str]:
         )
 
     return first_name, last_name
+
+
+def get_optional_admin_name_parts(
+    first_name_field: str,
+    last_name_field: str,
+    rider_label: str,
+) -> tuple[str | None, str | None]:
+    """Read and validate one optional rider name pair from an admin form.
+
+    Args:
+        first_name_field: Form field name for the optional rider's first name.
+        last_name_field: Form field name for the optional rider's last name.
+        rider_label: Beginner-friendly Swedish label used in validation errors.
+
+    Returns:
+        tuple[str | None, str | None]: Trimmed name parts, or ``(None, None)``
+        when the optional rider was left completely blank.
+    """
+
+    first_name = request.form.get(first_name_field, "").strip()
+    last_name = request.form.get(last_name_field, "").strip()
+
+    if not first_name and not last_name:
+        return None, None
+
+    if not first_name or not last_name:
+        raise ValueError(f"{rider_label} måste ha både för- och efternamn.")
+
+    if len(first_name) > MAX_PARTICIPANT_NAME_LENGTH:
+        raise ValueError(
+            f"{rider_label} förnamn får vara högst "
+            f"{MAX_PARTICIPANT_NAME_LENGTH} tecken långt."
+        )
+
+    if len(last_name) > MAX_PARTICIPANT_NAME_LENGTH:
+        raise ValueError(
+            f"{rider_label} efternamn får vara högst "
+            f"{MAX_PARTICIPANT_NAME_LENGTH} tecken långt."
+        )
+
+    return first_name, last_name
+
+
+def get_admin_canoe_rider_data() -> dict[str, str | None]:
+    """Read and validate one full canoe row from the admin booking forms."""
+
+    first_name, last_name = get_admin_participant_name_parts()
+    passenger_two_first_name, passenger_two_last_name = get_optional_admin_name_parts(
+        "passenger_two_first_name",
+        "passenger_two_last_name",
+        "Medpaddlare 2",
+    )
+    (
+        passenger_three_first_name,
+        passenger_three_last_name,
+    ) = get_optional_admin_name_parts(
+        "passenger_three_first_name",
+        "passenger_three_last_name",
+        "Medpaddlare 3",
+    )
+
+    return {
+        "first_name": first_name,
+        "last_name": last_name,
+        "passenger_two_first_name": passenger_two_first_name,
+        "passenger_two_last_name": passenger_two_last_name,
+        "passenger_three_first_name": passenger_three_first_name,
+        "passenger_three_last_name": passenger_three_last_name,
+    }
 
 
 def parse_admin_event_form_values(event: Event) -> dict[str, object]:
@@ -834,7 +965,7 @@ def payment():
         return redirect(url_for("main.index"))
 
     try:
-        participant_names = build_participant_names_from_form(requested)
+        participant_names = build_canoe_rider_data_from_form(requested)
     except ValueError as error:
         flash(str(error), "error")
         return redirect(url_for("main.index"))
@@ -873,6 +1004,10 @@ def payment():
                 booking_order_id=pending_order.id,
                 participant_first_name=participant["first_name"],
                 participant_last_name=participant["last_name"],
+                passenger_two_first_name=participant["passenger_two_first_name"],
+                passenger_two_last_name=participant["passenger_two_last_name"],
+                passenger_three_first_name=participant["passenger_three_first_name"],
+                passenger_three_last_name=participant["passenger_three_last_name"],
                 status="reserved",
             )
         )
@@ -1245,14 +1380,19 @@ def admin_update_account_password():
 def admin_add():
     """Handle the "Add new booking" form submission.
 
-    • Reads first and last name from form data.
+    • Reads one canoe's rider names from form data.
     • If non-empty, creates a one-canoe manual booking order and canoe row.
     • Redirects back to the dashboard.
     """
     try:
-        first_name, last_name = get_admin_participant_name_parts()
+        canoe_rider_data = get_admin_canoe_rider_data()
     except ValueError as error:
         flash(str(error), "error")
+        return redirect(url_for("main.admin_dashboard", panel="bookings"))
+
+    same_name_limit_error = validate_total_canoes_per_name([canoe_rider_data])
+    if same_name_limit_error is not None:
+        flash(same_name_limit_error, "error")
         return redirect(url_for("main.admin_dashboard", panel="bookings"))
 
     active_event = get_active_event()
@@ -1279,8 +1419,12 @@ def admin_add():
 
     booked_canoe = BookedCanoe(
         booking_order_id=booking_order.id,
-        participant_first_name=first_name,
-        participant_last_name=last_name,
+        participant_first_name=str(canoe_rider_data["first_name"]),
+        participant_last_name=str(canoe_rider_data["last_name"]),
+        passenger_two_first_name=canoe_rider_data["passenger_two_first_name"],
+        passenger_two_last_name=canoe_rider_data["passenger_two_last_name"],
+        passenger_three_first_name=canoe_rider_data["passenger_three_first_name"],
+        passenger_three_last_name=canoe_rider_data["passenger_three_last_name"],
         status="confirmed",
     )
     db.session.add(booked_canoe)
@@ -1292,10 +1436,10 @@ def admin_add():
 @main_blueprint.route("/admin/update/<int:id>", methods=["POST"])
 @login_required
 def admin_update(id):
-    """Handle editing an existing booking's name.
+    """Handle editing an existing canoe booking.
 
     • Fetches the ``BookedCanoe`` record by ``id`` or 404s.
-    • Reads the new first and last name values.
+    • Reads the updated pickup-person and optional rider values.
     • If valid, updates the record and commits.
     • Redirects back to the dashboard.
     """
@@ -1304,13 +1448,25 @@ def admin_update(id):
         abort(404)
 
     try:
-        first_name, last_name = get_admin_participant_name_parts()
+        canoe_rider_data = get_admin_canoe_rider_data()
     except ValueError as error:
         flash(str(error), "error")
         return redirect(url_for("main.admin_dashboard", panel="bookings"))
 
-    booking.participant_first_name = first_name
-    booking.participant_last_name = last_name
+    same_name_limit_error = validate_total_canoes_per_name(
+        [canoe_rider_data],
+        excluded_booking_ids={booking.id},
+    )
+    if same_name_limit_error is not None:
+        flash(same_name_limit_error, "error")
+        return redirect(url_for("main.admin_dashboard", panel="bookings"))
+
+    booking.participant_first_name = str(canoe_rider_data["first_name"])
+    booking.participant_last_name = str(canoe_rider_data["last_name"])
+    booking.passenger_two_first_name = canoe_rider_data["passenger_two_first_name"]
+    booking.passenger_two_last_name = canoe_rider_data["passenger_two_last_name"]
+    booking.passenger_three_first_name = canoe_rider_data["passenger_three_first_name"]
+    booking.passenger_three_last_name = canoe_rider_data["passenger_three_last_name"]
     db.session.commit()
     return redirect(url_for("main.admin_dashboard", panel="bookings"))
 

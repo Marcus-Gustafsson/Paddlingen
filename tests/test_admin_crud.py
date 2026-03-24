@@ -66,6 +66,10 @@ def test_admin_crud_flow(client):
         data={
             "participant_first_name": "Alice",
             "participant_last_name": "Andersson",
+            "passenger_two_first_name": "Beata",
+            "passenger_two_last_name": "Berg",
+            "passenger_three_first_name": "Clara",
+            "passenger_three_last_name": "Carlsson",
             "manual_payment_method": "stripe",
         },
         follow_redirects=True,
@@ -77,6 +81,10 @@ def test_admin_crud_flow(client):
     assert booking is not None
     assert BookingOrder.query.count() == 1
     assert booking.booking_order.payment_provider == "admin_manual_stripe"
+    assert booking.passenger_two_first_name == "Beata"
+    assert booking.passenger_two_last_name == "Berg"
+    assert booking.passenger_three_first_name == "Clara"
+    assert booking.passenger_three_last_name == "Carlsson"
     assert response.get_data(as_text=True).count(f"/admin/update/{booking.id}") == 1
 
     # Update the booking
@@ -85,6 +93,10 @@ def test_admin_crud_flow(client):
         data={
             "participant_first_name": "Bob",
             "participant_last_name": "Berg",
+            "passenger_two_first_name": "David",
+            "passenger_two_last_name": "Dahl",
+            "passenger_three_first_name": "",
+            "passenger_three_last_name": "",
         },
         follow_redirects=True,
     )
@@ -93,6 +105,10 @@ def test_admin_crud_flow(client):
     booking = db.session.get(BookedCanoe, booking.id)
     assert booking.participant_first_name == "Bob"
     assert booking.participant_last_name == "Berg"
+    assert booking.passenger_two_first_name == "David"
+    assert booking.passenger_two_last_name == "Dahl"
+    assert booking.passenger_three_first_name is None
+    assert booking.passenger_three_last_name is None
 
     # Delete the booking
     response = client.post(f"/admin/delete/{booking.id}", follow_redirects=True)
@@ -119,6 +135,78 @@ def test_admin_rejects_too_long_participant_names(client):
     assert response.status_code == 200
     assert "Förnamn får vara högst 20 tecken långt." in response.get_data(as_text=True)
     assert BookingOrder.query.count() == 0
+
+
+def test_admin_rejects_partial_optional_rider_names(client):
+    """Require optional admin riders to use complete first- and last-name pairs."""
+
+    login(client)
+
+    response = client.post(
+        "/admin/add",
+        data={
+            "participant_first_name": "Alice",
+            "participant_last_name": "Andersson",
+            "passenger_two_first_name": "Beata",
+            "passenger_two_last_name": "",
+            "manual_payment_method": "cash",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Medpaddlare 2 måste ha både för- och efternamn." in response.get_data(
+        as_text=True
+    )
+    assert BookingOrder.query.count() == 0
+
+
+def test_admin_rejects_manual_booking_above_total_canoe_limit(client):
+    """Reject an admin-created canoe when the pickup person already has five."""
+
+    login(client)
+
+    active_event = Event.query.filter_by(is_active=True).first()
+    assert active_event is not None
+
+    for booking_number in range(5):
+        booking_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference=f"PAD-ADMIN-LIMIT-{booking_number}",
+            status="paid",
+            canoe_count=1,
+            total_amount=1200,
+            currency="sek",
+            payment_provider="admin_manual_cash",
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=booking_order.id,
+                participant_first_name="Marcus",
+                participant_last_name="Gustafsson",
+                status="confirmed",
+            )
+        )
+
+    db.session.commit()
+
+    response = client.post(
+        "/admin/add",
+        data={
+            "participant_first_name": "Marcus",
+            "participant_last_name": "Gustafsson",
+            "manual_payment_method": "cash",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Marcus Gustafsson har redan 5 bokade kanoter." in response.get_data(
+        as_text=True
+    )
+    assert BookingOrder.query.count() == 5
 
 
 def test_admin_can_create_update_and_activate_events(client):

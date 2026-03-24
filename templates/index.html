@@ -171,9 +171,34 @@ Why it’s here:
 
           <div class="participant-overview-list">
             {% for booking_row in grouped_booking_overview_rows %}
-              <div class="participant-overview-row">
-                <span class="participant-overview-name">{{ booking_row.name }}</span>
-                <span class="participant-overview-count">{{ booking_row.canoe_count }}</span>
+              <div class="participant-overview-group">
+                <button
+                  type="button"
+                  class="participant-overview-row participant-overview-toggle"
+                  data-toggle-grouped-details
+                  aria-expanded="false"
+                  aria-controls="participantOverviewDetails{{ loop.index }}"
+                >
+                  <span class="participant-overview-name">{{ booking_row.name }}</span>
+                  <span class="participant-overview-count">{{ booking_row.canoe_count }}</span>
+                </button>
+
+                <div
+                  id="participantOverviewDetails{{ loop.index }}"
+                  class="participant-overview-details"
+                  hidden
+                >
+                  {% for canoe_detail in booking_row.canoe_details %}
+                    <div class="participant-overview-detail-row">
+                      <span class="participant-overview-detail-label">
+                        {{ canoe_detail.canoe_label }}
+                      </span>
+                      <span class="participant-overview-detail-value">
+                        {{ canoe_detail.display_rider_names }}
+                      </span>
+                    </div>
+                  {% endfor %}
+                </div>
               </div>
             {% endfor %}
           </div>
@@ -344,7 +369,8 @@ Why it’s here:
                 <h3 id="bookingStepTwoTitle">Fyll i deltagarnas namn</h3>
               </div>
               <p class="booking-step-text">
-                Namnen används för att koppla rätt kanot till rätt deltagare vid uthämtning.
+                Ange först namnet på den person som hämtar ut varje kanot.
+                Lägg sedan till fler personer genom att klicka på "Lägg till person".
               </p>
 
               <div id="nameFieldsContainer" class="participant-card-list"></div>

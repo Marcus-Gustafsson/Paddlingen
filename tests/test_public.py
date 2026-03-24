@@ -152,6 +152,85 @@ def test_successful_booking_creates_records(client):
         assert BookingOrder.query.first().event_id is not None
 
 
+def test_successful_booking_stores_optional_rider_names(client):
+    """Store rider-two and rider-three names on the booked canoe row."""
+
+    unlock_public_site(client)
+    booking_data = {
+        "canoeCount": "1",
+        "canoe1_fname": "Marcus",
+        "canoe1_lname": "Gustafsson",
+        "canoe1_passenger2_fname": "Mathias",
+        "canoe1_passenger2_lname": "Axelsson",
+        "canoe1_passenger3_fname": "Tom",
+        "canoe1_passenger3_lname": "Lundberg",
+    }
+
+    client.post("/create-checkout-session", data=booking_data)
+    client.get("/payment-success")
+
+    with client.application.app_context():
+        booked_canoe = BookedCanoe.query.one()
+        assert booked_canoe.pickup_person_name == "Marcus Gustafsson"
+        assert booked_canoe.passenger_two_first_name == "Mathias"
+        assert booked_canoe.passenger_two_last_name == "Axelsson"
+        assert booked_canoe.passenger_three_first_name == "Tom"
+        assert booked_canoe.passenger_three_last_name == "Lundberg"
+
+
+def test_grouped_overview_renders_hidden_canoe_detail_rows(client):
+    """Render the canoe-detail text in the overview modal for later expansion."""
+
+    unlock_public_site(client)
+    booking_data = {
+        "canoeCount": "2",
+        "canoe1_fname": "Marcus",
+        "canoe1_lname": "Gustafsson",
+        "canoe1_passenger2_fname": "Mathias",
+        "canoe1_passenger2_lname": "Axelsson",
+        "canoe2_fname": "Marcus",
+        "canoe2_lname": "Gustafsson",
+    }
+
+    client.post("/create-checkout-session", data=booking_data)
+    client.get("/payment-success")
+
+    response = client.get("/")
+    page = response.get_data(as_text=True)
+
+    assert "data-toggle-grouped-details" in page
+    assert "Kanot 1" in page
+    assert "Marcus Gustafsson &amp; Mathias Axelsson" in page
+    assert "Kanot 2" in page
+    assert "Marcus Gustafsson &amp; ?" in page
+
+
+def test_booking_rejects_partial_optional_second_rider_name(client):
+    """Reject a rider-two row when only one of the two name fields is filled in."""
+
+    unlock_public_site(client)
+    response = client.post(
+        "/create-checkout-session",
+        data={
+            "canoeCount": "1",
+            "canoe1_fname": "Marcus",
+            "canoe1_lname": "Gustafsson",
+            "canoe1_passenger2_fname": "Mathias",
+            "canoe1_passenger2_lname": "",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert (
+        "Andra personen i kanot 1 måste ha både för- och efternamn"
+        in response.get_data(as_text=True)
+    )
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 0
+
+
 def test_booking_rejects_participant_names_longer_than_twenty_characters(client):
     """Reject participant names that exceed the public booking length limit."""
 
@@ -261,7 +340,7 @@ def test_home_page_keeps_subtitle_blank_when_event_subtitle_is_empty(client):
 
 
 def test_home_page_groups_participant_overview_by_name(client):
-    """Show grouped canoe counts in the public participant overview."""
+    """Show grouped canoe counts while also rendering hidden canoe details."""
 
     with client.application.app_context():
         active_event = Event.query.filter_by(is_active=True).first()
@@ -304,10 +383,13 @@ def test_home_page_groups_participant_overview_by_name(client):
     response = client.get("/")
     page = response.get_data(as_text=True)
     assert "participant-overview-modal-card" in page
-    assert page.count("Saga Svensson") == 1
-    assert page.count("Olle Olsson") == 1
+    assert "data-toggle-grouped-details" in page
+    assert "Saga Svensson" in page
+    assert "Olle Olsson" in page
     assert 'participant-overview-count">2<' in page
     assert 'participant-overview-count">1<' in page
+    assert "Kanot 1" in page
+    assert "Kanot 2" in page
 
 
 def test_previous_year_image_metadata_has_stable_ids(client):

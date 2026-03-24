@@ -247,6 +247,7 @@
 .admin-secondary-button,
 .admin-add button,
 .inline-form button,
+.admin-booking-save-button,
 .admin-action-card,
 .login-home-link,
 .admin-header nav a {
@@ -263,7 +264,7 @@
 
 .login-submit,
 .admin-primary-button,
-.edit-form button {
+.admin-booking-save-button {
   background: linear-gradient(135deg, #f5f2eb, #dfe9e6);
   color: #10252d;
 }
@@ -325,6 +326,7 @@ button.admin-session-link {
 .admin-session-link:hover,
 .admin-header nav a:hover,
 .inline-form button:hover,
+.admin-booking-save-button:hover,
 .admin-action-card:hover {
   transform: translateY(-1px);
 }
@@ -340,6 +342,7 @@ button.admin-session-link {
 .admin-secondary-button:focus-visible,
 .admin-action-card:focus-visible,
 .inline-form button:focus-visible,
+.admin-booking-save-button:focus-visible,
 .inline-form input[type="text"]:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 3px;
@@ -947,7 +950,8 @@ button.admin-session-link {
 .admin-primary-button,
 .admin-secondary-button,
 .admin-add button,
-.inline-form button {
+.inline-form button,
+.admin-booking-save-button {
   min-height: 42px;
   padding: 0.72rem 0.95rem;
   cursor: pointer;
@@ -1002,8 +1006,194 @@ button.admin-session-link {
   gap: 0.55rem;
 }
 
+.admin-booking-editor {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-booking-editor--standalone {
+  margin-bottom: 0.7rem;
+}
+
+.admin-booking-rider {
+  padding: 0.72rem 0.78rem;
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-booking-rider-header {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.admin-booking-rider-header strong {
+  color: #f5f2eb;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.admin-booking-rider-header span {
+  color: rgba(241, 244, 241, 0.7);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.admin-booking-rider > .admin-inline-link {
+  margin-top: 0.75rem;
+}
+
+.admin-inline-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff3b6;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2rem;
+  cursor: pointer;
+}
+
+.admin-inline-link[hidden] {
+  display: none !important;
+}
+
+.admin-inline-link:hover,
+.admin-inline-link:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.admin-booking-save-button {
+  width: fit-content;
+  border: none;
+}
+
+.admin-bookings-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-bookings-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.82rem 0.86rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-bookings-card-meta {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-bookings-meta-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-bookings-meta-item span {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(241, 244, 241, 0.68);
+}
+
+.admin-bookings-meta-item strong {
+  color: #f5f2eb;
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.admin-bookings-card-form {
+  gap: 0.75rem;
+}
+
+.admin-booking-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.admin-bookings-card-form .admin-booking-toggle-row {
+  margin-top: -0.1rem;
+}
+
+.admin-booking-toggle-row .admin-inline-link {
+  margin-top: 0;
+}
+
+.admin-bookings-card-actions {
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-bookings-card-actions .delete-form {
+  margin: 0;
+}
+
+.admin-bookings-card-actions .admin-booking-save-button,
+.admin-bookings-card-actions .delete-form,
+.admin-bookings-card-actions .delete-form button {
+  width: 100%;
+}
+
 .edit-form input[type="text"] {
   width: 100%;
+}
+
+@media (min-width: 760px) {
+  .admin-bookings-card {
+    padding: 0.9rem 0.95rem;
+    border-radius: 1.2rem;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+      rgba(10, 28, 35, 0.82);
+    box-shadow: 0 16px 34px rgba(4, 12, 16, 0.14);
+  }
+
+  .admin-bookings-card-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .admin-bookings-meta-item {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.68rem 0.76rem;
+    border-radius: 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .admin-bookings-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .admin-bookings-card-actions .admin-booking-save-button,
+  .admin-bookings-card-actions .delete-form button {
+    width: auto;
+    min-width: 8.75rem;
+  }
+
+  .admin-bookings-card-actions .delete-form {
+    width: auto;
+  }
 }
 
 .actions-cell .inline-form {
@@ -1055,8 +1245,7 @@ button.admin-session-link {
   gap: 0.75rem;
 }
 
-.admin-checklist-head,
-.admin-checklist-row {
+.admin-checklist-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
   align-items: center;
@@ -1087,6 +1276,8 @@ button.admin-session-link {
 }
 
 .admin-checklist-row {
+  display: grid;
+  gap: 0.75rem;
   padding: 0.9rem 0.95rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
@@ -1094,6 +1285,13 @@ button.admin-session-link {
     linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
     rgba(10, 28, 35, 0.8);
   box-shadow: 0 16px 34px rgba(4, 12, 16, 0.14);
+}
+
+.admin-checklist-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  align-items: center;
+  gap: 0.85rem;
 }
 
 .admin-checklist-row--complete {
@@ -1112,6 +1310,31 @@ button.admin-session-link {
   gap: 0.18rem;
 }
 
+.admin-checklist-row--expanded .admin-checklist-person {
+  text-align: center;
+  justify-items: center;
+}
+
+.admin-checklist-summary-button {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-checklist-summary-button:hover .admin-checklist-person strong,
+.admin-checklist-summary-button:focus-visible .admin-checklist-person strong {
+  color: #fff3b6;
+}
+
+.admin-checklist-summary-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.86);
+  outline-offset: 5px;
+  border-radius: 12px;
+}
+
 .admin-checklist-person strong {
   font-size: 1.05rem;
   color: #f5f2eb;
@@ -1127,6 +1350,58 @@ button.admin-session-link {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.45rem;
+}
+
+.admin-checklist-details {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  padding-top: 0.72rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-checklist-details[hidden] {
+  display: none;
+}
+
+.admin-checklist-detail-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.68rem 0.78rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-checklist-detail-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.admin-checklist-detail-label {
+  color: #fff3b6;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-checklist-detail-value {
+  color: #f5f2eb;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.admin-checklist-detail-row--complete .admin-checklist-detail-label,
+.admin-checklist-detail-row--complete .admin-checklist-detail-value {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.admin-checklist-row--expanded .admin-checklist-boxes {
+  display: none;
 }
 
 .admin-checklist-box {
@@ -1206,13 +1481,24 @@ button.admin-session-link {
     grid-template-columns: 1fr;
   }
 
-  .admin-checklist-head,
-  .admin-checklist-row {
+  .admin-checklist-head {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-checklist-row-main {
     grid-template-columns: 1fr;
   }
 
   .admin-checklist-boxes {
     justify-content: center;
+  }
+
+  .admin-checklist-detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-checklist-box--detail {
+    justify-self: center;
   }
 }
 
@@ -1367,6 +1653,26 @@ button.admin-session-link {
     grid-template-columns: 1fr;
   }
 
+  .admin-bookings-card {
+    padding: 0.85rem 0.88rem;
+  }
+
+  .admin-bookings-card-meta {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .admin-bookings-card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-bookings-card-actions .admin-booking-save-button,
+  .admin-bookings-card-actions .delete-form,
+  .admin-bookings-card-actions .delete-form button {
+    width: 100%;
+  }
+
   .admin-checklist-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
@@ -1407,16 +1713,8 @@ button.admin-session-link {
     font-size: 0.78rem;
   }
 
-  .admin-bookings-table td[data-label="ID"] {
-    display: flex;
-    align-items: center;
-    gap: 0.32rem;
-  }
-
-  .admin-bookings-table td[data-label="ID"]::before {
-    content: attr(data-label) ":";
-    display: inline;
-    margin-bottom: 0;
+  .admin-checklist-detail-value {
+    font-size: 0.86rem;
   }
 
   .admin-panel-overlay {
@@ -1468,56 +1766,6 @@ button.admin-session-link {
   .admin-primary-button,
   .admin-secondary-button,
   .inline-form button {
-    width: 100%;
-  }
-
-  .overview-table {
-    display: block;
-    white-space: normal;
-  }
-
-  .admin-bookings-table thead {
-    display: none;
-  }
-
-  .admin-bookings-table tbody,
-  .admin-bookings-table tr,
-  .admin-bookings-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .admin-bookings-table tbody tr {
-    margin-bottom: 0.85rem;
-    padding: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  .admin-bookings-table td {
-    padding: 0.45rem 0;
-    border-bottom: none;
-  }
-
-  .admin-bookings-table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 0.4rem;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(241, 244, 241, 0.72);
-  }
-
-  .admin-bookings-table .name-cell .inline-form,
-  .admin-bookings-table .actions-cell .inline-form {
-    gap: 0.55rem;
-  }
-
-  .admin-bookings-table .name-cell .inline-form button,
-  .admin-bookings-table .actions-cell .inline-form button {
     width: 100%;
   }
 }

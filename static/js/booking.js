@@ -31,6 +31,96 @@
   }
 
   /**
+   * Return one trimmed full name or a fallback when both parts are empty.
+   */
+  function buildFullName(firstName, lastName, emptyFallback = "") {
+    const combinedName = `${firstName || ""} ${lastName || ""}`.trim();
+    return combinedName || emptyFallback;
+  }
+
+  /**
+   * Return whether the visible rider-pair fields are filled correctly.
+   */
+  function areNamePairFieldsValid(firstInput, lastInput, isRequired = false) {
+    const firstValue = firstInput ? firstInput.value.trim() : "";
+    const lastValue = lastInput ? lastInput.value.trim() : "";
+
+    if (isRequired) {
+      return firstValue !== "" && lastValue !== "";
+    }
+
+    if (firstInput && firstInput.closest("[hidden]")) {
+      return true;
+    }
+
+    return (
+      (firstValue === "" && lastValue === "") ||
+      (firstValue !== "" && lastValue !== "")
+    );
+  }
+
+  /**
+   * Build one reusable rider input row inside a canoe card.
+   */
+  function buildRiderFieldRow({
+    canoeNumber,
+    riderNumber,
+    title,
+    description,
+    firstNameFieldName,
+    lastNameFieldName,
+    required = false,
+    initiallyHidden = false,
+  }) {
+    const riderField = document.createElement("div");
+    riderField.className = "canoe-rider-field";
+    riderField.dataset.riderNumber = String(riderNumber);
+    riderField.hidden = initiallyHidden;
+
+    const riderHeading = document.createElement("div");
+    riderHeading.className = "canoe-rider-field-header";
+
+    const riderTitle = document.createElement("strong");
+    riderTitle.textContent = title;
+
+    const riderDescription = document.createElement("span");
+    riderDescription.textContent = description;
+
+    riderHeading.appendChild(riderTitle);
+    riderHeading.appendChild(riderDescription);
+    riderField.appendChild(riderHeading);
+
+    const inputsContainer = document.createElement("div");
+    inputsContainer.className = "inputs";
+
+    const firstNameInput = document.createElement("input");
+    firstNameInput.type = "text";
+    firstNameInput.id = `canoe${canoeNumber}_${firstNameFieldName}`;
+    firstNameInput.name = `canoe${canoeNumber}_${firstNameFieldName}`;
+    firstNameInput.placeholder = "Förnamn";
+    firstNameInput.maxLength = 20;
+    firstNameInput.required = required;
+
+    const lastNameInput = document.createElement("input");
+    lastNameInput.type = "text";
+    lastNameInput.id = `canoe${canoeNumber}_${lastNameFieldName}`;
+    lastNameInput.name = `canoe${canoeNumber}_${lastNameFieldName}`;
+    lastNameInput.placeholder = "Efternamn";
+    lastNameInput.maxLength = 20;
+    lastNameInput.required = required;
+
+    inputsContainer.appendChild(firstNameInput);
+    inputsContainer.appendChild(lastNameInput);
+    riderField.appendChild(inputsContainer);
+
+    return {
+      riderField,
+      firstNameInput,
+      lastNameInput,
+    };
+  }
+
+  /**
    * Register the booking modal and participant field generation.
    */
   function registerBookingModal() {
@@ -114,33 +204,142 @@
         const fieldWrapper = document.createElement("section");
         fieldWrapper.className = "canoe-field";
 
+        const canoeHeader = document.createElement("div");
+        canoeHeader.className = "canoe-field-header";
+
         const canoeLabel = document.createElement("label");
         canoeLabel.setAttribute("for", `canoe${canoeNumber}_fname`);
         canoeLabel.textContent = `Kanot ${canoeNumber}`;
-        fieldWrapper.appendChild(canoeLabel);
 
-        const inputsContainer = document.createElement("div");
-        inputsContainer.className = "inputs";
+        const canoeHint = document.createElement("p");
+        canoeHint.className = "canoe-field-hint";
+          canoeHint.textContent = ''
+          canoeHeader.appendChild(canoeLabel);
+        canoeHeader.appendChild(canoeHint);
+        fieldWrapper.appendChild(canoeHeader);
 
-        const firstNameInput = document.createElement("input");
-        firstNameInput.type = "text";
-        firstNameInput.id = `canoe${canoeNumber}_fname`;
-        firstNameInput.name = `canoe${canoeNumber}_fname`;
-        firstNameInput.placeholder = "Förnamn";
-        firstNameInput.maxLength = 15;
-        firstNameInput.required = true;
+        const pickupPersonFields = buildRiderFieldRow({
+          canoeNumber,
+          riderNumber: 1,
+          title: "Ansvarig vid uthämtning",
+          description: "Detta namn måste anges.",
+          firstNameFieldName: "fname",
+          lastNameFieldName: "lname",
+          required: true,
+        });
+        fieldWrapper.appendChild(pickupPersonFields.riderField);
 
-        const lastNameInput = document.createElement("input");
-        lastNameInput.type = "text";
-        lastNameInput.id = `canoe${canoeNumber}_lname`;
-        lastNameInput.name = `canoe${canoeNumber}_lname`;
-        lastNameInput.placeholder = "Efternamn";
-        lastNameInput.maxLength = 18;
-        lastNameInput.required = true;
+        const secondRiderFields = buildRiderFieldRow({
+          canoeNumber,
+          riderNumber: 2,
+          title: "Person 2",
+          description: "",
+          firstNameFieldName: "passenger2_fname",
+          lastNameFieldName: "passenger2_lname",
+          initiallyHidden: true,
+        });
+        secondRiderFields.riderField.id = `canoe${canoeNumber}_second_rider`;
+        const removeSecondPersonButton = document.createElement("button");
+        removeSecondPersonButton.type = "button";
+        removeSecondPersonButton.className = "booking-inline-link";
+        removeSecondPersonButton.textContent = "Ta bort person 2";
+        removeSecondPersonButton.hidden = true;
+        secondRiderFields.riderField.appendChild(removeSecondPersonButton);
+        fieldWrapper.appendChild(secondRiderFields.riderField);
 
-        inputsContainer.appendChild(firstNameInput);
-        inputsContainer.appendChild(lastNameInput);
-        fieldWrapper.appendChild(inputsContainer);
+        const thirdRiderFields = buildRiderFieldRow({
+          canoeNumber,
+          riderNumber: 3,
+          title: "Person 3",
+          description: "",
+          firstNameFieldName: "passenger3_fname",
+          lastNameFieldName: "passenger3_lname",
+          initiallyHidden: true,
+        });
+        const removeThirdPersonButton = document.createElement("button");
+        removeThirdPersonButton.type = "button";
+        removeThirdPersonButton.className = "booking-inline-link";
+        removeThirdPersonButton.textContent = "Ta bort person 3";
+        removeThirdPersonButton.hidden = true;
+        thirdRiderFields.riderField.appendChild(removeThirdPersonButton);
+        fieldWrapper.appendChild(thirdRiderFields.riderField);
+
+        const addSecondPersonButton = document.createElement("button");
+        addSecondPersonButton.type = "button";
+        addSecondPersonButton.className = "booking-inline-link";
+        addSecondPersonButton.textContent = "Lägg till person";
+        addSecondPersonButton.setAttribute("aria-expanded", "false");
+        addSecondPersonButton.setAttribute(
+          "aria-controls",
+          secondRiderFields.riderField.id
+        );
+
+        const addThirdPersonButton = document.createElement("button");
+        addThirdPersonButton.type = "button";
+        addThirdPersonButton.className = "booking-inline-link";
+        addThirdPersonButton.textContent = "Lägg till person";
+        addThirdPersonButton.setAttribute("aria-expanded", "false");
+        addThirdPersonButton.hidden = true;
+        thirdRiderFields.riderField.id = `canoe${canoeNumber}_third_rider`;
+        addThirdPersonButton.setAttribute(
+          "aria-controls",
+          thirdRiderFields.riderField.id
+        );
+
+        addSecondPersonButton.addEventListener("click", () => {
+          secondRiderFields.riderField.hidden = false;
+          addSecondPersonButton.hidden = true;
+          addThirdPersonButton.hidden = false;
+          removeSecondPersonButton.hidden = false;
+          validateParticipantForm();
+        });
+
+        addThirdPersonButton.addEventListener("click", () => {
+          thirdRiderFields.riderField.hidden = false;
+          addThirdPersonButton.hidden = true;
+          removeThirdPersonButton.hidden = false;
+          validateParticipantForm();
+        });
+
+        removeThirdPersonButton.addEventListener("click", () => {
+          thirdRiderFields.riderField.hidden = true;
+          thirdRiderFields.firstNameInput.value = "";
+          thirdRiderFields.lastNameInput.value = "";
+          removeThirdPersonButton.hidden = true;
+          addThirdPersonButton.hidden = false;
+          validateParticipantForm();
+        });
+
+        removeSecondPersonButton.addEventListener("click", () => {
+          const thirdRiderVisible = !thirdRiderFields.riderField.hidden;
+
+          if (thirdRiderVisible) {
+            secondRiderFields.firstNameInput.value = thirdRiderFields.firstNameInput.value;
+            secondRiderFields.lastNameInput.value = thirdRiderFields.lastNameInput.value;
+            thirdRiderFields.firstNameInput.value = "";
+            thirdRiderFields.lastNameInput.value = "";
+            thirdRiderFields.riderField.hidden = true;
+            removeThirdPersonButton.hidden = true;
+            addThirdPersonButton.hidden = false;
+            validateParticipantForm();
+            return;
+          }
+
+          secondRiderFields.firstNameInput.value = "";
+          secondRiderFields.lastNameInput.value = "";
+          secondRiderFields.riderField.hidden = true;
+          removeSecondPersonButton.hidden = true;
+          addSecondPersonButton.hidden = false;
+          addThirdPersonButton.hidden = true;
+          validateParticipantForm();
+        });
+
+        const optionalActionRow = document.createElement("div");
+        optionalActionRow.className = "booking-inline-actions";
+        optionalActionRow.appendChild(addSecondPersonButton);
+        optionalActionRow.appendChild(addThirdPersonButton);
+
+        fieldWrapper.appendChild(optionalActionRow);
         nameFieldsContainer.appendChild(fieldWrapper);
       }
     }
@@ -161,8 +360,44 @@
       for (let canoeNumber = 1; canoeNumber <= selectedCanoeCount; canoeNumber += 1) {
         const firstNameInput = document.getElementById(`canoe${canoeNumber}_fname`);
         const lastNameInput = document.getElementById(`canoe${canoeNumber}_lname`);
+        const passengerTwoFirstNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger2_fname`
+        );
+        const passengerTwoLastNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger2_lname`
+        );
+        const passengerTwoField = document.getElementById(
+          `canoe${canoeNumber}_second_rider`
+        );
+        const passengerThreeField = document.getElementById(
+          `canoe${canoeNumber}_third_rider`
+        );
+        const passengerThreeFirstNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger3_fname`
+        );
+        const passengerThreeLastNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger3_lname`
+        );
         const firstName = firstNameInput ? firstNameInput.value.trim() : "";
         const lastName = lastNameInput ? lastNameInput.value.trim() : "";
+        const secondRiderName = buildFullName(
+          passengerTwoFirstNameInput ? passengerTwoFirstNameInput.value.trim() : "",
+          passengerTwoLastNameInput ? passengerTwoLastNameInput.value.trim() : "",
+          "Namn saknas"
+        );
+        const secondRiderIsVisible = passengerTwoField
+          ? !passengerTwoField.hidden
+          : false;
+        const thirdRiderIsVisible = passengerThreeField
+          ? !passengerThreeField.hidden
+          : false;
+        const thirdRiderName = buildFullName(
+          passengerThreeFirstNameInput
+            ? passengerThreeFirstNameInput.value.trim()
+            : "",
+          passengerThreeLastNameInput ? passengerThreeLastNameInput.value.trim() : "",
+          "Namn saknas"
+        );
 
         const summaryItem = document.createElement("li");
         summaryItem.className = "booking-summary-item";
@@ -171,15 +406,34 @@
         titleElement.className = "booking-summary-item-title";
         titleElement.textContent = `Kanot ${canoeNumber}`;
 
-        const valueElement = document.createElement("span");
-        valueElement.className = "booking-summary-item-value";
-        valueElement.textContent =
-          firstName || lastName
-            ? `${firstName} ${lastName}`.trim()
-            : "Namn saknas";
+        const riderLinesElement = document.createElement("div");
+        riderLinesElement.className = "booking-summary-item-lines";
+
+        const pickupPersonElement = document.createElement("span");
+        pickupPersonElement.className = "booking-summary-item-line";
+        pickupPersonElement.textContent = buildFullName(
+          firstName,
+          lastName,
+          "Namn saknas"
+        );
+        riderLinesElement.appendChild(pickupPersonElement);
+
+        if (secondRiderIsVisible) {
+          const secondRiderElement = document.createElement("span");
+          secondRiderElement.className = "booking-summary-item-line";
+          secondRiderElement.textContent = secondRiderName;
+          riderLinesElement.appendChild(secondRiderElement);
+        }
+
+        if (thirdRiderIsVisible) {
+          const thirdRiderElement = document.createElement("span");
+          thirdRiderElement.className = "booking-summary-item-line";
+          thirdRiderElement.textContent = thirdRiderName;
+          riderLinesElement.appendChild(thirdRiderElement);
+        }
 
         summaryItem.appendChild(titleElement);
-        summaryItem.appendChild(valueElement);
+        summaryItem.appendChild(riderLinesElement);
         bookingSummaryListElement.appendChild(summaryItem);
       }
     }
@@ -189,12 +443,38 @@
         return;
       }
 
-      const participantInputs = nameFieldsContainer.querySelectorAll("input");
-      const allInputsAreFilled = Array.from(participantInputs).every(
-        (inputField) => inputField.value.trim() !== ""
-      );
+      let isFormValid = true;
 
-      submitButton.disabled = !allInputsAreFilled;
+      for (let canoeNumber = 1; canoeNumber <= selectedCanoeCount; canoeNumber += 1) {
+        const pickupFirstNameInput = document.getElementById(`canoe${canoeNumber}_fname`);
+        const pickupLastNameInput = document.getElementById(`canoe${canoeNumber}_lname`);
+        const secondRiderFirstNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger2_fname`
+        );
+        const secondRiderLastNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger2_lname`
+        );
+        const thirdRiderFirstNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger3_fname`
+        );
+        const thirdRiderLastNameInput = document.getElementById(
+          `canoe${canoeNumber}_passenger3_lname`
+        );
+
+        if (
+          !areNamePairFieldsValid(pickupFirstNameInput, pickupLastNameInput, true) ||
+          !areNamePairFieldsValid(
+            secondRiderFirstNameInput,
+            secondRiderLastNameInput
+          ) ||
+          !areNamePairFieldsValid(thirdRiderFirstNameInput, thirdRiderLastNameInput)
+        ) {
+          isFormValid = false;
+          break;
+        }
+      }
+
+      submitButton.disabled = !isFormValid;
       updateBookingSummary();
     }
 

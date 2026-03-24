@@ -44,7 +44,10 @@ Use the document that matches the task:
    phones.
 5. `docs/dev/dev_database.md`
    Read this when working with Supabase, migrations, or schema setup.
-6. `docs/dev/dev_testing.md`
+6. `docs/dev/dev_webdev_tips.md`
+   Read this when you inspect an element in the browser and need to find the
+   correct file to change.
+7. `docs/dev/dev_testing.md`
    Read this when running tests, linting, formatting, or using development seed
    commands.
 
@@ -193,19 +196,25 @@ Current admin dashboard behavior:
   - rotating the shared public-site password,
   - an event-day checklist for marking which booked canoes have been picked up.
 - Booking management currently supports:
-  - adding one manual booking,
+  - adding one manual canoe booking,
   - choosing the manual payment method,
-  - editing participant names,
+  - editing the pickup person and optional rider names,
   - deleting bookings.
 - The underlying `booked_canoes` data model now also supports optional second-
   and third-rider name fields on each canoe row, but the public and admin UI
   still need their later follow-up work before those extra riders are visible
-  and editable from the site.
+  and editable in every related screen.
+- The public booking modal now collects:
+  - one required pickup person,
+  - one optional second rider shown through a small add/remove button,
+  - one optional third rider shown through a small add/remove button.
 - The public participant overview now groups matching names and shows the canoe
   count on the right instead of listing every canoe row separately.
 - The grouped overview and grouped checklist helper data now also prepare one
-  canoe-detail row per canoe under each grouped pickup person, but the visible
-  expand/collapse UI still belongs to the next implementation step.
+  canoe-detail row per canoe under each grouped pickup person.
+- The public participant overview and the admin checklist now both render
+  expandable grouped rows so the saved rider names can be inspected canoe by
+  canoe without losing the compact grouped default view.
 - The public booking flow now also rejects a new booking if one exact
   participant name would end up above five total canoes for the active event.
 - Event management currently supports:

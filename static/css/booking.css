@@ -164,12 +164,51 @@ Why it is separate:
   padding: 0.9rem;
 }
 
+.canoe-field-header {
+  margin-bottom: 0.8rem;
+}
+
 .canoe-field label {
   display: block;
-  margin-bottom: 0.65rem;
   color: #f1eee6;
   font-weight: 600;
   font-size: 0.94rem;
+}
+
+.canoe-field-hint {
+  margin-top: 0.28rem;
+  color: rgba(219, 219, 219, 0.72);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.canoe-rider-field {
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.canoe-rider-field + .canoe-rider-field {
+  margin-top: 0.75rem;
+}
+
+.canoe-rider-field-header {
+  display: grid;
+  gap: 0.18rem;
+  margin-bottom: 0.65rem;
+}
+
+.canoe-rider-field-header strong {
+  color: #f5f4ef;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.canoe-rider-field-header span {
+  color: rgba(219, 219, 219, 0.66);
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .canoe-field .inputs {
@@ -196,6 +235,38 @@ Why it is separate:
   outline: 2px solid rgba(159, 209, 222, 0.55);
   outline-offset: 2px;
   border-color: rgba(159, 209, 222, 0.55);
+}
+
+.booking-inline-link {
+  margin-top: 0.8rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff3b6;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2rem;
+  cursor: pointer;
+}
+
+.booking-inline-link:hover,
+.booking-inline-link:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.booking-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 0.8rem;
+}
+
+.booking-inline-actions .booking-inline-link {
+  margin-top: 0;
 }
 
 .booking-summary-card {
@@ -229,9 +300,17 @@ Why it is separate:
   text-transform: uppercase;
 }
 
-.booking-summary-item-value {
+.booking-summary-item-lines {
+  display: grid;
+  gap: 0.22rem;
+  margin-top: 0.42rem;
+}
+
+.booking-summary-item-line {
   color: #f5f4ef;
+  font-size: 0.92rem;
   font-weight: 600;
+  line-height: 1.35;
 }
 
 .booking-summary-totals {
@@ -357,7 +436,7 @@ Why it is separate:
   }
 
   .canoe-field .inputs {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .canoe-field .inputs input {
