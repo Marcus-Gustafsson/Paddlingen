@@ -211,7 +211,34 @@ How to test:
 
 - Review the new layout and confirm it can grow without another redesign.
 
-### Step 5. Add secondary admin utility actions
+### Step 5. Prepare the public booking flow for Stripe-hosted Checkout
+
+What to do:
+
+- Keep the public booking modal focused on booking review and participant
+  details, not card entry.
+- Redirect the user from the booking summary step to Stripe-hosted Checkout
+  instead of trying to collect payment details in the site itself.
+- Add clear return states for:
+  - successful payment return,
+  - canceled payment return,
+  - declined or otherwise failed payment attempts.
+
+Why:
+
+- Stripe-hosted Checkout keeps the public payment UI simpler and safer for the
+  first real payment release.
+- The user should still understand what happened when they return to the site.
+
+How to test:
+
+- Start a booking and confirm:
+  - the site redirects cleanly to Stripe Checkout,
+  - the success return is clear,
+  - the cancel return is clear,
+  - the site does not claim payment success before the backend has verified it.
+
+### Step 6. Add secondary admin utility actions
 
 What to do:
 
@@ -230,7 +257,7 @@ How to test:
 - Confirm the new utility actions are easy to find without overpowering the
   main booking and event actions.
 
-### Step 6. Add an event-day checklist tool later
+### Step 7. Add an event-day checklist tool later
 
 What to do:
 
@@ -250,7 +277,7 @@ How to test:
 - Open the checklist tool from the admin page and confirm it works both on
   screen and for print/PDF use.
 
-### Step 7. Refine the public participant overview for grouped canoe counts
+### Step 8. Refine the public participant overview for grouped canoe counts
 
 What to do:
 

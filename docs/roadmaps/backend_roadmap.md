@@ -520,92 +520,266 @@ Goal:
 
 - Make bookings depend on verified real payment.
 
-### Step 1. Design the Stripe checkout and webhook flow
+### Step 1. Choose Stripe-hosted Checkout as the first payment UI
 
 What to do:
 
-- Define the order of:
+- Use Stripe Checkout, where the user is redirected to a payment page hosted by
+  Stripe.
+- Do not start with a custom in-app card form.
+- Keep the project open to a later upgrade to Stripe Elements or Payment
+  Element only if the project later needs a more custom payment UI.
+
+Why:
+
+- This keeps card-entry handling on Stripe's side instead of inside the app.
+- It reduces implementation complexity and lowers the payment risk surface for
+  the project.
+- It matches Stripe's own beginner-friendly Checkout examples.
+
+How to test:
+
+- Review the planned payment UX and confirm the public site only needs:
+  - one booking summary step,
+  - one redirect to Stripe,
+  - one success return page,
+  - one cancel return page.
+
+### Step 2. Design the real booking and payment state flow
+
+What to do:
+
+- Define the exact order of:
+  - availability check,
   - booking intent creation,
-  - Stripe checkout creation,
-  - webhook handling,
-  - booking finalization.
+  - Stripe Checkout Session creation,
+  - redirect to Stripe,
+  - Stripe webhook confirmation,
+  - final booking confirmation.
+- Keep the redirect back from Stripe separate from the real payment
+  confirmation logic.
 
 Why:
 
-- The flow must be clear before the code changes.
+- The app must not treat the success redirect alone as proof of payment.
+- The flow needs to be explicit before the code changes start.
 
 How to test:
 
-- Review the flow and confirm each state is understandable.
+- Review the flow and confirm each state is understandable and that the webhook
+  is the final confirmation source.
 
-### Step 2. Add Stripe configuration and dependency
+### Step 3. Add Stripe configuration and dependency
 
 What to do:
 
-- Add the Stripe SDK and required environment variables.
+- Add the Stripe SDK.
+- Add the required environment variables, starting with:
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - one base public site URL for success and cancel redirects
+- Keep all Stripe secrets server-side only.
 
 Why:
 
-- The backend needs a clear integration point for Stripe.
+- The backend needs a clear integration point for Stripe before any payment
+  routes are changed.
 
 How to test:
 
-- Start the app and confirm Stripe configuration loads correctly.
+- Start the app and confirm the Stripe configuration loads correctly without
+  exposing secrets to the client.
 
-### Step 3. Create a real Stripe Checkout session
+### Step 4. Keep price, quantity, and booking rules on the server
 
 What to do:
 
-- Replace the fake redirect step with a Stripe Checkout session.
+- Build the Stripe line item data from the server-side event settings and the
+  validated canoe count.
+- Do not trust price, currency, or final amount from the browser.
+- Keep the existing booking rules in force before a Checkout Session is created,
+  including:
+  - active event requirement,
+  - canoe availability,
+  - maximum five canoes in one booking,
+  - maximum five canoes for the same participant name.
 
 Why:
 
-- Stripe Checkout is simpler and safer than collecting payment details inside
-  the app.
+- Stripe should charge only for a server-validated booking attempt.
+- This prevents client-side price manipulation and keeps the payment flow easy
+  to reason about.
 
 How to test:
 
-- Start a checkout and confirm Stripe returns a valid redirect URL.
+- Try to start checkout with valid and invalid booking inputs and confirm only
+  valid server-approved bookings can proceed.
 
-### Step 4. Store the Stripe session reference in the database
+### Step 5. Create a real Stripe Checkout Session
 
 What to do:
 
-- Save the Stripe session ID and the local payment state on the booking order.
+- Replace the fake redirect step with a server-created Stripe Checkout Session.
+- Use `mode=payment`.
+- Redirect the user to the Stripe-hosted Checkout URL returned by Stripe.
 
 Why:
 
-- The app needs a reliable local record of what happened.
+- This is Stripe's intended starting point for a simple one-time payment flow.
+- It is safer and simpler than collecting card details inside the app.
 
 How to test:
 
-- Start a checkout and confirm the Stripe reference is stored.
+- Start a checkout and confirm Stripe returns a valid redirect URL and that the
+  browser is sent to Stripe Checkout.
 
-### Step 5. Add a Stripe webhook endpoint
+### Step 6. Store Stripe session references locally before redirect
 
 What to do:
 
-- Add a webhook route for successful payment events.
+- Save the Stripe Checkout Session ID on the local booking order.
+- Save the local payment state in a way that clearly distinguishes:
+  - booking intent created,
+  - checkout session created,
+  - payment confirmed,
+  - payment canceled,
+  - payment failed or expired.
+
+Why:
+
+- The app needs a reliable local record of what happened before and after the
+  external payment step.
+
+How to test:
+
+- Start a checkout and confirm the Stripe session reference and local pending
+  state are stored before the redirect happens.
+
+### Step 7. Add success and cancel return handling
+
+What to do:
+
+- Add a success page for users who return from Stripe after a completed
+  Checkout flow.
+- Add a cancel path for users who return without completing payment.
+- Keep these pages informational only.
+- Do not finalize bookings from the success redirect alone.
+
+Why:
+
+- Users need a clear result after leaving Stripe Checkout.
+- Stripe redirect behavior and Stripe webhook confirmation solve different
+  problems and should stay separate.
+
+How to test:
+
+- Use Stripe's hosted flow and confirm:
+  - successful test payments return to the success page,
+  - canceled payments return to the cancel page,
+  - the booking is not finalized only because the browser reached the success
+    page.
+
+### Step 8. Add a Stripe webhook endpoint with signature verification
+
+What to do:
+
+- Add a webhook route that verifies Stripe's signature header before processing
+  the event.
+- Start with the events needed for the first real payment flow, especially:
+  - `checkout.session.completed`
+- Keep the webhook logic idempotent so a duplicate event does not duplicate the
+  booking finalization.
 
 Why:
 
 - Webhooks are the reliable payment confirmation source.
+- Signature verification and idempotent handling are required for a safe
+  payment flow.
 
 How to test:
 
-- Send a Stripe test webhook and confirm the app receives it.
+- Send Stripe test webhooks and confirm:
+  - invalid signatures are rejected,
+  - valid events are accepted,
+  - duplicate deliveries do not create duplicate confirmed bookings.
 
-### Step 6. Finalize bookings only after verified payment
+### Step 9. Finalize bookings only after a verified Stripe event
 
 What to do:
 
-- Only mark bookings as confirmed after a verified Stripe success event.
+- Only mark the booking order as paid after a verified Stripe webhook confirms
+  the payment.
+- Only mark the reserved canoe rows as confirmed after that verified event.
+- Keep the success page as a user-facing confirmation page, not the backend's
+  final source of truth.
 
 Why:
 
-- This prevents false bookings from incomplete or failed payments.
+- This prevents false bookings from incomplete, failed, or interrupted payment
+  flows.
 
 How to test:
 
-- Complete a test payment and confirm the booking finalizes only after webhook
-  handling.
+- Complete a Stripe test payment and confirm the booking finalizes only after
+  webhook handling, not from the browser redirect alone.
+
+### Step 10. Re-test the full payment flow with Stripe's test cards
+
+What to do:
+
+- Re-test the real booking flow using Stripe's test card scenarios, including:
+  - successful payment,
+  - 3D Secure / SCA-required payment,
+  - declined payment,
+  - user-canceled checkout.
+- Keep the test cases documented in the dev docs so they are easy to repeat.
+
+Why:
+
+- A payment flow is not done when only the happy path works.
+
+How to test:
+
+- Run the documented Stripe test scenarios and confirm each one leaves the
+  booking order in the expected local state.
+
+### Step 11. Add refund handling as the first post-payment admin operation
+
+What to do:
+
+- Start by defining the operational refund flow in Stripe Dashboard first.
+- Add API-backed refund support from the admin side only if the manual
+  Dashboard workflow becomes too slow.
+- Store enough local payment references to make refunds traceable later.
+
+Why:
+
+- Refunds are a real business operation, but they should not block the first
+  working payment launch.
+- Stripe already provides a safe operational path through the Dashboard.
+
+How to test:
+
+- Complete a test payment, issue a refund in Stripe's test mode, and confirm
+  the project has the local reference data needed to identify that payment.
+
+### Step 12. Review payouts and adaptive pricing as later expansion work
+
+What to do:
+
+- Treat payout configuration as an operational Stripe account setup step first,
+  not an in-app feature.
+- Review manual payouts later only if the business flow really requires them.
+- Review adaptive pricing later only if the event expands beyond the current
+  Swedish audience and SEK-first pricing model.
+
+Why:
+
+- Both features are useful, but they are not part of the smallest safe payment
+  launch.
+- They should be added only when they solve a real operational problem.
+
+How to test:
+
+- Review the post-launch needs and confirm whether either feature is justified
+  before implementation starts.

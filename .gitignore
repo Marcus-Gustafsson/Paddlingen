@@ -29,3 +29,6 @@ instance/
 
 # ruff cache
 .ruff*
+
+# Local inspiration / scratch files
+inspo/
