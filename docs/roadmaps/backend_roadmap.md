@@ -450,6 +450,57 @@ How to test:
 - Create a booking where one person holds multiple canoes.
 - Confirm the overview shows the grouped name plus canoe count correctly.
 
+### Step 9. Support up to three named riders per canoe before Stripe
+
+What to do:
+
+- Change the meaning of one `booked_canoes` row so it represents one canoe,
+  not just one displayed participant name.
+- Keep the current required pickup person on the row.
+- Add optional rider slots for rider two and rider three on the same row.
+- Add model helper properties so the rest of the code can ask simple questions
+  such as:
+  - what the pickup person's full name is,
+  - what rider two should display when blank,
+  - whether the canoe has a third rider,
+  - how to format the canoe's rider names for display.
+
+Why:
+
+- Stripe should be added only after the booking data shape matches the real
+  canoe usage.
+- Keeping one canoe on one row still matches the checklist and payment logic
+  better than creating one row per rider.
+
+How to test:
+
+- Create or inspect a canoe row with only the required pickup person.
+- Confirm the new optional rider fields can stay empty without breaking the
+  model or existing routes.
+
+### Step 10. Prepare grouped canoe-detail view models for overview and checklist
+
+What to do:
+
+- Keep grouping the public overview and admin checklist by pickup person.
+- Add child detail rows under each group so one person can expand the grouped
+  row and inspect each canoe separately.
+- Make the grouped row itself a button, not only the name text.
+
+Why:
+
+- Grouping keeps the summary view compact.
+- Expandable child rows expose the missing canoe-by-canoe detail without
+  cluttering the default view.
+- Making the whole row a button improves mobile usability, creates a larger
+  click target, and is easier to use with a keyboard.
+
+How to test:
+
+- Build grouped data where one pickup person has two canoes.
+- Confirm the grouped row count stays correct and that each canoe can still be
+  listed separately in the child detail data.
+
 ## Phase 4: Make Booking Safety Explicit
 
 Goal:

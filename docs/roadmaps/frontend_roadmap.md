@@ -292,6 +292,75 @@ How to test:
 
 - Confirm the overview stays readable when one person holds multiple canoes.
 
+### Step 9. Extend the booking modal for named riders inside each canoe
+
+What to do:
+
+- Keep the current canoe-card layout in the public booking modal.
+- For each canoe card, collect:
+  - one required pickup person,
+  - one visible second rider field pair by default,
+  - one optional third rider field pair shown by a small add button.
+- Treat rider two and rider three as optional for now so the booking can still
+  proceed before every name is known.
+
+Why:
+
+- This matches the real event usage better than forcing one displayed name per
+  canoe.
+- It keeps the visual structure familiar instead of redesigning the booking
+  modal from scratch.
+
+How to test:
+
+- Open the booking modal and confirm each canoe card can collect one pickup
+  person, one optional second rider, and one optional third rider.
+
+### Step 10. Keep grouped overview and checklist rows expandable
+
+What to do:
+
+- Keep the grouped row summary in both:
+  - the public participant overview,
+  - the admin event-day checklist.
+- Let the admin or visitor expand a grouped row to inspect the individual
+  canoes booked under that pickup person's name.
+- Make the entire grouped summary row a button instead of making only the name
+  clickable.
+
+Why:
+
+- The grouped summary keeps the interface compact.
+- The expanded detail view shows who sits in each canoe without overloading the
+  default state.
+- A full-row button is better for mobile use, creates a larger click target,
+  and is easier to use with a keyboard.
+
+How to test:
+
+- Open the overview and checklist views with grouped bookings and confirm the
+  grouped row expands and collapses cleanly on both desktop and mobile.
+
+### Step 11. Extend manual admin booking and editing to match the canoe layout
+
+What to do:
+
+- Make the admin manual-booking form use the same canoe-based layout as the
+  public booking flow.
+- Allow admins to edit the pickup person, second rider, and optional third
+  rider on one canoe row.
+
+Why:
+
+- The public and admin flows should describe the same booking unit.
+- Admin corrections become clearer when one row means one canoe instead of one
+  displayed name.
+
+How to test:
+
+- Add a manual booking with multiple named riders and confirm the names can
+  later be edited from the admin panel.
+
 ## Phase 4: Re-test The Full Frontend On Real Layouts
 
 Goal:

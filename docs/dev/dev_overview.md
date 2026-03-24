@@ -197,8 +197,15 @@ Current admin dashboard behavior:
   - choosing the manual payment method,
   - editing participant names,
   - deleting bookings.
+- The underlying `booked_canoes` data model now also supports optional second-
+  and third-rider name fields on each canoe row, but the public and admin UI
+  still need their later follow-up work before those extra riders are visible
+  and editable from the site.
 - The public participant overview now groups matching names and shows the canoe
   count on the right instead of listing every canoe row separately.
+- The grouped overview and grouped checklist helper data now also prepare one
+  canoe-detail row per canoe under each grouped pickup person, but the visible
+  expand/collapse UI still belongs to the next implementation step.
 - The public booking flow now also rejects a new booking if one exact
   participant name would end up above five total canoes for the active event.
 - Event management currently supports:

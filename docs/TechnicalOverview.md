@@ -222,7 +222,8 @@ This is the current role of the main files and folders.
 - `app/util/booking_groups.py`
   Prepares grouped rows for the public participant overview and the admin
   event-day checklist so the route handlers do not have to duplicate grouping
-  logic.
+  logic. The grouped rows now also carry hidden canoe-detail data that later UI
+  steps can reveal through expandable summary rows.
 
 - `app/util/helper_functions.py`
   Contains helper logic, including image lookup and stable image metadata for
@@ -481,7 +482,8 @@ What this means in practice:
 
 Purpose:
 
-- Stores one participant name per canoe.
+- Stores one canoe booking row, including the required pickup person and up to
+  two optional extra riders.
 
 Current fields:
 
@@ -489,15 +491,21 @@ Current fields:
 - `booking_order_id`
 - `participant_first_name`
 - `participant_last_name`
+- `passenger_two_first_name`
+- `passenger_two_last_name`
+- `passenger_three_first_name`
+- `passenger_three_last_name`
 - `status`
+- `picked_up`
 - `created_at`
 
 Why this model exists:
 
-- One canoe row should represent one participant slot.
-- This keeps the participant names structured instead of hiding them inside a
-  JSON string.
-- It gives the admin view a clearer, more future-proof booking structure.
+- One canoe row should represent one canoe, not an unstructured blob of names.
+- Keeping the rider fields explicit is still easier for a beginner to follow
+  than hiding them inside JSON.
+- The current public and admin UI still mostly show only the pickup person, but
+  the model is now ready for later expandable canoe-detail views.
 
 ### 3. `User`
 

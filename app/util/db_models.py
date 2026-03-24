@@ -230,7 +230,14 @@ class PublicSiteAccessSetting(db.Model):
 
 
 class BookedCanoe(db.Model):
-    """Store one participant name for one canoe booking."""
+    """Store one canoe booking with up to three named riders.
+
+    The required pickup person stays in the existing participant fields so the
+    current booking, admin, and checklist flows remain easier to evolve
+    gradually. Optional rider-two and rider-three fields allow one canoe row to
+    describe the real people sitting in that canoe without needing a second
+    table yet.
+    """
 
     __tablename__ = "booked_canoes"
 
@@ -240,6 +247,10 @@ class BookedCanoe(db.Model):
     )
     participant_first_name = db.Column(db.String(120), nullable=False)
     participant_last_name = db.Column(db.String(120), nullable=False)
+    passenger_two_first_name = db.Column(db.String(120), nullable=True)
+    passenger_two_last_name = db.Column(db.String(120), nullable=True)
+    passenger_three_first_name = db.Column(db.String(120), nullable=True)
+    passenger_three_last_name = db.Column(db.String(120), nullable=True)
     status = db.Column(db.String(30), nullable=False, default="reserved")
     picked_up = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(
@@ -248,14 +259,102 @@ class BookedCanoe(db.Model):
 
     booking_order = db.relationship("BookingOrder", back_populates="booked_canoes")
 
+    @staticmethod
+    def build_full_name(
+        first_name: str | None,
+        last_name: str | None,
+        *,
+        empty_fallback: str = "",
+    ) -> str:
+        """Return one readable full name from separate first and last names.
+
+        Args:
+            first_name: Stored first-name value or ``None``.
+            last_name: Stored last-name value or ``None``.
+            empty_fallback: Text returned when both name parts are empty.
+
+        Returns:
+            str: A trimmed full name string ready for templates or admin views.
+        """
+
+        cleaned_first_name = (first_name or "").strip()
+        cleaned_last_name = (last_name or "").strip()
+        full_name = f"{cleaned_first_name} {cleaned_last_name}".strip()
+        return full_name or empty_fallback
+
+    @property
+    def pickup_person_name(self) -> str:
+        """Return the required pickup person's full name.
+
+        This is the main name used to group rows in the overview and checklist
+        views. It is stored in the existing participant columns.
+        """
+
+        return self.build_full_name(
+            self.participant_first_name,
+            self.participant_last_name,
+            empty_fallback="Unnamed participant",
+        )
+
+    @property
+    def passenger_two_name_or_placeholder(self) -> str:
+        """Return rider two's name or a placeholder when it is still unknown."""
+
+        return self.build_full_name(
+            self.passenger_two_first_name,
+            self.passenger_two_last_name,
+            empty_fallback="?",
+        )
+
+    @property
+    def passenger_three_name_or_placeholder(self) -> str:
+        """Return rider three's name or a placeholder when it is still unknown."""
+
+        return self.build_full_name(
+            self.passenger_three_first_name,
+            self.passenger_three_last_name,
+            empty_fallback="?",
+        )
+
+    @property
+    def has_third_rider(self) -> bool:
+        """Return whether this canoe row has a real third rider name filled in."""
+
+        return bool(
+            self.build_full_name(
+                self.passenger_three_first_name,
+                self.passenger_three_last_name,
+            )
+        )
+
+    @property
+    def display_rider_names(self) -> str:
+        """Return one combined rider string for overview and checklist details.
+
+        The pickup person is always shown first. Rider two is shown next and
+        falls back to ``?`` when still unknown. Rider three is included only
+        when that rider has actually been filled in.
+        """
+
+        rider_names = [
+            self.pickup_person_name,
+            self.passenger_two_name_or_placeholder,
+        ]
+        if self.has_third_rider:
+            rider_names.append(self.passenger_three_name_or_placeholder)
+
+        return " & ".join(rider_names)
+
     @property
     def name(self) -> str:
-        """Return the participant's full name for templates and admin forms."""
+        """Return the pickup person's full name for older template code.
 
-        full_name = (
-            f"{self.participant_first_name} {self.participant_last_name}".strip()
-        )
-        return full_name or "Unnamed participant"
+        This property is kept as a compatibility alias while the rest of the
+        project is updated from one-name-per-canoe handling to one-row-per-canoe
+        handling.
+        """
+
+        return self.pickup_person_name
 
     @name.setter
     def name(self, full_name: str) -> None:

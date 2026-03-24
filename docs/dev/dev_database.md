@@ -175,6 +175,12 @@ Important note:
   falls back to the matching value in `config.py`.
 - `booked_canoes.picked_up` stores whether one booked canoe has been collected
   during the event-day checklist workflow.
+- `booked_canoes` now also has optional rider-name columns so one canoe row can
+  hold:
+  - the required pickup person,
+  - an optional second rider,
+  - an optional third rider.
+- Existing rows remain valid because the extra rider columns are nullable.
 
 Important `events` fields now include:
 
@@ -205,6 +211,8 @@ Important admin note:
 - The admin checklist groups the UI by participant name, but the saved pickup
   state is still tracked per `booked_canoes` row so partial pickup remains
   accurate.
+- The current UI still mostly displays the pickup person only. A later UI step
+  will expose the extra riders through expandable canoe details.
 - If you really need to change one of them, update the value directly in the
   database row in Supabase.
 - Keep the matching fallback values in `config.py` aligned as well, so the app
