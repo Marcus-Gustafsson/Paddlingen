@@ -1,6 +1,6 @@
 # Backend Roadmap
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 
 ## Goal
 
@@ -671,131 +671,110 @@ Completed work:
   - canoe availability,
   - maximum canoes per booking from the active event,
   - maximum five canoes for the same participant name.
+- Availability now counts both confirmed bookings and still-active unpaid
+  reservation holds.
 - Added tests that confirm:
   - browser-sent amount fields are ignored,
   - checkout is blocked when no active event exists,
   - Stripe-ready line items are built from the event price.
 
-### Step 5. Create a real Stripe Checkout Session
+### Step 5. Create a real Stripe Checkout Session (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Replace the fake redirect step with a server-created Stripe Checkout Session.
-- Use `mode=payment`.
-- Include the local booking reference in Stripe metadata so webhook handling can
-  match the Stripe session back to the correct booking order safely.
-- Keep the Stripe Checkout expiration aligned with the local reservation hold
-  when practical, so abandoned sessions are easier to clean up consistently.
-- Redirect the user to the Stripe-hosted Checkout URL returned by Stripe.
+- Replaced the fake redirect step with a real server-created Stripe Checkout
+  Session.
+- Uses `mode=payment`.
+- Keeps the Checkout Session creation server-side so browser-sent price data is
+  still ignored.
+- Stores local booking metadata on the Checkout Session so later webhook
+  handling can match the Stripe session back to the correct booking order.
+- Configures Stripe-hosted Checkout for:
+  - Swedish locale,
+  - card only,
+  - a Stripe-managed session lifetime that fits Stripe's own minimum.
 
-Why:
+### Step 6. Store Stripe session references locally before redirect (Completed 2026-03-24)
 
-- This is Stripe's intended starting point for a simple one-time payment flow.
-- It is safer and simpler than collecting card details inside the app.
+Completed work:
 
-How to test:
+- Saves the Stripe Checkout Session ID on the local booking order.
+- Saves `payment_provider = "stripe_checkout"` on the order.
+- Moves the local order state from `pending_payment` to
+  `checkout_session_created` after Stripe Checkout has been created
+  successfully.
+- Keeps the local reservation expiration timestamp on the order.
+- Returns the pending booking data so the browser can move the booking modal
+  into Step 3 before the final redirect into Stripe and the visitor sees the
+  local hold state more clearly.
 
-- Start a checkout and confirm Stripe returns a valid redirect URL and that the
-  browser is sent to Stripe Checkout.
+### Step 7. Add success and cancel return handling (Completed 2026-03-24)
 
-### Step 6. Store Stripe session references locally before redirect
+Completed work:
 
-What to do:
+- Uses a success return page for visitors who come back from Stripe after
+  Checkout.
+- Uses a cancel path for visitors who return without completing payment.
+- The success return page now acts as a local completion step that waits for
+  the webhook-backed booking state before it shows the final confirmed message.
+- Adds a booking-modal Step 3 before Stripe Checkout with:
+  - a visible 15-minute reservation countdown,
+  - a dedicated `Avbryt order` button,
+  - a `Fortsätt till betalning` action that continues into Stripe.
+- The success return page no longer shows a false final success state
+  immediately. It waits locally until the booking is actually marked as paid.
+- The cancel flow now redirects back home with a toast and removes the unpaid
+  temporary booking so inventory does not stay blocked.
+- The public availability count now updates immediately when a temporary hold is
+  created and frees those canoes again when the reservation is canceled or
+  expires.
+- If a stale tab tries to reserve after the last canoe has already been taken,
+  the browser now reloads the homepage with a toast so the sold-out state is
+  visible immediately.
+- Entering Stripe Checkout no longer extends the local 15-minute hold. If the
+  visitor returns after that local hold expired, the app redirects home with a
+  toast and removes the stale unpaid reservation.
+- If the visitor has already returned from Stripe and the Checkout Session is
+  paid, the app now reconciles that session directly and confirms the local
+  booking even when the webhook listener is temporarily unavailable.
+- If the post-Stripe waiting page times out and Stripe still shows the session
+  as unpaid, the app now releases that temporary reservation immediately
+  instead of keeping the canoes blocked until the local timer expires.
+- The browser reaching the success page no longer finalizes the booking.
+- When the visitor cancels from modal Step 3, the app also asks Stripe to
+  expire the open Checkout Session before removing the unpaid booking.
 
-- Save the Stripe Checkout Session ID on the local booking order.
-- Save the local payment state in a way that clearly distinguishes:
-  - booking intent created,
-  - checkout session created,
-  - payment confirmed,
-  - payment canceled,
-  - payment failed or expired.
-- Keep the local reservation expiration timestamp on the order so later cleanup
-  logic can tell whether the unpaid hold should still block availability.
+### Step 8. Add a Stripe webhook endpoint with signature verification (Completed 2026-03-25)
 
-Why:
+Completed work:
 
-- The app needs a reliable local record of what happened before and after the
-  external payment step.
-
-How to test:
-
-- Start a checkout and confirm the Stripe session reference and local pending
-  state are stored before the redirect happens.
-
-### Step 7. Add success and cancel return handling
-
-What to do:
-
-- Add a success page for users who return from Stripe after a completed
-  Checkout flow.
-- Add a cancel path for users who return without completing payment.
-- Keep these pages informational only.
-- Let the success page explain that payment is being verified.
-- Let the cancel flow release or mark the unpaid reservation so inventory does
-  not stay blocked.
-- Do not finalize bookings from the success redirect alone.
-
-Why:
-
-- Users need a clear result after leaving Stripe Checkout.
-- Stripe redirect behavior and Stripe webhook confirmation solve different
-  problems and should stay separate.
-
-How to test:
-
-- Use Stripe's hosted flow and confirm:
-  - successful test payments return to the success page,
-  - canceled payments return to the cancel page,
-  - the booking is not finalized only because the browser reached the success
-    page.
-
-### Step 8. Add a Stripe webhook endpoint with signature verification
-
-What to do:
-
-- Add a webhook route that verifies Stripe's signature header before processing
-  the event.
-- Start with the events needed for the first real payment flow, especially:
+- Added a webhook route at `/stripe/webhook`.
+- Verifies Stripe's signature header before processing the event.
+- Starts with the events needed for the first real payment flow, especially:
   - `checkout.session.completed`
-- Also handle expiration cleanup events needed for reservation release, such as
-  `checkout.session.expired`, as soon as the local hold logic depends on them.
-- Keep the webhook logic idempotent so a duplicate event does not duplicate the
-  booking finalization.
-
-Why:
-
-- Webhooks are the reliable payment confirmation source.
-- Signature verification and idempotent handling are required for a safe
-  payment flow.
-
-How to test:
-
-- Send Stripe test webhooks and confirm:
-  - invalid signatures are rejected,
+- Also handles expiration cleanup with `checkout.session.expired`.
+- Keeps the webhook logic idempotent so a duplicate event does not duplicate
+  the booking finalization.
+- Added tests that confirm:
+  - missing or invalid signatures are rejected,
   - valid events are accepted,
   - duplicate deliveries do not create duplicate confirmed bookings.
 
-### Step 9. Finalize bookings only after a verified Stripe event
+### Step 9. Finalize bookings only after a verified Stripe event (Completed 2026-03-25)
 
-What to do:
+Completed work:
 
-- Only mark the booking order as paid after a verified Stripe webhook confirms
+- Only marks the booking order as paid after a verified Stripe webhook confirms
   the payment.
-- Only mark the reserved canoe rows as confirmed after that verified event.
-- Keep the success page as a user-facing confirmation page, not the backend's
-  final source of truth.
-- Before final confirmation, confirm the local order is still in a state that
-  can become paid and that the webhook matches the stored Stripe session.
-
-Why:
-
-- This prevents false bookings from incomplete, failed, or interrupted payment
-  flows.
-
-How to test:
-
-- Complete a Stripe test payment and confirm the booking finalizes only after
-  webhook handling, not from the browser redirect alone.
+- Only marks the reserved canoe rows as confirmed after that verified event.
+- Keeps the success page as a user-facing return page, not the backend's final
+  source of truth.
+- Confirms that the webhook matches the stored Stripe session before payment
+  finalization.
+- Stores payer details from Stripe on the local booking order when they are
+  available from Checkout.
+- Releases unpaid local reservations when Stripe later reports
+  `checkout.session.expired`.
 
 ### Step 10. Re-test the full payment flow with Stripe's test cards
 
@@ -817,7 +796,105 @@ How to test:
 - Run the documented Stripe test scenarios and confirm each one leaves the
   booking order in the expected local state.
 
-### Step 11. Add refund handling as the first post-payment admin operation
+### Step 11. Create a dedicated sender email address for the website
+
+What to do:
+
+- Decide which dedicated email address the website should use for outgoing
+  transactional mail, for example `paddlingen@...`.
+- Prefer an address controlled by the event or website rather than a personal
+  mailbox.
+- Document:
+  - mailbox provider,
+  - login method or app-password setup,
+  - sender name,
+  - reply-to address,
+  - where the credentials will be stored in production.
+- If needed for the first version, start with an external mailbox provider such
+  as Outlook or a similar service and replace it later with a domain-based
+  address.
+
+Why:
+
+- Booking emails should come from a stable sender the organizers control.
+- A dedicated sender address is easier to rotate, document, and share between
+  organizers.
+- This avoids tying website operations to one person's private inbox.
+
+How to test:
+
+- Send a manual test message from the chosen mailbox setup.
+- Confirm the sender name and address look correct in a normal inbox.
+- Confirm replies go to the intended mailbox.
+
+### Step 12. Move post-payment side effects into one shared finalization path
+
+What to do:
+
+- Move all post-payment side effects behind one shared `booking became paid`
+  path.
+- Keep Stripe webhook confirmation and direct Stripe return reconciliation
+  using that same path.
+- Use that shared path later for:
+  - confirmation email sending,
+  - future admin or audit logging,
+  - any later receipt or notification features.
+- Make the side effects idempotent so a duplicate webhook or repeated success
+  return does not send duplicate confirmation actions.
+
+Why:
+
+- The project now has two safe confirmation entry points:
+  - verified webhook delivery,
+  - direct Stripe session reconciliation after the browser returns.
+- Side effects must run exactly once no matter which path confirms the booking
+  first.
+- This keeps the payment flow easier to reason about before production launch.
+
+How to test:
+
+- Confirm a paid booking finalized by webhook runs the shared path once.
+- Confirm a paid booking finalized by browser-return reconciliation also runs
+  it once.
+- Confirm refreshing the success page or receiving a duplicate webhook does not
+  duplicate the side effect.
+
+### Step 13. Send a booking confirmation email after payment is verified
+
+What to do:
+
+- Add a post-payment email step that runs only after the booking has been
+  finalized from the shared paid-booking finalization path.
+- Send the confirmation email to the payer email stored on the booking order.
+- Include the same booking summary details that the visitor already sees in
+  booking-modal Step 3 under `Kanotoversikt`, especially:
+  - booked canoes and participant names,
+  - public booking reference,
+  - number of canoes,
+  - total paid amount.
+- Explain clearly in the email that the booking reference should be included if
+  the visitor replies with questions or change requests.
+- Complete this before the public site promises outgoing confirmation
+  emails.
+
+Why:
+
+- A confirmation email reduces uncertainty for the visitor after payment.
+- The booking reference in the email makes support and later booking changes
+  easier to trace.
+- This should come right after the shared finalization path is in place so
+  users do not see email-related copy before the real email behavior exists.
+
+How to test:
+
+- Complete a Stripe test payment after webhook finalization is implemented and
+  confirm the email includes:
+  - the booked canoes and participant names,
+  - the booking reference,
+  - the number of canoes,
+  - the total paid amount.
+
+### Step 14. Add refund handling as the first post-payment admin operation
 
 What to do:
 
@@ -837,7 +914,7 @@ How to test:
 - Complete a test payment, issue a refund in Stripe's test mode, and confirm
   the project has the local reference data needed to identify that payment.
 
-### Step 12. Review payouts and adaptive pricing as later expansion work
+### Step 15. Review payouts and adaptive pricing as later expansion work
 
 What to do:
 

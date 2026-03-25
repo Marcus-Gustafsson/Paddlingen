@@ -3,7 +3,7 @@
  *
  * What it does:
  *   - Handles the public booking progress bar.
- *   - Fetches the confirmed booking count and updates the progress display.
+ *   - Fetches the current unavailable canoe count and updates the progress display.
  *
  * Why it is separate:
  *   - The booking-progress feature is small and mostly independent.
@@ -19,7 +19,7 @@
    * Render the current booking progress into the homepage progress bar.
    *
    * Args:
-   *   bookedCanoes: Number of confirmed canoe bookings.
+   *   bookedCanoes: Number of canoes currently blocking availability.
    *   totalAvailableCanoesForEvent: Total number of canoes available.
    */
   function updateBookingProgress(
@@ -64,10 +64,10 @@
   }
 
   /**
-   * Fetch the number of confirmed bookings from the backend.
+   * Fetch the number of canoes currently blocking availability.
    *
    * Returns:
-   *   Promise<number>: Confirmed booking count, or 0 if the request fails.
+   *   Promise<number>: Current unavailable-canoe count, or 0 if the request fails.
    */
   async function fetchBookingCount() {
     try {
@@ -87,8 +87,8 @@
    *   Promise<void>: Resolves when the progress display has been updated.
    */
   async function updateProgressFromDatabase() {
-    const confirmedBookingCount = await fetchBookingCount();
-    updateBookingProgress(confirmedBookingCount, totalAvailableCanoes);
+    const bookedCanoeCount = await fetchBookingCount();
+    updateBookingProgress(bookedCanoeCount, totalAvailableCanoes);
   }
 
   window.PaddlingenBookingProgress = {

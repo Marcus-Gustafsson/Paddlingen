@@ -81,6 +81,48 @@ def remove_stale_variant_files(
     return removed_files
 
 
+def find_removed_metadata_entries(
+    existing_metadata: list[dict[str, str]],
+    synchronized_metadata: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Return metadata rows whose source image file no longer exists."""
+
+    active_filenames = {
+        metadata_entry["filename"] for metadata_entry in synchronized_metadata
+    }
+    return [
+        metadata_entry
+        for metadata_entry in existing_metadata
+        if metadata_entry.get("filename") not in active_filenames
+    ]
+
+
+def remove_deleted_source_variant_files(
+    removed_metadata_entries: list[dict[str, str]],
+    *,
+    ribbon_variant_folder: Path,
+    gallery_variant_folder: Path,
+) -> list[Path]:
+    """Remove generated ribbon and gallery files for deleted source images."""
+
+    from app.util.helper_functions import get_previous_year_variant_filename
+
+    removed_files: list[Path] = []
+    for metadata_entry in removed_metadata_entries:
+        image_id = metadata_entry.get("id", "")
+        if not image_id:
+            continue
+
+        variant_filename = get_previous_year_variant_filename(image_id)
+        for variant_folder in (ribbon_variant_folder, gallery_variant_folder):
+            variant_path = variant_folder / variant_filename
+            if variant_path.exists():
+                variant_path.unlink()
+                removed_files.append(variant_path)
+
+    return removed_files
+
+
 def main() -> None:
     """Update metadata plus optimized ribbon and gallery image variants."""
 
@@ -106,11 +148,20 @@ def main() -> None:
     synchronized_metadata = build_previous_year_image_metadata(
         image_filenames, existing_metadata
     )
+    removed_metadata_entries = find_removed_metadata_entries(
+        existing_metadata, synchronized_metadata
+    )
 
     write_previous_year_image_metadata_file(metadata_path, synchronized_metadata)
 
     ribbon_variant_folder.mkdir(parents=True, exist_ok=True)
     gallery_variant_folder.mkdir(parents=True, exist_ok=True)
+
+    removed_deleted_source_files = remove_deleted_source_variant_files(
+        removed_metadata_entries,
+        ribbon_variant_folder=ribbon_variant_folder,
+        gallery_variant_folder=gallery_variant_folder,
+    )
 
     expected_variant_filenames = {
         get_previous_year_variant_filename(metadata_entry["id"])
@@ -145,11 +196,13 @@ def main() -> None:
         f"{len(expected_variant_filenames)} ribbon variants,",
         f"{len(expected_variant_filenames)} gallery variants.",
     )
-    if removed_ribbon_files or removed_gallery_files:
-        print(
-            "Removed stale generated files:",
-            len(removed_ribbon_files) + len(removed_gallery_files),
-        )
+    total_removed_files = (
+        len(removed_deleted_source_files)
+        + len(removed_ribbon_files)
+        + len(removed_gallery_files)
+    )
+    if total_removed_files:
+        print("Removed stale generated files:", total_removed_files)
 
 
 if __name__ == "__main__":

@@ -160,7 +160,11 @@
 
     closeButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        closeModal(button.closest(".modal"));
+        const parentModal = button.closest(".modal");
+        if (parentModal && parentModal.id === "bookingModal") {
+          return;
+        }
+        closeModal(parentModal);
       });
     });
 

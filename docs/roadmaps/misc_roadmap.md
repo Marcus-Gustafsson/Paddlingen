@@ -1,6 +1,6 @@
 # Misc Roadmap
 
-Last updated: 2026-03-20
+Last updated: 2026-03-25
 
 ## Goal
 
@@ -414,7 +414,65 @@ How to test:
 
 - Write the steps clearly and confirm they are realistic.
 
-### Step 3. Run a full end-to-end prelaunch test
+### Step 3. Verify live Stripe configuration and webhook delivery
+
+What to do:
+
+- Configure the real production Stripe values, especially:
+  - `STRIPE_SECRET_KEY`,
+  - `STRIPE_WEBHOOK_SECRET`,
+  - `STRIPE_PUBLIC_BASE_URL`.
+- Register the live Stripe webhook endpoint in the Stripe Dashboard.
+- Confirm the live success and cancel return URLs point to the real public
+  domain.
+- Document who owns the live Stripe account access and how key rotation will be
+  handled.
+
+Why:
+
+- Test-mode success does not prove that live-mode Stripe configuration is
+  correct.
+- Webhooks must work in production even when the visitor closes the browser
+  before returning to the site.
+- Payment launch is riskier if secrets, return URLs, or webhook registration
+  are still treated as last-minute manual memory work.
+
+How to test:
+
+- Use Stripe Dashboard and webhook delivery tools to confirm the live endpoint
+  is reachable and accepts the expected events.
+- Run one controlled live validation payment only when the site is otherwise
+  ready and confirm the booking reaches the expected final state.
+
+### Step 4. Run a payment recovery and fallback drill before launch
+
+What to do:
+
+- Re-test the payment flow in a launch-like environment with special focus on:
+  - delayed webhook delivery,
+  - browser-return reconciliation for an already paid Checkout Session,
+  - unpaid timeout release,
+  - duplicate webhook deliveries,
+  - success-page refreshes after payment.
+- Record the expected local booking-order state after each scenario.
+- Confirm none of these cases can create a double booking, a duplicate paid
+  state, or duplicate post-payment side effects.
+
+Why:
+
+- Payment launch is not safe if only the happy path has been tested.
+- Recovery paths are the part users notice most when something unusual happens.
+- This drill gives a faster final check than trying to infer safety only from
+  code review.
+
+How to test:
+
+- Run each scenario in a launch-like environment and compare the real result
+  against the documented expected order state.
+- Confirm paid sessions end as `paid`, genuinely unpaid sessions release their
+  canoes, and no scenario leaves the site falsely sold out.
+
+### Step 5. Run a full end-to-end prelaunch test
 
 What to do:
 
@@ -434,7 +492,7 @@ How to test:
 
 - Complete the full flow successfully.
 
-### Step 4. Launch the smallest stable version first
+### Step 6. Launch the smallest stable version first
 
 What to do:
 

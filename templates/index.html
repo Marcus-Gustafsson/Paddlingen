@@ -23,6 +23,7 @@ Why it’s here:
   <script>
     window.PADDLINGEN_EVENT_SETTINGS = {{ event_settings | tojson }};
     window.PADDLINGEN_PREVIOUS_YEAR_IMAGES = {{ previous_year_gallery_image_urls | tojson }};
+    window.PADDLINGEN_PENDING_BOOKING = {{ pending_checkout_booking | tojson }};
   </script>
 </head>
 <body class="home-page{% if just_unlocked %} home-page--just-unlocked{% endif %}">
@@ -102,7 +103,7 @@ Why it’s here:
             >
               <div class="progress-bar" id="progressBar"></div>
               <div class="progress-text" id="progressText">
-                <span class="progress-text-main">0 / {{ event_settings.available_canoes_total }} kanoter bokade</span>
+                <span class="progress-text-main">{{ current_booked_canoes }} / {{ event_settings.available_canoes_total }} kanoter bokade</span>
                 <span class="progress-text-hint">Tryck för att se deltagare</span>
               </div>
             </button>
@@ -319,7 +320,7 @@ Why it’s here:
     <div class="modal-content modal-content--dark booking-modal-content">
       <button class="modal-close" aria-label="Stäng">&times;</button>
       <div class="booking-modal-header">
-        <p id="bookingStepLabel" class="booking-step-label">Steg 1 av 2</p>
+        <p id="bookingStepLabel" class="booking-step-label">Steg 1 av 3</p>
         <h2 id="bookingTitle">Boka kanot</h2>
         <p class="booking-intro">
           Fyll i namnen på de personer som
@@ -400,14 +401,105 @@ Why it’s here:
           </div>
         </section>
 
+        <section id="bookingStepThree" class="booking-step" aria-labelledby="bookingStepThreeTitle" hidden>
+          <div class="booking-step-panel booking-step-panel--review">
+            <div class="booking-step-heading">
+              <p class="booking-step-eyebrow">Steg 3</p>
+              <h3 id="bookingStepThreeTitle">Reservation och betalning</h3>
+            </div>
+            <p class="booking-step-text">
+              Din order är nu reserverad. Gå vidare till betalningen innan tiden går ut,
+              eller avbryt ordern om du vill börja om.
+            </p>
+
+            <div
+              id="bookingReservationTimer"
+              class="booking-reservation-timer"
+              data-pending-booking-countdown
+              data-expires-at="{{ pending_checkout_booking.countdown_expires_at_iso if pending_checkout_booking else '' }}"
+            >
+              <span class="booking-reservation-timer-label">Reservationen gäller i</span>
+              <strong id="bookingReservationTimerValue" class="booking-reservation-timer-value">15:00</strong>
+            </div>
+
+            <div class="booking-review-section" aria-labelledby="bookingReviewSummaryTitle">
+              <h3 id="bookingReviewSummaryTitle">Kanotöversikt</h3>
+              <ul id="pendingBookingSummaryList" class="booking-summary-list">
+                {% if pending_checkout_booking and pending_checkout_booking.canoe_summaries %}
+                  {% for canoe_summary in pending_checkout_booking.canoe_summaries %}
+                    <li class="booking-summary-item">
+                      <span class="booking-summary-item-title">Kanot {{ canoe_summary.canoe_number }}</span>
+                      <div class="booking-summary-item-lines">
+                        {% for participant_name in canoe_summary.participant_names %}
+                        <span class="booking-summary-item-line">{{ participant_name }}</span>
+                        {% endfor %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="booking-summary-empty">Ingen aktiv reservation just nu.</li>
+                {% endif %}
+              </ul>
+            </div>
+
+            <dl class="booking-review-totals">
+              <div class="booking-summary-row">
+                <dt>Bokningsreferens</dt>
+                <dd id="pendingBookingReference">{{ pending_checkout_booking.public_booking_reference if pending_checkout_booking else 'Ingen aktiv reservation' }}</dd>
+              </div>
+              <div class="booking-summary-row">
+                <dt>Antal kanoter</dt>
+                <dd id="pendingBookingCanoeCount">{{ pending_checkout_booking.canoe_count if pending_checkout_booking else 0 }}</dd>
+              </div>
+              <div class="booking-summary-row booking-summary-row--total">
+                <dt>Totalt</dt>
+                <dd id="pendingBookingTotalAmount">{{ pending_checkout_booking.formatted_total_amount if pending_checkout_booking else '0 kr' }}</dd>
+              </div>
+            </dl>
+
+            <div class="booking-review-note">
+              När du fortsätter öppnas Stripe Checkout i testläge. Där är endast kort aktiverat just nu.
+            </div>
+          </div>
+
+          <div class="booking-step-three-actions">
+            <button
+              type="submit"
+              form="pendingBookingCancelForm"
+              id="cancelReservedBooking"
+              class="button-secondary"
+            >
+              Avbryt order
+            </button>
+            <a
+              id="continueToStripePayment"
+              class="button-primary button-primary-link{% if not pending_checkout_booking %} button-primary-link--disabled{% endif %}"
+              href="{{ pending_checkout_booking.pay_now_url if pending_checkout_booking else '#' }}"
+              {% if not pending_checkout_booking %}aria-disabled="true"{% endif %}
+            >
+              Fortsätt till betalning
+            </a>
+          </div>
+        </section>
+
         <div class="booking-buttons booking-buttons--modal">
           <button type="button" id="cancelBooking" class="button-secondary">Avbryt</button>
           <button type="button" id="confirmBooking" class="button-primary" disabled>Fortsätt</button>
         </div>
 
         <p id="bookingPaymentNote" class="payment-note" hidden>
-          Du kommer att omdirigeras till en säker betalningssida.
+          När du reserverar kanoterna öppnas nästa steg i bokningsmodulen.
         </p>
+      </form>
+
+      <form
+        id="pendingBookingCancelForm"
+        method="POST"
+        action="{{ pending_checkout_booking.cancel_order_url if pending_checkout_booking else '#' }}"
+        hidden
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="pendingBookingCancelReason" name="cancellation_reason" value="manual">
       </form>
     </div>
   </div>

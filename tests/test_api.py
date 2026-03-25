@@ -5,7 +5,10 @@ successful responses and common error conditions so that the frontend can
 rely on stable and predictable behavior.
 """
 
+from datetime import timedelta
+
 from app import BookedCanoe, BookingOrder, Event, db
+from app.util.db_models import get_current_utc_time
 
 
 def unlock_public_site(client):
@@ -16,6 +19,48 @@ def unlock_public_site(client):
         data={"password": "eventpass"},
         follow_redirects=True,
     )
+
+
+def test_booking_count_api_includes_active_pending_reservations(client):
+    """Count active unpaid holds as blocked canoes in the public API."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        booking_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-2026-00002",
+            status="checkout_session_created",
+            canoe_count=2,
+            total_amount=2400.0,
+            currency="sek",
+            payment_provider="stripe_checkout",
+            payment_provider_session_id="cs_test_pending_count",
+            expires_at=get_current_utc_time() + timedelta(minutes=15),
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        db.session.add_all(
+            [
+                BookedCanoe(
+                    booking_order_id=booking_order.id,
+                    participant_first_name="Alice",
+                    participant_last_name="Andersson",
+                    status="reserved",
+                ),
+                BookedCanoe(
+                    booking_order_id=booking_order.id,
+                    participant_first_name="Bob",
+                    participant_last_name="Berg",
+                    status="reserved",
+                ),
+            ]
+        )
+        db.session.commit()
+
+    unlock_public_site(client)
+    response = client.get("/api/booking-count")
+    assert response.status_code == 200
+    assert response.get_json() == {"count": 2}
 
 
 def test_booking_count_api_returns_number(client):
@@ -60,6 +105,44 @@ def test_booking_count_api_returns_number(client):
     assert response.status_code == 200
     data = response.get_json()
     assert data["count"] == 1
+
+
+def test_booking_count_api_cleans_up_expired_pending_reservations(client):
+    """Drop expired temporary holds before returning the public blocked count."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        booking_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-2026-00003",
+            status="checkout_session_created",
+            canoe_count=1,
+            total_amount=1200.0,
+            currency="sek",
+            payment_provider="stripe_checkout",
+            payment_provider_session_id="cs_test_expired_count",
+            expires_at=get_current_utc_time() - timedelta(minutes=1),
+        )
+        db.session.add(booking_order)
+        db.session.flush()
+        db.session.add(
+            BookedCanoe(
+                booking_order_id=booking_order.id,
+                participant_first_name="Expired",
+                participant_last_name="Hold",
+                status="reserved",
+            )
+        )
+        db.session.commit()
+
+    unlock_public_site(client)
+    response = client.get("/api/booking-count")
+    assert response.status_code == 200
+    assert response.get_json() == {"count": 0}
+
+    with client.application.app_context():
+        assert BookingOrder.query.count() == 0
+        assert BookedCanoe.query.count() == 0
 
 
 def test_forecast_api_returns_data(client, monkeypatch):

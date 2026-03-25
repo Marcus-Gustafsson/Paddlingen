@@ -1,6 +1,6 @@
 # Paddlingen Technical Overview
 
-Last updated: 2026-03-20
+Last updated: 2026-03-25
 
 ## Purpose
 
@@ -112,27 +112,43 @@ Current homepage note:
 5. One booking is now limited to at most 5 canoes, so larger groups must make
    more than one booking.
 6. The form is submitted to `/create-checkout-session`.
-7. Flask checks the requested canoe count against current confirmed
+7. Flask requires one active `Event` row before real checkout can start.
+8. Flask checks the requested canoe count against current confirmed
    availability.
-8. Flask creates one `BookingOrder` row with status `pending_payment`.
-9. The order is linked to the active `Event` row when one exists.
-10. Flask creates one `BookedCanoe` row per canoe with status `reserved`.
-11. The extra rider names are stored on that canoe row when they were provided.
-12. The `pending_booking_order_id` is stored in the user session.
-13. The user is redirected to `/payment-success`.
-14. The app reads the pending order from the database and marks the order as
-   `paid` and the canoe rows as `confirmed`.
-15. The app renders a simple payment return page with a link back to the
-   homepage.
+9. Flask builds the total amount and Stripe line-item data from the server-side
+   event row.
+10. Flask creates one `BookingOrder` row with status `pending_payment`.
+11. The order is linked to the active `Event` row.
+12. Flask creates one `BookedCanoe` row per canoe with status `reserved`.
+13. The extra rider names are stored on that canoe row when they were provided.
+14. Flask creates a real Stripe Checkout Session in test mode or live mode,
+    depending on which Stripe key is configured.
+15. Flask saves the Stripe Checkout Session ID on the local order and updates
+    the order status to `checkout_session_created`.
+16. Flask returns the pending booking data to the browser so the booking modal
+    can move into a new Step 3 without reloading the page.
+17. That Step 3 shows a clear `Avbryt order` action, a 15-minute local
+    reservation countdown, a `Fortsätt till betalning` action that continues
+    into Stripe-hosted Checkout, and a `Kanotöversikt` that lists every
+    entered rider name for each canoe.
+18. Stripe-hosted Checkout is currently configured for Swedish locale and card
+    only.
+19. If the browser returns to `/payment-success`, the app first checks the
+    Stripe Checkout Session directly and finalizes the booking locally when
+    Stripe already reports the session as paid. The verified webhook remains
+    the normal background confirmation path, especially when the visitor closes
+    the browser before returning. If the waiting state later times out and
+    Stripe still shows the session as unpaid, the app cancels the temporary
+    reservation immediately so the canoes do not stay blocked.
+20. If the browser returns to `/payment-cancel`, the app releases the unpaid
+    temporary booking and sends the visitor home with a toast message.
 
 Important note:
 
-- This is currently a placeholder flow.
-- It simulates successful payment instead of using a real payment provider.
-- The roadmap already plans to replace this with Stripe-hosted Checkout plus
-  webhook-based payment confirmation.
-- The public route shape now also includes `/payment-cancel` so the later real
-  Stripe flow can return through separate success and cancel pages.
+- Stripe-hosted Checkout is now used for the payment page itself.
+- The booking is still not finalized from the browser redirect alone.
+- Verified Stripe webhooks are now used before the booking becomes fully paid
+  and confirmed.
 
 ### Admin flow
 
@@ -556,20 +572,31 @@ the file is now growing large enough that it may later need to be split.
   Renders the homepage and passes bookings and image lists to the template.
 
 - `/create-checkout-session`
-  Handles booking submission and creates a pending booking order plus reserved
-  canoe rows. It now also requires one active event row and prepares
-  Stripe-ready line-item and total-amount data from server-side event settings
-  instead of trusting browser-sent amount fields. It also rejects requests that
-  would push one exact participant name above five total booked canoes for the
-  active event.
+  Handles booking submission, creates a pending booking order plus reserved
+  canoe rows, creates a real Stripe Checkout Session, saves the Stripe session
+  ID locally, and returns the pending booking data so the booking modal can
+  move into Step 3 without reloading the page.
+  It now also requires one active event row and prepares Stripe-ready line-item
+  and total-amount data from server-side event settings instead of trusting
+  browser-sent amount fields. It also rejects requests that would push one
+  exact participant name above five total booked canoes for the active event.
+
+- `/checkout/<public_booking_reference>/pay`
+  Revalidates the pending order and redirects the visitor from booking-modal
+  Step 3 into Stripe-hosted Checkout.
+
+- `/checkout/<public_booking_reference>/cancel`
+  Cancels the unpaid order from booking-modal Step 3, expires the open Stripe
+  Checkout Session when Stripe still reports it as open, and sends the visitor
+  back to the homepage with a toast message.
 
 - `/payment-success`
-  Finalizes a booking after the current simulated payment flow and renders the
-  placeholder success return page.
+  Renders an informational success return page after Stripe Checkout without
+  finalizing the booking.
 
 - `/payment-cancel`
-  Renders the placeholder cancel return page and removes any still-pending
-  temporary booking from the current session.
+  Releases the unpaid booking after Stripe sends the visitor back and redirects
+  home with a toast message.
 
 ### API routes
 
@@ -729,6 +756,10 @@ There is a helper function in `app/util/helper_functions.py` that:
 1. reads the flattened `previous_years` source folder,
 2. loads stable image metadata from `data/previous_year_images.json`,
 3. returns stable image IDs plus the matching generated variant paths.
+
+The sync script `scripts/sync_previous_year_image_metadata.py` keeps those
+assets aligned by removing metadata rows and generated ribbon/gallery variants
+when a source image file is deleted, then regenerating the remaining variants.
 
 Why this was likely chosen:
 
@@ -973,11 +1004,14 @@ This section explains what is intentionally still simple today.
 
 Current state:
 
-- Simulated.
+- Real Stripe-hosted Checkout in test mode is now supported when
+  `STRIPE_SECRET_KEY` is a test key.
+- Final payment confirmation now depends on verified webhook handling.
 
 Planned improvement:
 
-- Replace with Stripe-hosted Checkout and Stripe webhooks.
+- Re-test the Stripe-hosted Checkout flow now that webhook confirmation is in
+  place.
 - Keep the public payment UX to:
   - one booking summary step,
   - one redirect to Stripe,
@@ -988,7 +1022,7 @@ Planned improvement:
   payment.
 - Use temporary `reserved` canoe rows plus an expiration time so abandoned
   unpaid checkouts can be released safely.
-- Only after a verified webhook should the booking order become `paid` and the
+- Only after a verified webhook does the booking order become `paid` and the
   canoe rows become `confirmed`.
 
 Planned first safe Stripe flow:
@@ -1000,18 +1034,52 @@ Planned first safe Stripe flow:
 4. Flask creates the matching temporary `BookedCanoe` reservation rows.
 5. Flask creates a Stripe Checkout Session from server-side event data.
 6. Flask stores the Stripe session ID on the local order.
-7. The browser is redirected to Stripe Checkout.
-8. `/payment-success` only tells the user that the return from Stripe was
-   received.
-9. `/payment-cancel` releases the unpaid reservation.
-10. A verified Stripe webhook confirms payment and finalizes the booking.
+7. Flask returns the pending booking data so the browser can move the booking
+   modal into Step 3 without reloading the page.
+8. That modal step owns the visible 15-minute reservation timer and the clear
+   `Avbryt order` button.
+9. The visitor clicks `Fortsätt till betalning` to continue into Stripe
+   Checkout.
+10. `/payment-success` acts as a local completion step after Stripe
+    returns. It can wait and poll locally, but it does not finalize payment on
+    its own. If the local hold already expired, it redirects home with a
+    toast.
+11. `/payment-cancel` releases the unpaid reservation and redirects home with a
+    toast. If the visitor returns after the local hold already expired, it
+    shows the same expiration toast instead of reopening stale checkout state.
+12. A verified Stripe webhook confirms payment and finalizes the booking.
+13. Duplicate webhook deliveries are ignored safely so the same booking is not
+    confirmed twice.
 
 Current progress note:
 
-- The app still uses a simulated payment finish, but it now already prepares
-  Stripe-ready line-item data from the active event row on the server.
+- The app now creates real Stripe Checkout Sessions and returns the pending
+  booking data so the browser can move the booking modal into Step 3 before
+  redirecting to Stripe-hosted Checkout.
+- That modal step is where the project now shows the 15-minute reservation
+  countdown and the dedicated cancel action.
+- Stripe-hosted Checkout itself is currently configured for Swedish locale and
+  card only.
 - Browser-sent amount fields are ignored.
 - Checkout preparation is blocked when no active event row exists.
+- The success page still does not finalize the booking on its own. It
+  now waits locally until the webhook-backed booking state is `paid` before it
+  shows the final confirmed message, payer email, and booking summary.
+- The app now verifies Stripe webhook signatures at `/stripe/webhook` before it
+  updates booking state.
+- A verified `checkout.session.completed` event marks the order as `paid`,
+  stores payer details from Stripe when available, and marks reserved canoes as
+  `confirmed`.
+- Availability checks now count both confirmed bookings and still-active unpaid
+  reservation holds. Expired holds are released before those counts are used.
+- If a stale tab tries to reserve after the last canoe was already taken, the
+  browser reloads the homepage with a toast so the booking UI and progress bar
+  immediately show the current sold-out state.
+- Entering Stripe Checkout does not extend the local 15-minute hold. If the
+  visitor comes back after that local hold expired, the app redirects home with
+  a toast and removes the stale unpaid reservation.
+- A verified `checkout.session.expired` event releases the unpaid local booking
+  if it still exists.
 
 ### Booking data model
 

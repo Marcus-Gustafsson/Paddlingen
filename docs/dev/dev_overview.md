@@ -1,6 +1,6 @@
 # Development Overview
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 
 ## Purpose
 
@@ -76,6 +76,44 @@ generating and saving a new one with:
 ```bash
 uv run flask --app wsgi reset-public-site-password
 ```
+
+### `SECRET_KEY` is still required
+
+The Flask app needs `SECRET_KEY` in `.env`
+
+Why:
+
+- Flask uses it to protect session cookies,
+- Flask-WTF uses it to generate CSRF tokens for forms,
+- the public lock page, admin login flow, and other form posts depend on it.
+
+In simple terms:
+
+- `SECRET_KEY` is the app's own secret for signing security-related data.
+- Without it, the app can fail while rendering a page that includes a CSRF
+  token.
+
+This is different from Stripe secrets:
+
+- `SECRET_KEY` belongs to Flask,
+- `STRIPE_SECRET_KEY` belongs to Stripe.
+
+Generate one with:
+
+```bash
+uv run python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Then save the printed value in `.env` like this:
+
+```env
+SECRET_KEY=your-generated-value-here
+```
+
+Where to save it:
+
+- put it in the project root `.env` file,
+- on production later, set the same variable in the hosting environment.
 
 ### Start the app locally
 
@@ -221,10 +259,37 @@ Current admin dashboard behavior:
 - The public booking flow now also rejects a new booking if one exact
   participant name would end up above five total canoes for the active event.
 - The public payment return surface now includes:
-  - `/payment-success` for the current placeholder success return,
-  - `/payment-cancel` for the current placeholder cancel return.
-- This keeps the public flow aligned with the planned Stripe-hosted Checkout
-  shape before the real Stripe SDK and webhooks are added.
+  - `/payment-success` for the current Stripe Checkout success return,
+  - `/payment-cancel` for the current Stripe Checkout cancel return.
+- The public booking route now creates a real Stripe Checkout Session and
+  returns pending-booking data so the booking modal can move into Step 3
+  without reloading the page.
+- That Step 3 now shows:
+  - a 15-minute reservation countdown,
+  - a dedicated `Avbryt order` button,
+  - a `Fortsätt till betalning` action that continues into Stripe,
+  - and a `Kanotöversikt` that lists every entered rider name for each canoe.
+- Stripe-hosted Checkout itself is currently configured for Swedish locale and
+  card only.
+- The app now also has a Stripe webhook route at `/stripe/webhook` for local
+  Stripe CLI forwarding and later production webhook delivery.
+- A verified `checkout.session.completed` webhook now marks the local booking
+  order as paid and the reserved canoes as confirmed.
+- Availability now also counts still-active unpaid reservation holds, and
+  expired holds are cleaned up before public availability is calculated.
+- If a stale tab tries to reserve after the last canoe is already taken, the
+  browser now reloads the homepage with a toast so the progress bar and booking
+  button reflect the latest availability immediately.
+- If the post-Stripe confirmation page gives up waiting and Stripe still shows
+  the session as unpaid, the app now cancels the reservation immediately so
+  the canoes become available again.
+- Entering Stripe Checkout no longer extends the local 15-minute reservation
+  timer. If the visitor returns after that local hold expired, the app sends
+  them back home with a toast instead of reopening stale checkout state.
+- The browser success page is still not the real proof of payment. It now
+  acts as a local completion step that waits until the webhook-backed booking
+  is marked as paid. Once the booking is paid, that page shows a clearer
+  confirmation state with the payer email and a compact booking summary.
 - Event management currently supports:
   - selecting an existing event,
   - editing the selected event,
@@ -258,14 +323,19 @@ Current admin dashboard behavior:
 These areas are still planned work:
 
 - Stripe is not yet fully integrated. The project now has:
+- Stripe is partly integrated. The project now has:
   - the chosen Stripe-hosted Checkout direction,
   - the planned webhook-first payment flow,
   - the Stripe SDK dependency,
   - explicit Stripe environment variables,
   - server-side Stripe-ready checkout preparation from the active event row,
+  - real Stripe Checkout Session creation,
+  - a Step 3 inside the booking modal before Stripe,
+  - webhook-based payment finalization,
+  - success and cancel return pages,
   - a Stripe setup guide for manual dashboard and CLI work.
-- The project still needs Stripe session creation, webhook verification, and
-  real payment-state handling.
+- The project still needs broader end-to-end re-testing of the webhook-backed
+  flow and later post-payment features such as confirmation emails.
 - monitoring and alerts are not yet configured.
 
 ## Planned Stripe Flow
@@ -279,11 +349,18 @@ The current roadmap now defines the first safe real payment flow like this:
 4. Create temporary reserved canoe rows with an expiration time.
 5. Create a Stripe Checkout Session from server-side data.
 6. Store the Stripe Checkout Session ID on the local booking order.
-7. Redirect the visitor to Stripe Checkout.
-8. Treat `/payment-success` as an informational return page only.
-9. Treat `/payment-cancel` as an informational page plus unpaid-reservation
-   cleanup.
-10. Treat the verified Stripe webhook as the final payment confirmation source.
+7. Move the booking modal into Step 3 with the visible timer and cancel
+   action, without reloading the page.
+8. Continue from that modal step into Stripe Checkout without
+   extending the local 15-minute hold.
+9. Treat `/payment-success` as a local completion page only. It may poll
+   the local booking state, but it must not mark the booking as paid on its
+   own. If the local hold already expired, redirect back home with a toast.
+10. Treat `/payment-cancel` as a home redirect plus unpaid-reservation
+    cleanup. If the visitor returns after the local hold expired, show the
+    same expiration toast on the homepage.
+11. Treat the verified Stripe webhook as the final payment confirmation
+    source.
 
 Important beginner note:
 

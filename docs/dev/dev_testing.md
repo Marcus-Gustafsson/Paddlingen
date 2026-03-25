@@ -320,7 +320,8 @@ What it does:
 - loads `data/previous_year_images.json`,
 - keeps existing `IMG-000x` IDs for filenames that already exist,
 - assigns new IDs only to new filenames,
-- removes metadata rows for files that no longer exist.
+- removes metadata rows for files that no longer exist,
+- removes old generated ribbon and gallery files for deleted source images,
 - writes optimized ribbon variants to `static/images/previous_years/ribbon/`,
 - writes optimized gallery variants to `static/images/previous_years/gallery/`.
 

@@ -1,6 +1,9 @@
 # Frontend Roadmap
 
-Last updated: 2026-03-20
+Last updated: 2026-03-25
+
+## TODO:S
+- Review the booking-confirmation and payment pages on real mobile and tablet devices after each larger layout change.
 
 ## Goal
 
@@ -219,6 +222,11 @@ Implementation note:
   first real payment UI.
 - The remaining frontend work in this step is to make the public return states
   clear and consistent once the real Stripe redirect is connected.
+- The project now also uses a new Step 3 inside the booking modal before
+  Stripe so the visitor can still see:
+  - a clear cancel action,
+  - a visible local reservation timer,
+  - a simple card-payment handoff.
 - Backend Phase 4 Step 2 has also chosen the meaning of those return states:
   - `/payment-success` should confirm only that the visitor returned from
     Stripe,
@@ -226,13 +234,23 @@ Implementation note:
     unpaid reservation was released,
   - neither page should claim the booking is fully paid until webhook
     verification has happened.
+- The backend now already performs the real redirect to Stripe-hosted Checkout
+  and returns to these informational pages. If a stale booking modal tries to
+  reserve after the event became full, the browser now reloads home with a
+  toast so the progress bar and booking button refresh immediately. If the
+  local hold expires while the visitor is at Stripe, the return flow now sends
+  them back home with the same toast instead of keeping stale checkout state
+  open. The confirmed return page now also shows a clearer booking summary and
+  the payer email. The remaining frontend work is mostly copy, clarity, and
+  later webhook-aware status messaging.
 
 What to do:
 
 - Keep the public booking modal focused on booking review and participant
   details, not card entry.
-- Redirect the user from the booking summary step to Stripe-hosted Checkout
-  instead of trying to collect payment details in the site itself.
+- Redirect the user from the booking summary step back into booking-modal
+  Step 3, then let that step continue into Stripe-hosted Checkout instead of
+  trying to collect payment details in the site itself.
 - Add clear return states for:
   - successful payment return,
   - canceled payment return,
@@ -247,10 +265,43 @@ Why:
 How to test:
 
 - Start a booking and confirm:
-  - the site redirects cleanly to Stripe Checkout,
+  - the site moves directly from Step 2 into Step 3 without reloading the page,
+  - that Step 3 shows the timer and cancel action clearly,
+  - the `Fortsätt till betalning` action redirects cleanly to Stripe Checkout,
   - the success return is clear,
   - the cancel return is clear,
   - the site does not claim payment success before the backend has verified it.
+
+### Step 5A. Brand Stripe-hosted Checkout to match the public site better
+
+What to do:
+
+- Add Stripe-supported branding first, especially:
+  - organizer or business name,
+  - logo or icon,
+  - accent and button colors,
+  - product image for the canoe booking,
+  - clearer product and support text.
+- Keep the page inside Stripe-hosted Checkout's supported customization surface
+  instead of trying to reproduce the full site layout there.
+- Treat Stripe custom domains as a later optional launch or polish decision,
+  not part of the first styling pass.
+
+Why:
+
+- The hosted payment page should feel like part of the same booking flow.
+- Better branding and product information reduce hesitation right before the
+  payment step.
+- Stripe-hosted Checkout is intentionally limited, so using the supported
+  surfaces is the fastest and safest way to improve trust.
+
+How to test:
+
+- Start a booking and open Stripe Checkout on desktop and mobile.
+- Confirm the logo, colors, and product image render correctly.
+- Confirm the product and support text are clear and no important information
+  is hidden or cropped.
+- Confirm the page still feels recognizably connected to the rest of the site.
 
 ### Step 6. Add secondary admin utility actions
 

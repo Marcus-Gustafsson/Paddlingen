@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="sv-SE">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/stripe.css') }}">
+</head>
+<body class="payment-confirmation-page{% if show_processing_indicator %} payment-confirmation-page--processing{% endif %}">
+  <main class="payment-return-layout">
+    <article
+      id="paymentReturnCard"
+      class="payment-return-card payment-confirmation-card{% if show_processing_indicator %} payment-return-card--processing{% endif %}"
+      {% if payment_status_url %}
+      data-payment-status-url="{{ payment_status_url }}"
+      data-confirmed-return-url="{{ confirmed_return_url }}"
+      data-home-url="{{ url_for('main.index') }}"
+      {% endif %}
+    >
+      {% if show_processing_indicator %}
+      <div class="payment-return-spinner" id="paymentReturnSpinner" aria-hidden="true"></div>
+      {% else %}
+      <div class="payment-confirmation-badge" aria-hidden="true">
+        <span class="payment-confirmation-check">✓</span>
+      </div>
+      {% endif %}
+      <h1 id="paymentReturnHeading">{{ return_heading }}</h1>
+      {% if return_message %}
+      <p id="paymentReturnMessage">{{ return_message }}</p>
+      {% endif %}
+      {% if confirmation_subtitle %}
+      <p class="payment-return-subtitle">{{ confirmation_subtitle }}</p>
+      {% endif %}
+      {% if booking_summary %}
+      <section class="payment-return-summary" aria-labelledby="paymentReturnSummaryTitle">
+        <div class="payment-return-summary-header">
+          <h2 id="paymentReturnSummaryTitle">Bokningsöversikt</h2>
+        </div>
+        <dl class="payment-return-summary-totals">
+          <div class="payment-return-summary-row">
+            <dt>Bokningsreferens</dt>
+            <dd>{{ booking_summary.public_booking_reference }}</dd>
+          </div>
+          <div class="payment-return-summary-row">
+            <dt>Antal kanoter</dt>
+            <dd>{{ booking_summary.canoe_count }}</dd>
+          </div>
+          <div class="payment-return-summary-row payment-return-summary-row--total">
+            <dt>Totalt</dt>
+            <dd>{{ booking_summary.formatted_total_amount }}</dd>
+          </div>
+        </dl>
+        <div class="payment-return-summary-participants">
+          <h3>Kanotöversikt:</h3>
+          <ul class="payment-return-summary-list">
+            {% for canoe_summary in booking_summary.canoe_summaries %}
+            <li class="payment-return-summary-list-item">
+              <span class="payment-return-summary-list-label">Kanot {{ canoe_summary.canoe_number }}</span>
+              <span class="payment-return-summary-list-values">
+                {% for participant_name in canoe_summary.participant_names %}
+                <span class="payment-return-summary-list-value">{{ participant_name }}</span>
+                {% endfor %}
+              </span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+      {% endif %}
+      {% if status_note %}
+      <p class="payment-return-status-note" id="paymentReturnStatusNote">{{ status_note }}</p>
+      {% else %}
+      <p class="payment-return-status-note is-hidden" id="paymentReturnStatusNote"></p>
+      {% endif %}
+      <a
+        id="paymentReturnPrimaryLink"
+        class="payment-return-link{% if hide_primary_link %} is-hidden{% endif %}"
+        href="{{ primary_link_url }}"
+      >{{ primary_link_label }}</a>
+    </article>
+  </main>
+  {% if payment_status_url %}
+  <script src="{{ url_for('static', filename='js/payment_return.js') }}"></script>
+  {% endif %}
+</body>
+</html>

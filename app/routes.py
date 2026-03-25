@@ -13,6 +13,7 @@ from functools import wraps
 import re
 from urllib.parse import urlsplit
 import requests
+import stripe
 from flask import (
     abort,
     Blueprint,
@@ -57,6 +58,17 @@ from .util.helper_functions import (
     get_project_root_from_static_folder,
 )
 from .util.checkout_preparation import prepare_server_side_checkout_booking
+from .util.stripe_helpers import (
+    construct_stripe_webhook_event,
+    create_stripe_checkout_session,
+    expire_stripe_checkout_session,
+    retrieve_stripe_checkout_session,
+)
+from .util.stripe_webhooks import (
+    confirm_paid_booking_from_checkout_session,
+    process_stripe_webhook_event,
+    release_expired_booking_from_checkout_session,
+)
 from .util.db_models import (
     BookedCanoe,
     BookingOrder,
@@ -70,7 +82,7 @@ from .util.booking_groups import (
     build_admin_checklist_rows,
     build_grouped_booking_overview_rows,
 )
-from . import rate_limiter
+from . import csrf_protect, rate_limiter
 
 # -----------------------------------------------------------------------------
 # LOGGING SETUP
@@ -89,6 +101,39 @@ PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY = "public_site_just_unlocked"
 PROTECTED_PREVIOUS_YEAR_STATIC_PREFIXES = (
     "/static/images/previous_years/ribbon/",
     "/static/images/previous_years/gallery/",
+)
+PENDING_CHECKOUT_ORDER_STATUSES = {
+    "pending_payment",
+    "checkout_session_created",
+}
+SOLD_OUT_RELOAD_MESSAGE = (
+    "Tyvärr, alla kanoter hann bli reserverade innan din reservation sparades. "
+    "Sidan har uppdaterats så att du ser det senaste läget."
+)
+STRIPE_PAYMENT_RESERVATION_EXPIRED_MESSAGE = (
+    "Reservationstiden gick ut medan betalningen var öppen. "
+    "Gör en ny bokning om du vill fortsätta."
+)
+PAYMENT_CONFIRMATION_CANCELED_HEADING = "Reservationen avbröts"
+PAYMENT_CONFIRMATION_CANCELED_MESSAGE = (
+    "Din reservation kunde inte slutföras automatiskt och har nu avbrutits."
+)
+PAYMENT_CONFIRMATION_CANCELED_NOTE = (
+    "Kanoterna är inte längre reserverade för den här ordern. "
+    "Gör en ny bokning från startsidan om du fortfarande vill boka en kanot."
+)
+PAYMENT_CONFIRMATION_PENDING_HEADING = "Betalningen väntar på bekräftelse"
+PAYMENT_CONFIRMATION_PENDING_MESSAGE = (
+    "Betalningen verkar redan vara registrerad hos Stripe, men bokningen är "
+    "inte bekräftad lokalt ännu."
+)
+PAYMENT_CONFIRMATION_PENDING_NOTE = (
+    "Din reservation ligger kvar medan vi väntar på den lokala bekräftelsen. "
+    "Boka inte samma kanoter igen just nu."
+)
+PAYMENT_CONFIRMATION_UNKNOWN_NOTE = (
+    "Vi kunde inte avgöra om reservationen skulle släppas. Vänta en stund "
+    "och kontrollera bokningen igen om du redan har betalat."
 )
 
 main_blueprint = Blueprint("main", __name__)
@@ -244,6 +289,7 @@ def enforce_public_site_access_gate():
 
     allowed_endpoints = {
         "main.index",
+        "main.stripe_webhook",
         "main.unlock_public_site",
         "main.serve_previous_year_image",
         "static",
@@ -307,11 +353,403 @@ def count_confirmed_booked_canoes_for_event_id(event_id: int | None) -> int:
     )
 
 
+def get_pending_checkout_orders_query(event_id: int | None = None):
+    """Return pending checkout orders that can still block canoe inventory.
+
+    Args:
+        event_id: Optional event primary key used to scope the query.
+
+    Returns:
+        SQLAlchemy query for pending checkout orders.
+    """
+
+    pending_query = BookingOrder.query.filter(
+        BookingOrder.status.in_(PENDING_CHECKOUT_ORDER_STATUSES)
+    )
+
+    if event_id is None:
+        return pending_query.order_by(BookingOrder.id)
+
+    return pending_query.filter(BookingOrder.event_id == event_id).order_by(
+        BookingOrder.id
+    )
+
+
+def cleanup_expired_pending_checkout_orders(event_id: int | None = None) -> int:
+    """Release expired unpaid checkout orders before counting availability.
+
+    Args:
+        event_id: Optional event primary key used to limit cleanup work.
+
+    Returns:
+        int: Number of expired orders that were released successfully.
+    """
+
+    released_order_count = 0
+    for pending_order in get_pending_checkout_orders_query(event_id).all():
+        if not is_booking_order_expired(pending_order):
+            continue
+
+        if cancel_pending_checkout_order(pending_order) == "released":
+            released_order_count += 1
+
+    return released_order_count
+
+
+def get_active_reserved_booked_canoes_for_event_id(
+    event_id: int | None,
+    *,
+    cleanup_expired_orders: bool = True,
+) -> list[BookedCanoe]:
+    """Return reserved canoe rows from still-active unpaid checkout orders.
+
+    Args:
+        event_id: Optional event primary key used to scope the count.
+        cleanup_expired_orders: Whether expired pending orders should be
+            released first.
+
+    Returns:
+        list[BookedCanoe]: Reserved canoe rows that still block availability.
+    """
+
+    if cleanup_expired_orders:
+        cleanup_expired_pending_checkout_orders(event_id)
+
+    reserved_canoes: list[BookedCanoe] = []
+    for pending_order in get_pending_checkout_orders_query(event_id).all():
+        if is_booking_order_expired(pending_order):
+            continue
+
+        reserved_canoes.extend(
+            booked_canoe
+            for booked_canoe in pending_order.booked_canoes
+            if booked_canoe.status == "reserved"
+        )
+
+    return reserved_canoes
+
+
+def count_active_reserved_canoes_for_event_id(
+    event_id: int | None,
+    *,
+    cleanup_expired_orders: bool = True,
+) -> int:
+    """Return how many canoes are held by still-active unpaid reservations."""
+
+    return len(
+        get_active_reserved_booked_canoes_for_event_id(
+            event_id,
+            cleanup_expired_orders=cleanup_expired_orders,
+        )
+    )
+
+
+def count_currently_unavailable_canoes_for_event_id(
+    event_id: int | None,
+    *,
+    cleanup_expired_orders: bool = True,
+) -> int:
+    """Return the total canoes blocked by confirmed bookings and active holds."""
+
+    return count_confirmed_booked_canoes_for_event_id(
+        event_id
+    ) + count_active_reserved_canoes_for_event_id(
+        event_id,
+        cleanup_expired_orders=cleanup_expired_orders,
+    )
+
+
+def count_currently_unavailable_canoes() -> int:
+    """Return blocked canoes for the active event, including active holds."""
+
+    active_event = get_active_event()
+    active_event_id = active_event.id if active_event is not None else None
+    return count_currently_unavailable_canoes_for_event_id(active_event_id)
+
+
 def build_public_booking_reference(booking_order_id: int) -> str:
     """Create a simple public booking reference for admins and support."""
 
     event_year = get_event_year_with_fallback()
     return f"PAD-{event_year}-{booking_order_id:05d}"
+
+
+def format_swedish_krona_amount(amount: Decimal) -> str:
+    """Return a beginner-friendly Swedish currency string for one amount."""
+
+    normalized_amount = normalize_money_decimal(amount)
+    if normalized_amount == normalized_amount.to_integral():
+        integer_amount = int(normalized_amount)
+        return f"{integer_amount:,}".replace(",", " ") + " kr"
+
+    amount_text = f"{normalized_amount:,.2f}"
+    amount_text = amount_text.replace(",", " ").replace(".", ",")
+    return f"{amount_text} kr"
+
+
+def is_pending_checkout_order(booking_order: BookingOrder | None) -> bool:
+    """Return whether a booking is still an unpaid Stripe checkout attempt."""
+
+    return (
+        booking_order is not None
+        and booking_order.status in PENDING_CHECKOUT_ORDER_STATUSES
+    )
+
+
+def is_booking_order_expired(booking_order: BookingOrder) -> bool:
+    """Return whether the local checkout hold has already expired."""
+
+    if booking_order.expires_at is None:
+        return False
+
+    expires_at = booking_order.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=get_current_utc_time().tzinfo)
+
+    return expires_at <= get_current_utc_time()
+
+
+def build_booking_order_expiration_iso(booking_order: BookingOrder) -> str:
+    """Return the booking hold expiration time as an ISO string for the UI."""
+
+    if booking_order.expires_at is None:
+        return ""
+
+    expires_at = booking_order.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=get_current_utc_time().tzinfo)
+
+    return expires_at.isoformat()
+
+
+def build_booked_canoe_participant_names(booked_canoe: BookedCanoe) -> list[str]:
+    """Return the entered rider names for one canoe in display order.
+
+    Args:
+        booked_canoe: One booked canoe row linked to the current order.
+
+    Returns:
+        list[str]: The pickup person first, followed by any optional riders
+        that were actually entered for this canoe.
+    """
+
+    participant_names = [booked_canoe.pickup_person_name]
+    for first_name, last_name in (
+        (
+            booked_canoe.passenger_two_first_name,
+            booked_canoe.passenger_two_last_name,
+        ),
+        (
+            booked_canoe.passenger_three_first_name,
+            booked_canoe.passenger_three_last_name,
+        ),
+    ):
+        participant_name = BookedCanoe.build_full_name(first_name, last_name)
+        if participant_name:
+            participant_names.append(participant_name)
+
+    return participant_names
+
+
+def build_booking_order_summary_data(booking_order: BookingOrder) -> dict[str, object]:
+    """Return one shared booking summary payload for UI templates."""
+
+    canoe_summaries = [
+        {
+            "canoe_number": canoe_number,
+            "participant_names": build_booked_canoe_participant_names(booked_canoe),
+        }
+        for canoe_number, booked_canoe in enumerate(
+            booking_order.booked_canoes,
+            start=1,
+        )
+    ]
+
+    return {
+        "public_booking_reference": booking_order.public_booking_reference,
+        "canoe_count": booking_order.canoe_count,
+        "formatted_total_amount": format_swedish_krona_amount(
+            Decimal(booking_order.total_amount)
+        ),
+        "canoe_summaries": canoe_summaries,
+    }
+
+
+def build_pending_checkout_modal_data(
+    booking_order: BookingOrder,
+    *,
+    open_on_load: bool,
+) -> dict[str, object]:
+    """Return the JSON-safe modal Step 3 data for one pending booking."""
+
+    pending_checkout_data = build_booking_order_summary_data(booking_order)
+    pending_checkout_data.update(
+        {
+            "countdown_expires_at_iso": build_booking_order_expiration_iso(
+                booking_order
+            ),
+            "pay_now_url": url_for(
+                "main.start_stripe_checkout",
+                public_booking_reference=booking_order.public_booking_reference,
+            ),
+            "cancel_order_url": url_for(
+                "main.cancel_checkout_order",
+                public_booking_reference=booking_order.public_booking_reference,
+            ),
+            "open_on_load": open_on_load,
+        }
+    )
+    return pending_checkout_data
+
+
+def build_payment_status_api_url(
+    public_booking_reference: str,
+    checkout_session_id: str,
+) -> str:
+    """Return the polling URL used by the post-Stripe payment return page."""
+
+    return url_for(
+        "main.stripe_checkout_status",
+        order_ref=public_booking_reference,
+        session_id=checkout_session_id,
+    )
+
+
+def is_ajax_request() -> bool:
+    """Return whether the current request expects a JSON-style response."""
+
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def build_home_redirect_payload(message: str) -> dict[str, object]:
+    """Store a home-page toast message and return redirect details for JS."""
+
+    flash(message, "error")
+    return {
+        "message": message,
+        "redirect_url": url_for("main.index"),
+        "reload_page": True,
+    }
+
+
+def build_payment_return_failure_payload(
+    *,
+    heading: str,
+    message: str,
+    status_note: str,
+) -> dict[str, str]:
+    """Return one shared failure-card payload for the payment return page."""
+
+    return {
+        "heading": heading,
+        "message": message,
+        "status_note": status_note,
+    }
+
+
+def reconcile_pending_checkout_order_with_stripe(booking_order: BookingOrder) -> str:
+    """Try to synchronize one pending booking with the latest Stripe session state.
+
+    This is a fallback for the browser return flow when the visitor has already
+    completed Stripe Checkout but the webhook has not updated the local booking
+    yet. The webhook remains the normal background confirmation path.
+    """
+
+    if not is_pending_checkout_order(booking_order):
+        return "not_pending"
+
+    checkout_session_id = (booking_order.payment_provider_session_id or "").strip()
+    if not checkout_session_id:
+        return "missing_session"
+
+    try:
+        stripe_checkout_session = retrieve_stripe_checkout_session(checkout_session_id)
+    except stripe.StripeError:
+        current_app.logger.exception(
+            "Stripe Checkout Session lookup failed while reconciling %s.",
+            booking_order.public_booking_reference,
+        )
+        return "stripe_error"
+
+    checkout_status = str(getattr(stripe_checkout_session, "status", "") or "")
+    payment_status = str(getattr(stripe_checkout_session, "payment_status", "") or "")
+
+    if payment_status == "paid":
+        return confirm_paid_booking_from_checkout_session(stripe_checkout_session)
+
+    if checkout_status == "expired":
+        return release_expired_booking_from_checkout_session(stripe_checkout_session)
+
+    return "pending"
+
+
+def build_checkout_error_response(
+    message: str,
+    status_code: int = 400,
+    *,
+    reload_page: bool = False,
+):
+    """Return either JSON or a flash+redirect checkout error response."""
+
+    if is_ajax_request():
+        response_payload: dict[str, object] = {"ok": False, "message": message}
+        if reload_page:
+            response_payload.update(build_home_redirect_payload(message))
+        return jsonify(response_payload), status_code
+
+    flash(message, "error")
+    return redirect(url_for("main.index"))
+
+
+def cancel_pending_checkout_order(booking_order: BookingOrder) -> str:
+    """Release one unpaid pending checkout order when it is still safe.
+
+    Args:
+        booking_order: Local booking order that should be released.
+
+    Returns:
+        str: Result label used by routes to decide which message to show.
+        Possible values are ``released``, ``already_paid``, ``stripe_error``,
+        and ``not_pending``.
+    """
+
+    if not is_pending_checkout_order(booking_order):
+        return "not_pending"
+
+    checkout_session_id = booking_order.payment_provider_session_id
+    if checkout_session_id:
+        try:
+            stripe_checkout_session = retrieve_stripe_checkout_session(
+                checkout_session_id
+            )
+        except stripe.StripeError:
+            current_app.logger.exception(
+                "Stripe Checkout Session lookup failed while cancelling %s.",
+                booking_order.public_booking_reference,
+            )
+            return "stripe_error"
+
+        checkout_status = str(getattr(stripe_checkout_session, "status", "") or "")
+        payment_status = str(
+            getattr(stripe_checkout_session, "payment_status", "") or ""
+        )
+
+        if checkout_status == "complete" or payment_status == "paid":
+            return "already_paid"
+
+        if checkout_status == "open":
+            try:
+                expire_stripe_checkout_session(checkout_session_id)
+            except stripe.StripeError:
+                current_app.logger.exception(
+                    "Stripe Checkout Session expiry failed while cancelling %s.",
+                    booking_order.public_booking_reference,
+                )
+                return "stripe_error"
+
+    db.session.delete(booking_order)
+    db.session.commit()
+    return "released"
 
 
 def build_canoe_rider_data_from_form(
@@ -444,12 +882,18 @@ def validate_total_canoes_per_name(
         for participant in participant_names
     )
     excluded_booking_ids = excluded_booking_ids or set()
+    active_event = get_active_event()
+    active_event_id = active_event.id if active_event is not None else None
+    existing_canoe_rows = [
+        *get_confirmed_booked_canoes_query().all(),
+        *get_active_reserved_booked_canoes_for_event_id(active_event_id),
+    ]
     existing_name_counts = Counter(
         normalize_participant_full_name(
             booking.participant_first_name,
             booking.participant_last_name,
         )
-        for booking in get_confirmed_booked_canoes_query().all()
+        for booking in existing_canoe_rows
         if booking.id not in excluded_booking_ids
     )
 
@@ -835,12 +1279,39 @@ def index():
         return render_template("public_lock.html", event_settings=event_settings)
 
     just_unlocked = bool(session.pop(PUBLIC_SITE_JUST_UNLOCKED_SESSION_KEY, False))
+    pending_checkout_booking: dict[str, object] | None = None
+    pending_order_id = session.get("pending_booking_order_id")
+    pending_checkout_requested = request.args.get("pending_checkout") == "1"
+    if pending_order_id is not None:
+        pending_order = db.session.get(BookingOrder, pending_order_id)
+        if is_pending_checkout_order(pending_order):
+            if is_booking_order_expired(pending_order):
+                cancellation_result = cancel_pending_checkout_order(pending_order)
+                session.pop("pending_booking_order_id", None)
+                if cancellation_result == "released":
+                    flash(
+                        "Reservationstiden gick ut. Gör en ny bokning om du fortfarande vill boka en kanot.",
+                        "error",
+                    )
+                else:
+                    flash(
+                        "Reservationen kunde inte uppdateras automatiskt. Kontrollera bokningen igen om en stund.",
+                        "error",
+                    )
+            else:
+                pending_checkout_booking = build_pending_checkout_modal_data(
+                    pending_order,
+                    open_on_load=pending_checkout_requested,
+                )
+        elif pending_order is None:
+            session.pop("pending_booking_order_id", None)
 
     # fetch all bookings for your overview panel
     alla_bokningar = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
 
-    # server‐side business rule from config
-    current = count_confirmed_booked_canoes()
+    # Server-side availability should include both confirmed bookings and
+    # still-active temporary reservation holds.
+    current = count_currently_unavailable_canoes()
     available_canoes = max(0, get_total_available_canoes() - current)
     (
         previous_year_ribbon_image_urls,
@@ -853,8 +1324,10 @@ def index():
         bokningar=alla_bokningar,
         grouped_booking_overview_rows=grouped_booking_overview_rows,
         available_canoes=available_canoes,
+        current_booked_canoes=current,
         event_settings=event_settings,
         just_unlocked=just_unlocked,
+        pending_checkout_booking=pending_checkout_booking,
         previous_year_ribbon_image_urls=previous_year_ribbon_image_urls,
         previous_year_gallery_image_urls=previous_year_gallery_image_urls,
     )
@@ -931,8 +1404,10 @@ def payment():
     3) Check how many are already booked.
     4) Reject requests that break booking or availability rules.
     5) Build server-approved order and Stripe-ready line-item data.
-    6) Create a temporary local booking order and proceed to the current
-       placeholder return flow.
+    6) Create a temporary local booking order.
+    7) Create a real Stripe Checkout Session in the background.
+    8) Return the pending booking data so the browser can move the modal into
+       Step 3 without a full page reload.
 
     Storing the booking server-side means the customer cannot modify the
     canoe count, total amount, or participant names by editing browser-sent
@@ -942,20 +1417,33 @@ def payment():
     try:
         requested = int(request.form["canoeCount"])
     except (ValueError, KeyError):
-        flash("Ogiltigt antal kanoter.", "error")
-        return redirect(url_for("main.index"))
+        return build_checkout_error_response("Ogiltigt antal kanoter.")
 
     active_event = get_active_event()
     if active_event is None:
         current_app.logger.warning(
             "Blocked checkout creation because no active database event exists."
         )
-        flash("Det finns inget aktivt event att boka just nu.", "error")
-        return redirect(url_for("main.index"))
+        return build_checkout_error_response(
+            "Det finns inget aktivt event att boka just nu."
+        )
 
-    # 2) count existing confirmed bookings
-    current = count_confirmed_booked_canoes()
-    available = active_event.available_canoes - current
+    cleanup_expired_pending_checkout_orders(active_event.id)
+    locked_active_event = (
+        Event.query.filter_by(id=active_event.id).with_for_update().first()
+    )
+    if locked_active_event is None:
+        return build_checkout_error_response(
+            "Det gick inte att låsa eventet för bokning just nu. Försök igen om en stund.",
+            status_code=503,
+        )
+
+    # 2) count confirmed bookings plus active temporary reservation holds
+    current = count_currently_unavailable_canoes_for_event_id(
+        locked_active_event.id,
+        cleanup_expired_orders=False,
+    )
+    available = locked_active_event.available_canoes - current
 
     # 3) if they want too many, stop here
     # Log the requested and available canoe counts for debugging purposes.
@@ -963,32 +1451,34 @@ def payment():
     logger.debug("User requested %d canoe(s)", requested)
     logger.debug("Canoes available before booking: %d", available)
     if requested > available:
-        flash(
-            f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",
-            "error",
-        )
-        return redirect(url_for("main.index"))
+        if available <= 0:
+            return build_checkout_error_response(
+                SOLD_OUT_RELOAD_MESSAGE,
+                status_code=409,
+                reload_page=True,
+            )
 
-    if requested > active_event.max_canoes_per_booking:
-        flash(
-            f"Du kan boka högst {active_event.max_canoes_per_booking} kanoter åt gången.",
-            "error",
+        return build_checkout_error_response(
+            f"Tyvärr, bara {available} kanot(er) kvar. Vänligen minska din beställning.",
+            status_code=409,
         )
-        return redirect(url_for("main.index"))
+
+    if requested > locked_active_event.max_canoes_per_booking:
+        return build_checkout_error_response(
+            f"Du kan boka högst {locked_active_event.max_canoes_per_booking} kanoter åt gången.",
+        )
 
     try:
         participant_names = build_canoe_rider_data_from_form(requested)
     except ValueError as error:
-        flash(str(error), "error")
-        return redirect(url_for("main.index"))
+        return build_checkout_error_response(str(error))
 
     same_name_limit_error = validate_total_canoes_per_name(participant_names)
     if same_name_limit_error is not None:
-        flash(same_name_limit_error, "error")
-        return redirect(url_for("main.index"))
+        return build_checkout_error_response(same_name_limit_error)
 
     prepared_checkout_booking = prepare_server_side_checkout_booking(
-        active_event=active_event,
+        active_event=locked_active_event,
         canoe_count=requested,
     )
 
@@ -999,7 +1489,7 @@ def payment():
         canoe_count=prepared_checkout_booking.canoe_count,
         total_amount=prepared_checkout_booking.total_amount,
         currency=prepared_checkout_booking.currency,
-        payment_provider="simulated",
+        payment_provider="stripe_checkout",
         expires_at=get_current_utc_time() + timedelta(minutes=15),
     )
     db.session.add(pending_order)
@@ -1024,132 +1514,541 @@ def payment():
 
     db.session.commit()
 
+    try:
+        checkout_session = create_stripe_checkout_session(
+            public_booking_reference=pending_order.public_booking_reference,
+            stripe_line_items=prepared_checkout_booking.stripe_line_items,
+            metadata={
+                "booking_order_id": str(pending_order.id),
+                "public_booking_reference": pending_order.public_booking_reference,
+                "event_id": str(prepared_checkout_booking.active_event.id),
+                "canoe_count": str(prepared_checkout_booking.canoe_count),
+            },
+        )
+    except stripe.StripeError:
+        current_app.logger.exception(
+            "Stripe Checkout Session creation failed for booking reference %s.",
+            pending_order.public_booking_reference,
+        )
+        db.session.delete(pending_order)
+        db.session.commit()
+        return build_checkout_error_response(
+            "Det gick inte att starta betalningen just nu. Försök igen om en stund.",
+            status_code=502,
+        )
+
+    pending_order.status = "checkout_session_created"
+    pending_order.payment_provider = "stripe_checkout"
+    pending_order.payment_provider_session_id = checkout_session.id
+    db.session.commit()
+
     session["pending_booking_order_id"] = pending_order.id
-    return redirect(url_for("main.payment_success"))
+    pending_booking_modal_data = build_pending_checkout_modal_data(
+        pending_order,
+        open_on_load=True,
+    )
+    if is_ajax_request():
+        return jsonify(
+            {
+                "ok": True,
+                "pending_booking": pending_booking_modal_data,
+            }
+        )
+
+    return redirect(url_for("main.index", pending_checkout="1"))
+
+
+@main_blueprint.route("/checkout/<public_booking_reference>/pay")
+@public_site_access_required
+def start_stripe_checkout(public_booking_reference: str):
+    """Redirect the visitor from booking-modal Step 3 into Stripe."""
+
+    pending_order = BookingOrder.query.filter_by(
+        public_booking_reference=public_booking_reference
+    ).first()
+    if not is_pending_checkout_order(pending_order):
+        flash("Ordern kunde inte hittas längre. Börja om från startsidan.", "error")
+        return redirect(url_for("main.index"))
+
+    if is_booking_order_expired(pending_order):
+        cancellation_result = cancel_pending_checkout_order(pending_order)
+        session.pop("pending_booking_order_id", None)
+        if cancellation_result == "released":
+            flash(
+                "Tiden för reservationen gick ut innan betalningen startade. Gör en ny bokning om du vill fortsätta.",
+                "error",
+            )
+        else:
+            flash(
+                "Betalningen kunde inte startas eftersom ordern inte längre var aktiv.",
+                "error",
+            )
+        return redirect(url_for("main.index"))
+
+    checkout_session_id = pending_order.payment_provider_session_id
+    if not checkout_session_id:
+        flash(
+            "Betalningen kunde inte startas eftersom Stripe-sessionen saknas.",
+            "error",
+        )
+        return redirect(url_for("main.index", pending_checkout="1"))
+
+    try:
+        checkout_session = retrieve_stripe_checkout_session(checkout_session_id)
+    except stripe.StripeError:
+        current_app.logger.exception(
+            "Stripe Checkout Session lookup failed for booking reference %s.",
+            pending_order.public_booking_reference,
+        )
+        flash(
+            "Det gick inte att öppna Stripe-betalningen just nu. Försök igen om en stund.",
+            "error",
+        )
+        return redirect(url_for("main.index", pending_checkout="1"))
+
+    checkout_url = getattr(checkout_session, "url", None)
+    if not checkout_url:
+        flash(
+            "Stripe skickade ingen betalningslänk för den här ordern.",
+            "error",
+        )
+        return redirect(url_for("main.index", pending_checkout="1"))
+
+    return redirect(str(checkout_url))
+
+
+@main_blueprint.route("/checkout/<public_booking_reference>/cancel", methods=["POST"])
+@public_site_access_required
+def cancel_checkout_order(public_booking_reference: str):
+    """Cancel one pending checkout order from booking-modal Step 3."""
+
+    cancellation_reason = request.form.get("cancellation_reason", "manual").strip()
+    pending_order = BookingOrder.query.filter_by(
+        public_booking_reference=public_booking_reference
+    ).first()
+    cancellation_result = (
+        cancel_pending_checkout_order(pending_order)
+        if pending_order is not None
+        else "not_pending"
+    )
+    session.pop("pending_booking_order_id", None)
+
+    if cancellation_result == "released":
+        if cancellation_reason == "expired":
+            flash(
+                "Reservationstiden gick ut. Gör en ny bokning om du fortfarande vill boka en kanot.",
+                "error",
+            )
+        else:
+            flash("Ordern avbröts. Du kan nu gå tillbaka och boka på nytt.", "error")
+    elif cancellation_result == "already_paid":
+        flash(
+            "Ordern verkar redan vara betald hos Stripe. Kontrollera bokningsstatusen innan du försöker igen.",
+            "error",
+        )
+    else:
+        flash(
+            "Ordern kunde inte avbrytas just nu. Kontrollera sidan igen om en stund.",
+            "error",
+        )
+
+    return redirect(url_for("main.index"))
 
 
 @main_blueprint.route("/payment-success")
 @public_site_access_required
 def payment_success():
-    """Finalize the booking after the current simulated payment flow.
+    """Show the Stripe success return page after hosted Checkout finishes.
 
-    Steps:
-        1. Look up the pending booking order referenced in the user's session.
-        2. Re-check availability to avoid overbooking.
-        3. Mark the order and its canoe rows as confirmed.
-        4. Render a return page instead of jumping straight back to the
-           homepage.
-
-    By storing only the database ID in the session and the actual booking
-    details on the server we prevent clients from tampering with their
-    reservations.
+    Stripe controls when the browser leaves hosted Checkout. This route makes
+    sure the visitor only sees the final local success state after the verified
+    webhook has marked the booking as paid.
     """
-    pending_order_id = session.pop("pending_booking_order_id", None)
-    if not pending_order_id:
-        # No reference → user reloaded or came here directly
+    session.pop("pending_booking_order_id", None)
+
+    public_booking_reference = request.args.get("order_ref", "").strip()
+    checkout_session_id = request.args.get("session_id", "").strip()
+    if not public_booking_reference or not checkout_session_id:
         return redirect(url_for("main.index"))
 
-    pending_order = db.session.get(BookingOrder, pending_order_id)
-    if not pending_order:
+    pending_order = BookingOrder.query.filter_by(
+        public_booking_reference=public_booking_reference
+    ).first()
+    if pending_order is None:
+        flash(
+            "Reservationen är inte längre aktiv. Gör en ny bokning om du vill fortsätta.",
+            "error",
+        )
         return redirect(url_for("main.index"))
 
-    requested = pending_order.canoe_count
-    current = count_confirmed_booked_canoes_for_event_id(pending_order.event_id)
-    available_canoes_for_event = (
-        pending_order.event.available_canoes
-        if pending_order.event is not None
-        else get_total_available_canoes()
-    )
-    if current + requested > available_canoes_for_event:
-        flash("Ojdå! Någon hann boka före dig. Försök igen med färre kanoter.", "error")
-        db.session.delete(pending_order)
-        db.session.commit()
+    if pending_order.payment_provider_session_id != checkout_session_id:
+        current_app.logger.warning(
+            "Stripe success return session mismatch for booking reference %s.",
+            public_booking_reference,
+        )
         return redirect(url_for("main.index"))
 
-    pending_participant_names = [
-        {
-            "first_name": booked_canoe.participant_first_name,
-            "last_name": booked_canoe.participant_last_name,
-        }
-        for booked_canoe in pending_order.booked_canoes
-    ]
-    same_name_limit_error = validate_total_canoes_per_name(pending_participant_names)
-    if same_name_limit_error is not None:
-        flash(same_name_limit_error, "error")
-        db.session.delete(pending_order)
-        db.session.commit()
-        return redirect(url_for("main.index"))
+    if pending_order.status != "paid" and is_booking_order_expired(pending_order):
+        cancellation_result = cancel_pending_checkout_order(pending_order)
+        session.pop("pending_booking_order_id", None)
+        if cancellation_result == "released":
+            flash(STRIPE_PAYMENT_RESERVATION_EXPIRED_MESSAGE, "error")
+            return redirect(url_for("main.index"))
+        if cancellation_result != "already_paid":
+            flash(
+                "Betalningen kunde inte kopplas till en aktiv reservation. "
+                "Kontrollera startsidan igen om en stund.",
+                "error",
+            )
+            return redirect(url_for("main.index"))
 
-    pending_order.status = "paid"
-    pending_order.paid_at = get_current_utc_time()
-    for booked_canoe in pending_order.booked_canoes:
-        booked_canoe.status = "confirmed"
+        pending_order = BookingOrder.query.filter_by(
+            public_booking_reference=public_booking_reference
+        ).first()
+        if pending_order is None:
+            flash(
+                "Bokningen kunde inte hittas längre. Börja om från startsidan om du vill boka igen.",
+                "error",
+            )
+            return redirect(url_for("main.index"))
 
-    db.session.commit()
+    if pending_order.status in PENDING_CHECKOUT_ORDER_STATUSES:
+        reconciliation_result = reconcile_pending_checkout_order_with_stripe(
+            pending_order
+        )
+        if reconciliation_result == "confirmed":
+            pending_order = BookingOrder.query.filter_by(
+                public_booking_reference=public_booking_reference
+            ).first()
+        elif reconciliation_result == "released":
+            flash(
+                "Betalningen slutfördes inte hos Stripe och reservationen släpptes. "
+                "Gör en ny bokning om du vill fortsätta.",
+                "error",
+            )
+            return redirect(url_for("main.index"))
+
+    if pending_order is not None and pending_order.status == "paid":
+        payer_email = (pending_order.payer_email or "").strip()
+        if payer_email:
+            confirmation_subtitle = f"Orderbekräftelse skickas till {payer_email}"
+        else:
+            confirmation_subtitle = "Orderbekräftelse skickas till den e-postadress som användes i betalningen."
+
+        return render_template(
+            "payment_confirmation.html",
+            page_title="Bokningen är bekräftad",
+            return_heading="Din bokning är nu slutförd",
+            confirmation_subtitle=confirmation_subtitle,
+            booking_summary=build_booking_order_summary_data(pending_order),
+            primary_link_url=url_for("main.index"),
+            primary_link_label="Tillbaka till hemsidan",
+        )
 
     return render_template(
-        "payment_return.html",
-        page_title="Bokning mottagen",
-        return_heading="Din bokning är registrerad",
+        "payment_confirmation.html",
+        page_title="Slutför din bokning",
+        return_heading="Slutför din bokning",
         return_message=(
-            "Tack! Din bokning är nu sparad. Du kan gå tillbaka till startsidan "
-            "för att se den bekräftade bokningen i deltagarlistan."
+            "Vänta ett ögonblick medan bokningen slutförs. Du skickas vidare "
+            "automatiskt så snart betalningen är kopplad till din bokning. "
+            f"Bokningsreferens: {pending_order.public_booking_reference}."
         ),
         primary_link_url=url_for("main.index"),
-        primary_link_label="Till startsidan",
+        primary_link_label="Tillbaka till hemsidan",
+        hide_primary_link=True,
+        show_processing_indicator=True,
+        payment_status_url=build_payment_status_api_url(
+            pending_order.public_booking_reference,
+            checkout_session_id,
+        ),
+        confirmed_return_url=url_for(
+            "main.payment_success",
+            order_ref=pending_order.public_booking_reference,
+            session_id=checkout_session_id,
+            confirmed="1",
+        ),
+        status_note=(
+            "Stäng inte sidan medan bokningen slutförs. Om något går fel visas "
+            "ett nytt meddelande här."
+        ),
     )
 
 
 @main_blueprint.route("/payment-cancel")
 @public_site_access_required
 def payment_cancel():
-    """Show the cancel return page and remove any temporary pending booking.
+    """Release an unpaid booking after Stripe sends the visitor back."""
 
-    The current placeholder flow stores a pending booking before the payment
-    step. If the visitor cancels and comes back here, the temporary order
-    should be removed so it does not keep canoe rows reserved by mistake.
-    """
-
+    public_booking_reference = request.args.get("order_ref", "").strip()
     pending_order_id = session.pop("pending_booking_order_id", None)
-    if pending_order_id is not None:
-        pending_order = db.session.get(BookingOrder, pending_order_id)
-        if pending_order is not None and pending_order.status == "pending_payment":
-            db.session.delete(pending_order)
-            db.session.commit()
 
-    return render_template(
-        "payment_return.html",
-        page_title="Betalningen avbröts",
-        return_heading="Ingen bokning bekräftades",
-        return_message=(
-            "Betalningen slutfördes inte. Du kan gå tillbaka och prova igen "
-            "när du vill."
-        ),
-        primary_link_url=url_for("main.index"),
-        primary_link_label="Tillbaka till startsidan",
+    pending_order = None
+    if public_booking_reference:
+        pending_order = BookingOrder.query.filter_by(
+            public_booking_reference=public_booking_reference
+        ).first()
+    elif pending_order_id is not None:
+        pending_order = db.session.get(BookingOrder, pending_order_id)
+
+    if pending_order is None and public_booking_reference:
+        flash(STRIPE_PAYMENT_RESERVATION_EXPIRED_MESSAGE, "error")
+        return redirect(url_for("main.index"))
+
+    reservation_was_expired = (
+        pending_order is not None
+        and is_pending_checkout_order(pending_order)
+        and is_booking_order_expired(pending_order)
     )
+
+    cancellation_result = (
+        cancel_pending_checkout_order(pending_order)
+        if pending_order is not None
+        else "not_pending"
+    )
+    if cancellation_result == "released":
+        if reservation_was_expired:
+            flash(STRIPE_PAYMENT_RESERVATION_EXPIRED_MESSAGE, "error")
+        else:
+            flash(
+                "Betalningen avbröts och reservationen släpptes. Gör en ny bokning om du vill fortsätta.",
+                "error",
+            )
+    elif cancellation_result == "already_paid":
+        flash(
+            "Betalningen verkar redan vara genomförd hos Stripe. Kontrollera bokningsstatusen innan du försöker igen.",
+            "error",
+        )
+    else:
+        flash(
+            "Betalningen slutfördes inte. Gör en ny bokning om du vill prova igen.",
+            "error",
+        )
+
+    return redirect(url_for("main.index"))
+
+
+@main_blueprint.route("/api/checkout-status")
+@public_site_access_required
+def stripe_checkout_status():
+    """Return the local booking state for one Stripe return polling request."""
+
+    public_booking_reference = request.args.get("order_ref", "").strip()
+    checkout_session_id = request.args.get("session_id", "").strip()
+    if not public_booking_reference or not checkout_session_id:
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "booking_status": "invalid_request",
+                }
+            ),
+            400,
+        )
+
+    finalize_failed_confirmation = request.args.get("finalize_failed") == "1"
+
+    booking_order = BookingOrder.query.filter_by(
+        public_booking_reference=public_booking_reference
+    ).first()
+    if booking_order is None:
+        response_payload = {"ok": True, "booking_status": "not_found"}
+        response_payload.update(
+            build_home_redirect_payload(
+                "Reservationen är inte längre aktiv. Gör en ny bokning om du vill fortsätta."
+            )
+        )
+        return jsonify(response_payload)
+
+    if booking_order.payment_provider_session_id != checkout_session_id:
+        current_app.logger.warning(
+            "Blocked checkout-status lookup because the session ID did not match "
+            "booking %s.",
+            public_booking_reference,
+        )
+        response_payload = {"ok": True, "booking_status": "session_mismatch"}
+        response_payload.update(
+            build_payment_return_failure_payload(
+                heading="Bokningen kunde inte kopplas till rätt betalning",
+                message=(
+                    "Betalningen kunde inte kopplas till den här bokningen automatiskt."
+                ),
+                status_note=(
+                    "Gå tillbaka till startsidan och börja om om du fortfarande vill boka en kanot."
+                ),
+            )
+        )
+        return jsonify(response_payload)
+
+    if booking_order.status == "paid":
+        return jsonify({"ok": True, "booking_status": "paid"})
+
+    if (
+        booking_order.status in PENDING_CHECKOUT_ORDER_STATUSES
+        and is_booking_order_expired(booking_order)
+    ):
+        cancellation_result = cancel_pending_checkout_order(booking_order)
+        if cancellation_result == "released":
+            response_payload = {"ok": True, "booking_status": "expired"}
+            response_payload.update(
+                build_home_redirect_payload(STRIPE_PAYMENT_RESERVATION_EXPIRED_MESSAGE)
+            )
+            return jsonify(response_payload)
+        if cancellation_result == "already_paid":
+            return jsonify({"ok": True, "booking_status": "pending"})
+        response_payload = {"ok": True, "booking_status": "unknown"}
+        response_payload.update(
+            build_payment_return_failure_payload(
+                heading="Bokningen kunde inte slutföras automatiskt",
+                message="Bokningen kunde inte bekräftas automatiskt just nu.",
+                status_note=PAYMENT_CONFIRMATION_UNKNOWN_NOTE,
+            )
+        )
+        return jsonify(response_payload)
+
+    if booking_order.status in PENDING_CHECKOUT_ORDER_STATUSES:
+        if finalize_failed_confirmation:
+            reconciliation_result = reconcile_pending_checkout_order_with_stripe(
+                booking_order
+            )
+            if reconciliation_result == "confirmed":
+                return jsonify({"ok": True, "booking_status": "paid"})
+            if reconciliation_result == "released":
+                response_payload = {"ok": True, "booking_status": "canceled"}
+                response_payload.update(
+                    build_payment_return_failure_payload(
+                        heading=PAYMENT_CONFIRMATION_CANCELED_HEADING,
+                        message=PAYMENT_CONFIRMATION_CANCELED_MESSAGE,
+                        status_note=PAYMENT_CONFIRMATION_CANCELED_NOTE,
+                    )
+                )
+                return jsonify(response_payload)
+
+            cancellation_result = cancel_pending_checkout_order(booking_order)
+            if cancellation_result == "released":
+                response_payload = {"ok": True, "booking_status": "canceled"}
+                response_payload.update(
+                    build_payment_return_failure_payload(
+                        heading=PAYMENT_CONFIRMATION_CANCELED_HEADING,
+                        message=PAYMENT_CONFIRMATION_CANCELED_MESSAGE,
+                        status_note=PAYMENT_CONFIRMATION_CANCELED_NOTE,
+                    )
+                )
+                return jsonify(response_payload)
+            if cancellation_result == "already_paid":
+                reconciliation_result = reconcile_pending_checkout_order_with_stripe(
+                    booking_order
+                )
+                if reconciliation_result == "confirmed":
+                    return jsonify({"ok": True, "booking_status": "paid"})
+
+                response_payload = {"ok": True, "booking_status": "pending"}
+                response_payload.update(
+                    build_payment_return_failure_payload(
+                        heading=PAYMENT_CONFIRMATION_PENDING_HEADING,
+                        message=PAYMENT_CONFIRMATION_PENDING_MESSAGE,
+                        status_note=PAYMENT_CONFIRMATION_PENDING_NOTE,
+                    )
+                )
+                return jsonify(response_payload)
+            response_payload = {"ok": True, "booking_status": "unknown"}
+            response_payload.update(
+                build_payment_return_failure_payload(
+                    heading="Bokningen kunde inte slutföras automatiskt",
+                    message="Bokningen kunde inte bekräftas automatiskt just nu.",
+                    status_note=PAYMENT_CONFIRMATION_UNKNOWN_NOTE,
+                )
+            )
+            return jsonify(response_payload)
+
+        return jsonify({"ok": True, "booking_status": "pending"})
+
+    if booking_order.status in {"canceled", "payment_failed"}:
+        response_payload = {"ok": True, "booking_status": booking_order.status}
+        response_payload.update(
+            build_payment_return_failure_payload(
+                heading=PAYMENT_CONFIRMATION_CANCELED_HEADING,
+                message=PAYMENT_CONFIRMATION_CANCELED_MESSAGE,
+                status_note=PAYMENT_CONFIRMATION_CANCELED_NOTE,
+            )
+        )
+        return jsonify(response_payload)
+
+    if booking_order.status == "expired":
+        response_payload = {"ok": True, "booking_status": "expired"}
+        response_payload.update(
+            build_payment_return_failure_payload(
+                heading="Reservationstiden gick ut",
+                message=STRIPE_PAYMENT_RESERVATION_EXPIRED_MESSAGE,
+                status_note=PAYMENT_CONFIRMATION_CANCELED_NOTE,
+            )
+        )
+        return jsonify(response_payload)
+
+    response_payload = {"ok": True, "booking_status": "unknown"}
+    response_payload.update(
+        build_payment_return_failure_payload(
+            heading="Bokningen kunde inte slutföras automatiskt",
+            message="Bokningen kunde inte bekräftas automatiskt just nu.",
+            status_note=PAYMENT_CONFIRMATION_UNKNOWN_NOTE,
+        )
+    )
+    return jsonify(response_payload)
+
+
+@main_blueprint.route("/stripe/webhook", methods=["POST"])
+@csrf_protect.exempt
+def stripe_webhook():
+    """Verify and process incoming Stripe webhook events."""
+
+    stripe_signature_header = request.headers.get("Stripe-Signature", "").strip()
+    if not stripe_signature_header:
+        current_app.logger.warning(
+            "Rejected Stripe webhook because the Stripe-Signature header was missing."
+        )
+        return make_response("Missing Stripe-Signature header.", 400)
+
+    payload = request.get_data(cache=False)
+
+    try:
+        stripe_event = construct_stripe_webhook_event(payload, stripe_signature_header)
+    except ValueError:
+        current_app.logger.warning(
+            "Rejected Stripe webhook because the payload was invalid."
+        )
+        return make_response("Invalid payload.", 400)
+    except stripe.SignatureVerificationError:
+        current_app.logger.warning(
+            "Rejected Stripe webhook because signature verification failed."
+        )
+        return make_response("Invalid signature.", 400)
+
+    event_type, processing_result = process_stripe_webhook_event(stripe_event)
+    current_app.logger.info(
+        "Processed Stripe webhook event %s with result %s.",
+        event_type,
+        processing_result,
+    )
+    return make_response("", 200)
 
 
 @main_blueprint.route("/api/booking-count")
 @public_site_access_required
 def get_booking_count():
-    """Return the current number of bookings as JSON.
+    """Return the canoes currently blocking availability as JSON.
 
-    This route:
-        1. Counts confirmed bookings for the active event when one exists.
-        2. Falls back to the older global count if no active event exists yet.
-        3. Returns the count as JSON data.
+    This route counts:
+        1. confirmed bookings,
+        2. still-active temporary reservation holds,
+        3. and excludes expired holds after cleanup.
 
-    The JavaScript ``fetch()`` function will call this endpoint.
+    The JavaScript ``fetch()`` function uses this endpoint to keep the public
+    progress display in sync with real availability.
 
     Returns:
         JSON object with the count: {"count": 25}
     """
-    # Count confirmed rows for the active event.
-    booking_count = count_confirmed_booked_canoes()
-
-    # Return the count as JSON
-    # jsonify() converts Python data to JSON format that JavaScript can read
+    booking_count = count_currently_unavailable_canoes()
     return jsonify({"count": booking_count})
 
 

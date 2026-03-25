@@ -8,8 +8,9 @@ environment variables directly in multiple routes.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
-from urllib.parse import urlsplit
+from datetime import datetime, timedelta, timezone
+from typing import Any, Mapping, cast
+from urllib.parse import quote, urlsplit
 
 from flask import current_app
 import stripe
@@ -30,20 +31,37 @@ class StripeCheckoutConfiguration:
     webhook_secret: str
     public_base_url: str
 
-    @property
-    def success_url(self) -> str:
-        """Return the Checkout success URL with Stripe's session placeholder."""
+    def build_success_url(self, booking_reference: str) -> str:
+        """Return the Checkout success URL with order and session references.
 
-        return (
-            f"{self.public_base_url}/payment-success"
-            "?session_id={CHECKOUT_SESSION_ID}"
+        Args:
+            booking_reference: Local public booking reference stored on the
+                pending booking order.
+
+        Returns:
+            str: Success return URL that includes both the local booking
+            reference and Stripe's session placeholder.
+        """
+
+        query_string = (
+            f"order_ref={quote(booking_reference)}" "&session_id={CHECKOUT_SESSION_ID}"
         )
+        return f"{self.public_base_url}/payment-success?{query_string}"
 
-    @property
-    def cancel_url(self) -> str:
-        """Return the Checkout cancel URL."""
+    def build_cancel_url(self, booking_reference: str) -> str:
+        """Return the Checkout cancel URL for one local booking reference.
 
-        return f"{self.public_base_url}/payment-cancel"
+        Args:
+            booking_reference: Local public booking reference stored on the
+                pending booking order.
+
+        Returns:
+            str: Cancel return URL that lets the app identify which temporary
+            order should be released.
+        """
+
+        query_string = f"order_ref={quote(booking_reference)}"
+        return f"{self.public_base_url}/payment-cancel?{query_string}"
 
 
 def normalize_stripe_public_base_url(public_base_url: str) -> str:
@@ -144,3 +162,108 @@ def build_stripe_client() -> stripe.StripeClient:
 
     stripe_configuration = get_stripe_checkout_configuration()
     return stripe.StripeClient(stripe_configuration.secret_key)
+
+
+def create_stripe_checkout_session(
+    public_booking_reference: str,
+    stripe_line_items: list[dict[str, object]],
+    metadata: Mapping[str, str],
+) -> stripe.checkout.Session:
+    """Create one hosted Stripe Checkout Session for a local booking attempt.
+
+    Args:
+        public_booking_reference: Local booking reference used in redirect URLs.
+        stripe_line_items: Server-approved Stripe line items for the booking.
+        metadata: Local identifiers stored on the Stripe session for later
+            lookup and webhook handling.
+
+    Returns:
+        stripe.checkout.Session: Newly created Stripe Checkout Session.
+    """
+
+    stripe_configuration = get_stripe_checkout_configuration()
+    stripe_client = build_stripe_client()
+
+    return stripe_client.v1.checkout.sessions.create(
+        {
+            "mode": "payment",
+            "locale": "sv",
+            "payment_method_types": ["card"],
+            "client_reference_id": public_booking_reference,
+            "success_url": stripe_configuration.build_success_url(
+                public_booking_reference
+            ),
+            "cancel_url": stripe_configuration.build_cancel_url(
+                public_booking_reference
+            ),
+            "line_items": cast(Any, stripe_line_items),
+            "metadata": dict(metadata),
+            "custom_text": {
+                "submit": {
+                    "message": (
+                        "Testläge: använd endast Stripe testkort under utveckling."
+                    )
+                }
+            },
+            # Stripe only allows expires_at between 30 minutes and 24 hours
+            # from session creation. The local booking hold is shorter and is
+            # enforced by the app before the visitor enters Stripe Checkout.
+            "expires_at": int(
+                (datetime.now(timezone.utc) + timedelta(minutes=30)).timestamp()
+            ),
+        }
+    )
+
+
+def retrieve_stripe_checkout_session(
+    checkout_session_id: str,
+) -> stripe.checkout.Session:
+    """Retrieve one Stripe Checkout Session by ID."""
+
+    stripe_client = build_stripe_client()
+    return stripe_client.v1.checkout.sessions.retrieve(checkout_session_id)
+
+
+def expire_stripe_checkout_session(
+    checkout_session_id: str,
+) -> stripe.checkout.Session:
+    """Expire one open Stripe Checkout Session by ID.
+
+    Args:
+        checkout_session_id: Stripe Checkout Session ID such as ``cs_test_...``.
+
+    Returns:
+        stripe.checkout.Session: Updated Checkout Session after Stripe expires
+        it.
+    """
+
+    stripe_client = build_stripe_client()
+    return stripe_client.v1.checkout.sessions.expire(checkout_session_id)
+
+
+def construct_stripe_webhook_event(
+    payload: bytes,
+    stripe_signature_header: str,
+) -> stripe.Event:
+    """Verify and parse one incoming Stripe webhook event.
+
+    Args:
+        payload: Raw request body exactly as Flask received it.
+        stripe_signature_header: Value from the incoming
+            ``Stripe-Signature`` header.
+
+    Returns:
+        stripe.Event: Verified Stripe event object.
+
+    Raises:
+        ValueError: If the payload cannot be parsed as a Stripe event.
+        stripe.SignatureVerificationError: If the signature does not match the
+            configured webhook secret.
+    """
+
+    stripe_configuration = get_stripe_checkout_configuration()
+    return stripe.Webhook.construct_event(
+        payload=payload,
+        sig_header=stripe_signature_header,
+        secret=stripe_configuration.webhook_secret,
+    )
