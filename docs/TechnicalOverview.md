@@ -1,6 +1,6 @@
 # Paddlingen Technical Overview
 
-Last updated: 2026-03-25
+Last updated: 2026-03-26
 
 ## Purpose
 
@@ -80,8 +80,14 @@ Current homepage note:
   - one centered hero for the current event,
   - weather in the top-left corner area,
   - information and contact actions in the top-right area,
+  - clickable calendar and location rows in the hero center,
   - a clickable progress bar that opens the participant list,
   - and a previous-years image ribbon below the booking action.
+- The hero date row now downloads a small `.ics` file so the visitor can add
+  the event to a calendar app without the project needing separate Google,
+  Apple, or Outlook integrations.
+- The hero location row now acts as a clearer maps action instead of only
+  showing static text.
 - The older sidebar and multi-section archive styling has now been removed from
   the active homepage CSS so the new hero layout is easier to reason about.
 - The previous-years ribbon now loops continuously through the available image
@@ -131,8 +137,10 @@ Current homepage note:
     reservation countdown, a `Fortsätt till betalning` action that continues
     into Stripe-hosted Checkout, and a `Kanotöversikt` that lists every
     entered rider name for each canoe.
-18. Stripe-hosted Checkout is currently configured for Swedish locale and card
-    only.
+18. Stripe-hosted Checkout is currently configured for Swedish locale, card
+    only, a short canoe-count title, a per-canoe note under Stripe's total
+    amount, one public product image, short helper text around the pay button,
+    and a short receipt description for Stripe's successful payment email.
 19. If the browser returns to `/payment-success`, the app first checks the
     Stripe Checkout Session directly and finalizes the booking locally when
     Stripe already reports the session as paid. The verified webhook remains
@@ -437,6 +445,8 @@ Why this matters now:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PUBLIC_BASE_URL`
+- `STRIPE_CHECKOUT_PRODUCT_ID` (optional, used to load the Dashboard product
+  image for hosted Checkout)
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
 - `PUBLIC_SITE_PASSWORD_HASH`
@@ -1058,13 +1068,16 @@ Current progress note:
   redirecting to Stripe-hosted Checkout.
 - That modal step is where the project now shows the 15-minute reservation
   countdown and the dedicated cancel action.
-- Stripe-hosted Checkout itself is currently configured for Swedish locale and
-  card only.
+- Stripe-hosted Checkout itself is currently configured for Swedish locale,
+  card only, a short canoe-count title, a per-canoe note below Stripe's total
+  amount, one public product image, short helper text near the pay button, and
+  a short Stripe receipt description that includes the event title, canoe
+  count, event date, and booking reference.
 - Browser-sent amount fields are ignored.
 - Checkout preparation is blocked when no active event row exists.
-- The success page still does not finalize the booking on its own. It
-  now waits locally until the webhook-backed booking state is `paid` before it
-  shows the final confirmed message, payer email, and booking summary.
+- The success page no longer blindly trusts the browser return. It first checks
+  Stripe directly and can finalize the booking locally when Stripe already
+  reports the Checkout Session as paid.
 - The app now verifies Stripe webhook signatures at `/stripe/webhook` before it
   updates booking state.
 - A verified `checkout.session.completed` event marks the order as `paid`,

@@ -796,6 +796,38 @@ How to test:
 - Run the documented Stripe test scenarios and confirm each one leaves the
   booking order in the expected local state.
 
+### Step 10A. Enable Stripe's automatic success receipt for Checkout payments
+
+What to do:
+
+- Keep the first receipt step simple by using Stripe's built-in successful
+  payment receipt instead of building a separate app-sent booking email first.
+- Keep the current code path that adds `payment_intent_data.description` when
+  creating the Checkout Session.
+- Enable `Successful payments` under Stripe `Customer emails`.
+- Do not enable one-time paid invoices for this booking flow.
+- Use Stripe Dashboard branding and public details so the receipt looks
+  trustworthy and includes the right organizer contact information.
+
+Why:
+
+- The payer already enters an email address in hosted Checkout.
+- Stripe can send the receipt automatically after a successful card payment.
+- This is the fastest and safest first confirmation-email step.
+- The project does not need paid invoice creation for normal card checkout.
+
+How to test:
+
+- Enable Stripe automatic success receipts in test mode.
+- Complete a successful Stripe test payment.
+- Confirm the payer receives the receipt.
+- Confirm the receipt shows:
+  - the expected branding,
+  - the correct public contact details,
+  - and the short booking description with event title, canoe count, date,
+    and booking reference.
+- Confirm failed or canceled payments do not send a success receipt.
+
 ### Step 11. Create a dedicated sender email address for the website
 
 What to do:

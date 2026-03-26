@@ -68,10 +68,58 @@ Why it’s here:
 
           <nav class="hero-utility hero-utility-right" aria-label="Snabbval">
             <button id="faqBtn" class="hero-icon-button" type="button" aria-label="Visa regler och frågor">
-              <span aria-hidden="true">i</span>
+              <svg
+                class="hero-icon-svg"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9 4.03 9 9 9Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.4 9.2a2.77 2.77 0 0 1 5.12 1.48c0 1.84-2.52 2.76-2.52 2.76"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 16.8h.01"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
             <button id="contactBtn" class="hero-icon-button" type="button" aria-label="Visa kontaktinformation">
-              <span aria-hidden="true">@</span>
+              <svg
+                class="hero-icon-svg"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="m5.3 7.1 5.64 4.5a1.7 1.7 0 0 0 2.12 0l5.64-4.5"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
           </nav>
         </header>
@@ -84,11 +132,84 @@ Why it’s here:
 
           <div class="unlock-reveal unlock-reveal--2">
             <div class="hero-details no-select">
-              <div class="date-time" id="dateTime">{{ event_settings.full_date_display }} – {{ event_settings.time_display }}</div>
-              <div class="location hero-location">
-                <span>Samlingsplats:</span>
-                <a href="{{ event_settings.location_url }}" target="_blank" rel="noopener">
-                  {{ event_settings.location_name }}
+              <div class="hero-action-row">
+                <span class="hero-action-icon" aria-hidden="true">
+                  <svg
+                    class="hero-action-icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="3.5"
+                      y="5.5"
+                      width="17"
+                      height="15"
+                      rx="2.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+                    <path
+                      d="M7.5 3.8v3.1M16.5 3.8v3.1M3.5 9.2h17"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                    <path
+                      d="M8.2 13h.01M12 13h.01M15.8 13h.01M8.2 16.6h.01M12 16.6h.01"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+                <a
+                  class="hero-action-link"
+                  href="{{ url_for('main.download_event_calendar_file') }}"
+                  id="heroCalendarAction"
+                  download="paddlingen-event.ics"
+                  aria-label="Ladda ner kalenderhändelsen"
+                >
+                  <span class="hero-action-value" id="dateTime">
+                    {{ event_settings.full_date_display }} – {{ event_settings.time_display }}
+                  </span>
+                </a>
+              </div>
+
+              <div class="hero-action-row">
+                <span class="hero-action-icon" aria-hidden="true">
+                  <svg
+                    class="hero-action-icon-svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 20.5s6-5.64 6-10.35A6 6 0 1 0 6 10.15c0 4.71 6 10.35 6 10.35Z"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="10.2"
+                      r="2.4"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+                  </svg>
+                </span>
+                <a
+                  class="hero-action-link"
+                  href="{{ event_settings.location_url }}"
+                  id="heroLocationAction"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Öppna samlingsplatsen i Google Maps"
+                >
+                  <span class="hero-action-value hero-action-value--location">
+                    Samlingsplats: {{ event_settings.location_name }}
+                  </span>
                 </a>
               </div>
             </div>
@@ -101,15 +222,25 @@ Why it’s here:
               type="button"
               aria-label="Visa bokningsstatus och deltagarlista"
             >
-              <div class="progress-bar" id="progressBar"></div>
+              <div
+                class="progress-bar"
+                id="progressBar"
+                style="width: {{ booking_progress.width_percent }}%; background-color: {{ booking_progress.bar_color }};"
+              ></div>
               <div class="progress-text" id="progressText">
                 <span class="progress-text-main">{{ current_booked_canoes }} / {{ event_settings.available_canoes_total }} kanoter bokade</span>
                 <span class="progress-text-hint">Tryck för att se deltagare</span>
               </div>
             </button>
 
-            <button id="bookBtn" class="book-btn" type="button" aria-disabled="false">
-              Boka kanot
+            <button
+              id="bookBtn"
+              class="book-btn"
+              type="button"
+              aria-disabled="{{ booking_progress.aria_disabled }}"
+              {% if booking_progress.is_fully_booked %}disabled{% endif %}
+            >
+              {{ booking_progress.button_text }}
             </button>
           </div>
 

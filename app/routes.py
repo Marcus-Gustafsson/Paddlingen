@@ -12,6 +12,7 @@ from decimal import Decimal, InvalidOperation
 from functools import wraps
 import re
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 import requests
 import stripe
 from flask import (
@@ -57,7 +58,10 @@ from .util.helper_functions import (
     get_previous_year_variant_filename,
     get_project_root_from_static_folder,
 )
-from .util.checkout_preparation import prepare_server_side_checkout_booking
+from .util.checkout_preparation import (
+    build_stripe_receipt_description,
+    prepare_server_side_checkout_booking,
+)
 from .util.stripe_helpers import (
     construct_stripe_webhook_event,
     create_stripe_checkout_session,
@@ -88,9 +92,11 @@ from . import csrf_protect, rate_limiter
 # LOGGING SETUP
 # -----------------------------------------------------------------------------
 # logging.basicConfig configures Python's built-in logging system so that
-# log messages show up in the console. We set level=INFO to display info logs
-# and above by default; debug logs require level DEBUG.
+# log messages show up in the console. We keep INFO-level app logs in local
+# development, but Stripe's SDK request logs are reduced to WARNING so normal
+# homepage reads do not flood the terminal.
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("stripe").setLevel(logging.WARNING)
 
 # Each module should have its own logger. __name__ resolves to this file's
 # import path ("main"), which helps identify where log messages originate.
@@ -459,12 +465,23 @@ def count_currently_unavailable_canoes_for_event_id(
     )
 
 
-def count_currently_unavailable_canoes() -> int:
-    """Return blocked canoes for the active event, including active holds."""
+def count_currently_unavailable_canoes(
+    *,
+    cleanup_expired_orders: bool = True,
+) -> int:
+    """Return blocked canoes for the active event, including active holds.
+
+    Args:
+        cleanup_expired_orders: Whether expired pending checkout rows should be
+            actively released before the count is returned.
+    """
 
     active_event = get_active_event()
     active_event_id = active_event.id if active_event is not None else None
-    return count_currently_unavailable_canoes_for_event_id(active_event_id)
+    return count_currently_unavailable_canoes_for_event_id(
+        active_event_id,
+        cleanup_expired_orders=cleanup_expired_orders,
+    )
 
 
 def build_public_booking_reference(booking_order_id: int) -> str:
@@ -485,6 +502,37 @@ def format_swedish_krona_amount(amount: Decimal) -> str:
     amount_text = f"{normalized_amount:,.2f}"
     amount_text = amount_text.replace(",", " ").replace(".", ",")
     return f"{amount_text} kr"
+
+
+def build_booking_progress_display_data(
+    booked_canoes: int,
+    total_available_canoes: int,
+) -> dict[str, object]:
+    """Return one small payload used to render the homepage progress bar.
+
+    The homepage should paint the current fill state immediately from the
+    server-rendered booking count. A later background refresh can still fetch a
+    fresh count, but the first render should not wait for JavaScript.
+    """
+
+    safe_total = max(0, total_available_canoes)
+    if safe_total <= 0:
+        booking_percentage = 0.0
+    else:
+        booking_percentage = min(100.0, max(0.0, (booked_canoes / safe_total) * 100))
+
+    start_hue = 120.0
+    end_hue = 0.0
+    progress_hue = start_hue + (end_hue - start_hue) * (booking_percentage / 100)
+    is_fully_booked = safe_total <= 0 or booked_canoes >= safe_total
+
+    return {
+        "width_percent": round(booking_percentage, 2),
+        "bar_color": f"hsl({progress_hue:.2f}, 100%, 50%)",
+        "is_fully_booked": is_fully_booked,
+        "button_text": "Fullbokat" if is_fully_booked else "Boka kanot",
+        "aria_disabled": "true" if is_fully_booked else "false",
+    }
 
 
 def is_pending_checkout_order(booking_order: BookingOrder | None) -> bool:
@@ -928,6 +976,69 @@ def build_event_settings() -> dict[str, object]:
     return build_event_settings_with_fallback()
 
 
+def escape_ical_text(value: str) -> str:
+    """Return text escaped for safe use inside an iCalendar field."""
+
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", r"\;")
+        .replace(",", r"\,")
+        .replace("\n", r"\n")
+    )
+
+
+def build_event_calendar_ics(event_settings: dict[str, object]) -> str:
+    """Build one simple iCalendar file for the public event.
+
+    Args:
+        event_settings: Event values already prepared for the public templates.
+
+    Returns:
+        str: UTF-8 iCalendar text that calendar apps can import.
+    """
+
+    stockholm_timezone = ZoneInfo("Europe/Stockholm")
+    event_start_local = datetime.fromisoformat(
+        str(event_settings["datetime_local_iso"])
+    ).replace(tzinfo=stockholm_timezone)
+    event_start_utc = event_start_local.astimezone(ZoneInfo("UTC"))
+    event_title = escape_ical_text(str(event_settings["title"]))
+    event_location_name = escape_ical_text(str(event_settings["location_name"]))
+    event_location_url = escape_ical_text(str(event_settings["location_url"]))
+    event_date_label = escape_ical_text(str(event_settings["full_date_display"]))
+    event_time_label = escape_ical_text(str(event_settings["time_display"]))
+    event_contact_email = escape_ical_text(str(event_settings["contact_email"]))
+    event_description = escape_ical_text(
+        "Lägg till Paddlingen i din kalender. "
+        f"Datum: {event_date_label}. "
+        f"Tid: {event_time_label}. "
+        f"Plats: {event_location_name}. "
+        f"Frågor: {event_contact_email}."
+    )
+    current_timestamp_utc = get_current_utc_time().strftime("%Y%m%dT%H%M%SZ")
+    event_timestamp_utc = event_start_utc.strftime("%Y%m%dT%H%M%SZ")
+    event_uid = f"paddlingen-{event_settings['year']}-" "calendar@paddlingen.local"
+
+    ical_lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Paddlingen//Event Booking//SV",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        f"UID:{event_uid}",
+        f"DTSTAMP:{current_timestamp_utc}",
+        f"DTSTART:{event_timestamp_utc}",
+        f"SUMMARY:{event_title}",
+        f"LOCATION:{event_location_name}",
+        f"DESCRIPTION:{event_description}",
+        f"URL:{event_location_url}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    return "\r\n".join(ical_lines) + "\r\n"
+
+
 def build_previous_year_gallery_data() -> tuple[list[str], list[dict[str, str]]]:
     """Build ribbon and gallery image URLs for previous-year photos.
 
@@ -1309,10 +1420,17 @@ def index():
     # fetch all bookings for your overview panel
     alla_bokningar = get_confirmed_booked_canoes_query().order_by(BookedCanoe.id).all()
 
-    # Server-side availability should include both confirmed bookings and
-    # still-active temporary reservation holds.
-    current = count_currently_unavailable_canoes()
-    available_canoes = max(0, get_total_available_canoes() - current)
+    total_available_canoes = int(event_settings["available_canoes_total"])
+
+    # Read-only homepage rendering should not trigger Stripe reconciliation for
+    # old pending orders. Expired holds are ignored in the count, and checkout
+    # routes still perform the active cleanup when needed.
+    current = count_currently_unavailable_canoes(cleanup_expired_orders=False)
+    available_canoes = max(0, total_available_canoes - current)
+    booking_progress = build_booking_progress_display_data(
+        current,
+        total_available_canoes,
+    )
     (
         previous_year_ribbon_image_urls,
         previous_year_gallery_image_urls,
@@ -1325,12 +1443,27 @@ def index():
         grouped_booking_overview_rows=grouped_booking_overview_rows,
         available_canoes=available_canoes,
         current_booked_canoes=current,
+        booking_progress=booking_progress,
         event_settings=event_settings,
         just_unlocked=just_unlocked,
         pending_checkout_booking=pending_checkout_booking,
         previous_year_ribbon_image_urls=previous_year_ribbon_image_urls,
         previous_year_gallery_image_urls=previous_year_gallery_image_urls,
     )
+
+
+@main_blueprint.route("/event.ics")
+@public_site_access_required
+def download_event_calendar_file():
+    """Return a simple iCalendar file for the current event."""
+
+    event_settings = build_event_settings()
+    ical_response = make_response(build_event_calendar_ics(event_settings))
+    ical_response.headers["Content-Type"] = "text/calendar; charset=utf-8"
+    ical_response.headers["Content-Disposition"] = (
+        'attachment; filename="paddlingen-event.ics"'
+    )
+    return ical_response
 
 
 @main_blueprint.route("/unlock", methods=["POST"])
@@ -1518,6 +1651,11 @@ def payment():
         checkout_session = create_stripe_checkout_session(
             public_booking_reference=pending_order.public_booking_reference,
             stripe_line_items=prepared_checkout_booking.stripe_line_items,
+            payment_intent_description=build_stripe_receipt_description(
+                active_event=prepared_checkout_booking.active_event,
+                canoe_count=prepared_checkout_booking.canoe_count,
+                public_booking_reference=pending_order.public_booking_reference,
+            ),
             metadata={
                 "booking_order_id": str(pending_order.id),
                 "public_booking_reference": pending_order.public_booking_reference,
@@ -2048,7 +2186,9 @@ def get_booking_count():
     Returns:
         JSON object with the count: {"count": 25}
     """
-    booking_count = count_currently_unavailable_canoes()
+    booking_count = count_currently_unavailable_canoes(
+        cleanup_expired_orders=False,
+    )
     return jsonify({"count": booking_count})
 
 

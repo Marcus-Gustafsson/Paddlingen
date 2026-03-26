@@ -1,14 +1,19 @@
 """Tests for Stripe configuration helpers."""
 
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 import stripe
 
 from app.util.stripe_helpers import (
+    build_stripe_checkout_product_image_url,
+    can_use_public_base_url_for_checkout_product_image,
     construct_stripe_webhook_event,
     create_stripe_checkout_session,
+    enrich_checkout_line_items_for_hosted_checkout,
     expire_stripe_checkout_session,
+    get_catalog_product_image_urls,
     get_stripe_checkout_configuration,
     get_stripe_checkout_configuration_from_mapping,
     is_stripe_checkout_configured,
@@ -40,12 +45,14 @@ def test_get_stripe_checkout_configuration_from_mapping_builds_return_urls() -> 
             "STRIPE_SECRET_KEY": "sk_test_123",
             "STRIPE_WEBHOOK_SECRET": "whsec_123",
             "STRIPE_PUBLIC_BASE_URL": "https://example.com/",
+            "STRIPE_CHECKOUT_PRODUCT_ID": "prod_123",
         }
     )
 
     assert stripe_configuration.secret_key == "sk_test_123"
     assert stripe_configuration.webhook_secret == "whsec_123"
     assert stripe_configuration.public_base_url == "https://example.com"
+    assert stripe_configuration.checkout_product_id == "prod_123"
     assert (
         stripe_configuration.build_success_url("PAD-2026-00001")
         == "https://example.com/payment-success?order_ref=PAD-2026-00001&"
@@ -106,6 +113,74 @@ def test_is_stripe_checkout_configured_returns_false_when_values_are_missing(cli
         assert is_stripe_checkout_configured() is False
 
 
+def test_build_stripe_checkout_product_image_url_uses_public_base_url() -> None:
+    """Build an absolute public URL for the hosted Checkout product image."""
+
+    assert build_stripe_checkout_product_image_url("https://example.com") == (
+        "https://example.com/static/images/canoe_checkout_icon_png.png"
+    )
+
+
+def test_can_use_public_base_url_for_checkout_product_image_rejects_localhost() -> None:
+    """Reject localhost because Stripe cannot fetch hosted Checkout images there."""
+
+    assert (
+        can_use_public_base_url_for_checkout_product_image("http://127.0.0.1:5000")
+        is False
+    )
+    assert can_use_public_base_url_for_checkout_product_image("https://example.com")
+
+
+def test_get_catalog_product_image_urls_returns_dashboard_images() -> None:
+    """Load product images from a real Stripe catalog product when configured."""
+
+    fake_stripe_client = SimpleNamespace(
+        v1=SimpleNamespace(
+            products=SimpleNamespace(
+                retrieve=lambda product_id: SimpleNamespace(
+                    id=product_id,
+                    images=["https://files.stripe.com/canoe.png"],
+                )
+            )
+        )
+    )
+
+    assert get_catalog_product_image_urls(
+        cast(stripe.StripeClient, fake_stripe_client),
+        "prod_123",
+    ) == ["https://files.stripe.com/canoe.png"]
+
+
+def test_enrich_checkout_line_items_for_hosted_checkout_adds_product_image() -> None:
+    """Add a public product image to hosted Checkout line items when missing."""
+
+    line_items = [
+        {
+            "price_data": {
+                "product_data": {
+                    "name": "Kanotbokning - Paddlingen 2026",
+                }
+            },
+            "quantity": 1,
+        }
+    ]
+
+    enriched_line_items = enrich_checkout_line_items_for_hosted_checkout(
+        line_items,
+        ["https://example.com/static/images/canoe_checkout_icon_png.png"],
+    )
+
+    original_price_data = cast(dict[str, object], line_items[0]["price_data"])
+    original_product_data = cast(dict[str, object], original_price_data["product_data"])
+    enriched_price_data = cast(dict[str, object], enriched_line_items[0]["price_data"])
+    enriched_product_data = cast(dict[str, object], enriched_price_data["product_data"])
+
+    assert original_product_data.get("images") is None
+    assert enriched_product_data["images"] == [
+        "https://example.com/static/images/canoe_checkout_icon_png.png"
+    ]
+
+
 def test_create_stripe_checkout_session_uses_card_only_swedish_checkout(
     client, monkeypatch
 ) -> None:
@@ -132,8 +207,21 @@ def test_create_stripe_checkout_session_uses_card_only_swedish_checkout(
     with client.application.app_context():
         create_stripe_checkout_session(
             public_booking_reference="PAD-2026-00001",
-            stripe_line_items=[{"quantity": 1}],
+            stripe_line_items=[
+                {
+                    "quantity": 1,
+                    "price_data": {
+                        "product_data": {
+                            "name": "2 kanoter",
+                        }
+                    },
+                }
+            ],
             metadata={"booking_order_id": "1"},
+            payment_intent_description=(
+                "Paddlingen - 2 kanoter - 20 mars 2026 - "
+                "Bokningsreferens PAD-2026-00001"
+            ),
         )
 
     assert captured_payload["locale"] == "sv"
@@ -145,11 +233,108 @@ def test_create_stripe_checkout_session_uses_card_only_swedish_checkout(
         "http://127.0.0.1:5000/payment-success?order_ref=PAD-2026-00001&"
         "session_id={CHECKOUT_SESSION_ID}"
     )
+    assert captured_payload["submit_type"] == "book"
+    assert captured_payload["payment_intent_data"] == {
+        "description": (
+            "Paddlingen - 2 kanoter - 20 mars 2026 - " "Bokningsreferens PAD-2026-00001"
+        )
+    }
+    assert captured_payload["line_items"] == [
+        {
+            "quantity": 1,
+            "price_data": {
+                "product_data": {
+                    "name": "2 kanoter",
+                }
+            },
+        }
+    ]
     assert captured_payload["expires_at"] is not None
     assert captured_payload["custom_text"] == {
         "submit": {
-            "message": "Testläge: använd endast Stripe testkort under utveckling."
+            "message": (
+                "Reservationen blir bindande först när betalningen är slutförd."
+            )
+        },
+        "after_submit": {
+            "message": (
+                "Du skickas tillbaka till Paddlingen direkt efter betalningen "
+                "för bokningsbekräftelse och översikt."
+            )
+        },
+    }
+
+
+def test_create_stripe_checkout_session_uses_catalog_product_image_when_configured(
+    client, monkeypatch
+) -> None:
+    """Prefer the Stripe Dashboard product image over the local fallback image."""
+
+    captured_payload: dict[str, object] = {}
+
+    class FakeCheckoutSessionsApi:
+        def create(self, payload: dict[str, object]) -> SimpleNamespace:
+            captured_payload.update(payload)
+            return SimpleNamespace(id="cs_test_123", url="https://checkout.stripe.test")
+
+    class FakeProductsApi:
+        def retrieve(self, product_id: str) -> SimpleNamespace:
+            assert product_id == "prod_checkout_123"
+            return SimpleNamespace(
+                id=product_id,
+                images=["https://files.stripe.com/canoe-dashboard-image.png"],
+            )
+
+    fake_stripe_client = SimpleNamespace(
+        v1=SimpleNamespace(
+            checkout=SimpleNamespace(sessions=FakeCheckoutSessionsApi()),
+            products=FakeProductsApi(),
+        )
+    )
+
+    monkeypatch.setattr(
+        "app.util.stripe_helpers.build_stripe_client",
+        lambda: fake_stripe_client,
+    )
+
+    with client.application.app_context():
+        client.application.config["STRIPE_CHECKOUT_PRODUCT_ID"] = "prod_checkout_123"
+        create_stripe_checkout_session(
+            public_booking_reference="PAD-2026-00001",
+            stripe_line_items=[
+                {
+                    "quantity": 2,
+                    "price_data": {
+                        "product_data": {
+                            "name": "2 kanoter",
+                            "description": "(1 200 kr per kanot)",
+                        }
+                    },
+                }
+            ],
+            metadata={"booking_order_id": "1"},
+            payment_intent_description=(
+                "Paddlingen - 2 kanoter - 20 mars 2026 - "
+                "Bokningsreferens PAD-2026-00001"
+            ),
+        )
+
+    assert captured_payload["line_items"] == [
+        {
+            "quantity": 2,
+            "price_data": {
+                "product_data": {
+                    "name": "2 kanoter",
+                    "description": "(1 200 kr per kanot)",
+                    "images": ["https://files.stripe.com/canoe-dashboard-image.png"],
+                }
+            },
         }
+    ]
+    assert captured_payload["payment_intent_data"] == {
+        "description": (
+            "Paddlingen - 2 kanoter - 20 mars 2026 - " "Bokningsreferens PAD-2026-00001"
+        )
     }
 
 

@@ -32,3 +32,9 @@ instance/
 
 # Local inspiration / scratch files
 inspo/
+
+# Environment variables (never commit your secrets!)
+.env.*
+!.env.example
+# Windows download metadata
+*:Zone.Identifier

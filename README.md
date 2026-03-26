@@ -234,3 +234,24 @@ For more background see the [Alembic tutorial](https://alembic.sqlalchemy.org/en
 <a href="https://www.freepik.com/animated-icon/questions-answers_12205154#fromView=search&page=1&position=25&uuid=dea22ebe-c84f-4a5c-becc-13cc1116ad77">Icon by Freepik</a>
 
 <a href="https://www.flaticon.com/free-animated-icons/contact" title="contact animated icons">Contact animated icons created by Freepik - Flaticon</a>
+
+
+### TODO:
+- Add correct copyright/attribution for the canoe icon:
+"Canoe SVG Vector 37
+Free Download Canoe 37 SVG vector file in monocolor and multicolor type for Sketch and Figma from Canoe 37 Vectors svg vector collection. Canoe 37 Vectors SVG vector illustration graphic art design format.
+
+COLLECTION: Noto Emojis
+LICENSE: Apache License
+AUTHOR: googlefonts
+
+Apache License
+You are free:
+
+to share – to copy, distribute and transmit the work
+to remix – to adapt the work
+Under the following terms:
+
+liability – the author doesn't provide any warranty and doesn't accepts any liability
+copyright notice – a copy of the license or copyright notice must be included with software
+trademark use – does not grand trademark rights."

@@ -46,7 +46,7 @@ function registerScrollAnimations() {
 document.addEventListener("DOMContentLoaded", async () => {
   const bookingProgressModule = window.PaddlingenBookingProgress;
   if (bookingProgressModule) {
-    await bookingProgressModule.updateProgressFromDatabase();
+    bookingProgressModule.updateProgressFromDatabase();
   }
 
   const weatherModule = window.PaddlingenWeather;

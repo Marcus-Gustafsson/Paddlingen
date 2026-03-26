@@ -63,6 +63,7 @@ def client():
         STRIPE_SECRET_KEY="sk_test_123",
         STRIPE_WEBHOOK_SECRET="whsec_test_123",
         STRIPE_PUBLIC_BASE_URL="http://127.0.0.1:5000",
+        STRIPE_CHECKOUT_PRODUCT_ID="",
     )
     with flask_application.app_context():
         db.drop_all()

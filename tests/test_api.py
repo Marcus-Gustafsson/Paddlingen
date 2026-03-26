@@ -107,8 +107,8 @@ def test_booking_count_api_returns_number(client):
     assert data["count"] == 1
 
 
-def test_booking_count_api_cleans_up_expired_pending_reservations(client):
-    """Drop expired temporary holds before returning the public blocked count."""
+def test_booking_count_api_ignores_expired_pending_reservations(client):
+    """Ignore expired temporary holds without deleting rows during a read-only count."""
 
     with client.application.app_context():
         active_event = Event.query.filter_by(is_active=True).first()
@@ -141,8 +141,8 @@ def test_booking_count_api_cleans_up_expired_pending_reservations(client):
     assert response.get_json() == {"count": 0}
 
     with client.application.app_context():
-        assert BookingOrder.query.count() == 0
-        assert BookedCanoe.query.count() == 0
+        assert BookingOrder.query.count() == 1
+        assert BookedCanoe.query.count() == 1
 
 
 def test_forecast_api_returns_data(client, monkeypatch):

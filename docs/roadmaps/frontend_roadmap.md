@@ -1,6 +1,6 @@
 # Frontend Roadmap
 
-Last updated: 2026-03-25
+Last updated: 2026-03-26
 
 ## TODO:S
 - Review the booking-confirmation and payment pages on real mobile and tablet devices after each larger layout change.
@@ -53,6 +53,101 @@ Completed work:
 - Limited one booking to five canoes.
 - Improved the booking summary and quantity selector behavior.
 
+### Step 4. Refresh the homepage weather card with a lighter frosted-glass style
+
+What to do:
+
+- Keep the current weather content, placement, and logic exactly as they are.
+- Replace only the current weather-card surface styling with a lighter frosted
+  glass treatment.
+- Remove the darker current card/background look and rebuild it with:
+  - larger rounded corners,
+  - a lighter semi-transparent glass background,
+  - a softer border,
+  - stronger blur,
+  - and a gentler premium shadow.
+- Do not redesign the content structure during this step.
+
+Why:
+
+- The weather block already works functionally, but the current darker widget
+  surface feels heavier and older than the desired inspiration.
+- A lighter frosted-glass card should match the water-background hero better
+  without changing the information architecture.
+
+How to test:
+
+- Open the homepage on desktop, tablet, and phone.
+- Confirm the weather widget keeps the same content and placement.
+- Confirm the card now feels lighter and more premium.
+- Confirm the card stays readable against both lighter and darker parts of the
+  hero background image.
+
+### Step 5. Turn the date and location block into clickable action rows
+
+What to do:
+
+- Replace the current plain date and location text lines with two simple,
+  aligned rows in the hero center.
+- Keep the visual treatment minimal:
+  - icon on the left,
+  - readable text on the right,
+  - no card background,
+  - no rounded icon background.
+- Make only the text part clickable.
+- Use one row to download or open an `.ics` calendar event as the first
+  calendar solution.
+- Use the other row to open the existing Google Maps location link.
+- Keep the font size slightly smaller than the previous hero text so the rows
+  flow better with the rest of the homepage.
+
+Why:
+
+- The current date and location lines are readable, but they do not clearly
+  communicate that they can become practical user actions.
+- Turning them into icon-led text rows should make the hero feel more useful
+  and intentional without adding extra visual weight.
+- Starting with an `.ics` file is a practical first calendar solution and a
+  common best-practice format.
+
+How to test:
+
+- Click the date text and confirm it opens or downloads a valid `.ics` event.
+- Import that event into a calendar app and confirm the date/time are correct.
+- Click the location text and confirm it opens the correct Google Maps location.
+- Confirm both rows remain readable and easy to tap on mobile.
+
+### Step 6. Rebuild the booking progress bar into a premium editorial strip
+
+What to do:
+
+- Keep the component clickable so it still opens the participant view.
+- Replace the current heavier pill-button progress look with a more editorial
+  strip layout.
+- Use:
+  - a thinner premium gradient progress line,
+  - the booking count clearly below the line on the left,
+  - and the interaction hint on the right with the wording
+    `Tryck för att visa deltagare`.
+- Keep the live booking count and color behavior, but present them in a more
+  modern and premium way.
+
+Why:
+
+- The current progress element works, but it still reads more like a filled
+  button than a refined live booking-status strip.
+- Splitting the status and click hint should make the interaction clearer and
+  make the homepage feel more deliberate.
+
+How to test:
+
+- Open the homepage with low, medium, and high booking counts.
+- Confirm the thinner gradient line still reflects the correct booking level.
+- Confirm the text hierarchy is clear:
+  - booking count on the left,
+  - `Tryck för att visa deltagare` on the right.
+- Confirm the whole strip still opens the participant list.
+
 ## Phase 2: Redesign The Admin Login Page
 
 Goal:
@@ -93,6 +188,7 @@ Why:
 How to test:
 
 - Try an invalid login and confirm the message is easy to see.
+
 
 ## Phase 3: Redesign The Admin Dashboard
 
@@ -298,9 +394,19 @@ Why:
 How to test:
 
 - Start a booking and open Stripe Checkout on desktop and mobile.
-- Confirm the logo, colors, and product image render correctly.
-- Confirm the product and support text are clear and no important information
-  is hidden or cropped.
+- Confirm the app-driven parts now render correctly:
+  - canoe-count title,
+  - short price summary,
+  - product image, preferably by wiring `STRIPE_CHECKOUT_PRODUCT_ID` to a real
+    Stripe Product Catalog item so the image stays managed from Stripe
+    Dashboard,
+  - and the short helper text near the pay button.
+- Confirm the Dashboard-driven branding parts are also configured before this
+  step is marked complete:
+  - logo,
+  - color theme,
+  - support contact information,
+  - and legal policy links.
 - Confirm the page still feels recognizably connected to the rest of the site.
 
 ### Step 6. Add secondary admin utility actions

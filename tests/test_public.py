@@ -114,6 +114,10 @@ def test_home_page(client):
     assert "info@paddlingen.se" in page
     assert "Paddlingen" in page
     assert "20 mars 2026" in page
+    assert 'id="heroCalendarAction"' in page
+    assert "/event.ics" in page
+    assert 'download="paddlingen-event.ics"' in page
+    assert "Samlingsplats: Havsjömossen" in page
     assert "Visa bildinformation" in page
     assert "Bildinformation" in page
     assert "/previous-years-images/ribbon/" in page
@@ -122,11 +126,159 @@ def test_home_page(client):
     assert 'fetchpriority="low"' in page
 
 
+def test_event_calendar_route_returns_ical_file(client):
+    """Return one downloadable iCalendar file for the current event."""
+
+    unlock_public_site(client)
+    response = client.get("/event.ics")
+
+    assert response.status_code == 200
+    assert response.headers["Content-Type"].startswith("text/calendar")
+    assert (
+        response.headers["Content-Disposition"]
+        == 'attachment; filename="paddlingen-event.ics"'
+    )
+
+    calendar_file = response.get_data(as_text=True)
+    assert "BEGIN:VCALENDAR" in calendar_file
+    assert "BEGIN:VEVENT" in calendar_file
+    assert "SUMMARY:Paddlingen" in calendar_file
+    assert "LOCATION:Havsjömossen" in calendar_file
+    assert "URL:https://www.google.com/maps/dir/" in calendar_file
+    assert "Bokningsreferens" not in calendar_file
+
+
+def test_home_page_ignores_expired_holds_without_stripe_lookup(client, monkeypatch):
+    """Render the homepage count from local data without Stripe cleanup calls."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        assert active_event is not None
+        active_event.available_canoes = 5
+
+        confirmed_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-2026-90001",
+            status="paid",
+            canoe_count=1,
+            total_amount=1200,
+            payment_provider="stripe_checkout",
+        )
+        confirmed_order.booked_canoes.append(
+            BookedCanoe(
+                participant_first_name="Alice",
+                participant_last_name="Andersson",
+                status="confirmed",
+            )
+        )
+
+        expired_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-2026-90002",
+            status="checkout_session_created",
+            canoe_count=1,
+            total_amount=1200,
+            payment_provider="stripe_checkout",
+            payment_provider_session_id="cs_test_home_expired",
+            expires_at=get_current_utc_time() - timedelta(minutes=1),
+        )
+        expired_order.booked_canoes.append(
+            BookedCanoe(
+                participant_first_name="Bob",
+                participant_last_name="Berg",
+                status="reserved",
+            )
+        )
+
+        db.session.add_all([confirmed_order, expired_order])
+        db.session.commit()
+
+    def fail_if_stripe_lookup_runs(*_args, **_kwargs):
+        raise AssertionError("Homepage availability should not call Stripe.")
+
+    monkeypatch.setattr(
+        "app.routes.retrieve_stripe_checkout_session",
+        fail_if_stripe_lookup_runs,
+    )
+
+    unlock_public_site(client)
+    response = client.get("/")
+
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "1 / 5 kanoter bokade" in page
+    assert 'id="progressBar"' in page
+    assert "width: 20.0%" in page
+    assert "background-color: hsl(96.00, 100%, 50%)" in page
+
+
 def test_login_page(client):
     """Ensure the login route renders so users can start authentication."""
     unlock_public_site(client)
     response = client.get("/login")
     assert response.status_code == 200
+
+
+def test_booking_count_api_ignores_expired_holds_without_stripe_lookup(
+    client, monkeypatch
+):
+    """Return live availability counts without reconciling old Stripe sessions."""
+
+    with client.application.app_context():
+        active_event = Event.query.filter_by(is_active=True).first()
+        assert active_event is not None
+        active_event.available_canoes = 5
+
+        confirmed_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-2026-90003",
+            status="paid",
+            canoe_count=1,
+            total_amount=1200,
+            payment_provider="stripe_checkout",
+        )
+        confirmed_order.booked_canoes.append(
+            BookedCanoe(
+                participant_first_name="Cecilia",
+                participant_last_name="Carlsson",
+                status="confirmed",
+            )
+        )
+
+        expired_order = BookingOrder(
+            event_id=active_event.id,
+            public_booking_reference="PAD-2026-90004",
+            status="checkout_session_created",
+            canoe_count=1,
+            total_amount=1200,
+            payment_provider="stripe_checkout",
+            payment_provider_session_id="cs_test_api_expired",
+            expires_at=get_current_utc_time() - timedelta(minutes=1),
+        )
+        expired_order.booked_canoes.append(
+            BookedCanoe(
+                participant_first_name="David",
+                participant_last_name="Dahl",
+                status="reserved",
+            )
+        )
+
+        db.session.add_all([confirmed_order, expired_order])
+        db.session.commit()
+
+    def fail_if_stripe_lookup_runs(*_args, **_kwargs):
+        raise AssertionError("Booking count API should not call Stripe.")
+
+    monkeypatch.setattr(
+        "app.routes.retrieve_stripe_checkout_session",
+        fail_if_stripe_lookup_runs,
+    )
+
+    unlock_public_site(client)
+    response = client.get("/api/booking-count")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"count": 1}
 
 
 def test_booking_over_limit_shows_error(client):

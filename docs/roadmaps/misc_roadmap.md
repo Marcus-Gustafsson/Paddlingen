@@ -414,6 +414,41 @@ How to test:
 
 - Write the steps clearly and confirm they are realistic.
 
+### Step 2A. Create a dedicated Outlook account and OneDrive backup target
+
+What to do:
+
+- Create a dedicated Microsoft account for the event, for example
+  `paddlingen@outlook...`, instead of using a private mailbox.
+- Use that account for:
+  - event email ownership,
+  - shared organizer recovery access,
+  - and the first lightweight cloud-storage target for database backups.
+- Start with the free Outlook mailbox plus the included free OneDrive storage.
+- Prefer uploading backup files to OneDrive rather than storing daily backups as
+  email attachments in the inbox.
+- Document:
+  - the chosen address,
+  - who can recover the account,
+  - where the backup folder lives,
+  - and the first retention rule, for example daily backups with later cleanup.
+
+Why:
+
+- The project needs one stable event-owned mailbox before production launch.
+- Outlook plus OneDrive is a practical first step because it covers both email
+  and light backup storage without needing a separate paid service on day one.
+- A dedicated account is easier to hand over later than a personal mailbox.
+
+How to test:
+
+- Sign in to the new account and confirm Outlook mail works.
+- Confirm OneDrive storage is available from the same account.
+- Upload one test backup file manually and confirm it appears in the expected
+  folder.
+- Confirm at least one other organizer can recover or access the account if the
+  main owner becomes unavailable.
+
 ### Step 3. Verify live Stripe configuration and webhook delivery
 
 What to do:

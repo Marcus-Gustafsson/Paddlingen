@@ -2,8 +2,10 @@
 
 from datetime import date, time
 from decimal import Decimal
+from typing import cast
 
 from app.util.checkout_preparation import (
+    build_stripe_receipt_description,
     build_stripe_line_items_for_booking,
     convert_money_decimal_to_minor_units,
     prepare_server_side_checkout_booking,
@@ -60,13 +62,27 @@ def test_build_stripe_line_items_for_booking_uses_server_event_price() -> None:
                 "currency": "sek",
                 "unit_amount": 150000,
                 "product_data": {
-                    "name": "Kanotbokning - Paddlingen",
-                    "description": "Kanothyra för eventet 2026. Pris per kanot.",
+                    "name": "2 kanoter",
+                    "description": "(1 500 kr per kanot)",
                 },
             },
             "quantity": 2,
         }
     ]
+
+
+def test_build_stripe_receipt_description_uses_swedish_booking_summary() -> None:
+    """Build one short Stripe receipt description from booking details."""
+
+    receipt_description = build_stripe_receipt_description(
+        active_event=build_test_event(Decimal("1200.00")),
+        canoe_count=2,
+        public_booking_reference="PAD-2026-00001",
+    )
+
+    assert receipt_description == (
+        "Paddlingen - 2 kanoter - 20 mars 2026 - " "Bokningsreferens PAD-2026-00001"
+    )
 
 
 def test_prepare_server_side_checkout_booking_calculates_total_amount() -> None:
@@ -77,6 +93,12 @@ def test_prepare_server_side_checkout_booking_calculates_total_amount() -> None:
         canoe_count=3,
     )
 
+    stripe_line_item = prepared_booking.stripe_line_items[0]
+    price_data = cast(dict[str, object], stripe_line_item["price_data"])
+    product_data = cast(dict[str, object], price_data["product_data"])
+
     assert prepared_booking.total_amount == Decimal("5250.00")
     assert prepared_booking.currency == "sek"
-    assert prepared_booking.stripe_line_items[0]["quantity"] == 3
+    assert stripe_line_item["quantity"] == 3
+    assert product_data["name"] == "3 kanoter"
+    assert product_data["description"] == "(1 750 kr per kanot)"
