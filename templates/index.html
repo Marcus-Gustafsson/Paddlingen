@@ -207,8 +207,11 @@ Why it’s here:
                   rel="noopener"
                   aria-label="Öppna samlingsplatsen i Google Maps"
                 >
-                  <span class="hero-action-value hero-action-value--location">
-                    Samlingsplats: {{ event_settings.location_name }}
+                  <span class="hero-action-value">
+                    Samlingsplats:
+                    <span class="hero-action-value--location">
+                      {{ event_settings.location_name }}
+                    </span>
                   </span>
                 </a>
               </div>
@@ -222,14 +225,16 @@ Why it’s here:
               type="button"
               aria-label="Visa bokningsstatus och deltagarlista"
             >
-              <div
-                class="progress-bar"
-                id="progressBar"
-                style="width: {{ booking_progress.width_percent }}%; background-color: {{ booking_progress.bar_color }};"
-              ></div>
+              <div class="progress-rail" aria-hidden="true">
+                <div
+                  class="progress-bar"
+                  id="progressBar"
+                  style="width: {{ booking_progress.width_percent }}%; background-color: {{ booking_progress.bar_color }};"
+                ></div>
+              </div>
               <div class="progress-text" id="progressText">
                 <span class="progress-text-main">{{ current_booked_canoes }} / {{ event_settings.available_canoes_total }} kanoter bokade</span>
-                <span class="progress-text-hint">Tryck för att se deltagare</span>
+                <span class="progress-text-hint">Tryck för att visa deltagare</span>
               </div>
             </button>
 

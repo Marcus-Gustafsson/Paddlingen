@@ -48,7 +48,7 @@
     progressBarElement.style.backgroundColor = progressColor;
     progressTextElement.innerHTML = `
       <span class="progress-text-main">${bookedCanoes} / ${totalAvailableCanoesForEvent} kanoter bokade</span>
-      <span class="progress-text-hint">Tryck för att se deltagare</span>
+      <span class="progress-text-hint">Tryck för att visa deltagare</span>
     `;
 
     if (bookedCanoes >= totalAvailableCanoesForEvent) {

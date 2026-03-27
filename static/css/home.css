@@ -354,51 +354,58 @@ body.public-lock-page {
 }
 
 .home-page .progress-trigger {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: min(100%, 620px);
-  height: 2.6rem;
+  min-height: 4.3rem;
   margin: 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background-color: rgba(255, 255, 255, 0.14);
+  padding: 0.9rem 1rem 0.95rem;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  box-shadow: 0 18px 36px rgba(4, 11, 16, 0.24);
-  backdrop-filter: blur(12px);
   transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    transform 0.24s ease,
+    box-shadow 0.24s ease;
 }
 
 .home-page .progress-container {
   position: relative;
-  overflow: hidden;
-  border-radius: 1rem;
+  overflow: visible;
+  border-radius: 1.2rem;
   isolation: isolate;
 }
 
+.home-page .progress-rail {
+  width: 100%;
+  height: 0.62rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 3px rgba(5, 14, 20, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 .home-page .progress-bar {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  position: relative;
+  height: 100%;
   width: 0%;
   background-color: hsl(120, 100%, 50%);
   background-image: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.02) 100%
+    rgba(91, 235, 139, 0.96) 0%,
+    rgba(237, 205, 91, 0.9) 62%,
+    rgba(231, 95, 95, 0.92) 100%
   );
   box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.18),
-    0 0 14px rgba(61, 201, 99, 0.28);
+    inset -1px 0 0 rgba(255, 255, 255, 0.22),
+    0 0 18px rgba(124, 211, 118, 0.18);
   transform-origin: left center;
   animation: home-progress-bar-fill 1s cubic-bezier(0.22, 1, 0.36, 1) both;
   transition:
     width 1.55s cubic-bezier(0.22, 1, 0.36, 1),
     background-color 1.55s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 @keyframes home-progress-bar-fill {
@@ -415,8 +422,7 @@ body.public-lock-page {
 
 .home-page .progress-trigger:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.34);
-  box-shadow: 0 24px 40px rgba(4, 11, 16, 0.28);
+  box-shadow: 0 18px 30px rgba(4, 11, 16, 0.14);
 }
 
 .home-page .progress-trigger:focus-visible,
@@ -428,34 +434,44 @@ body.public-lock-page {
 }
 
 .home-page .progress-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: static;
   width: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.18rem;
-  padding-inline: 1rem;
-  text-align: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding-top: 0.72rem;
+  text-align: left;
   pointer-events: none;
 }
 
 .home-page .progress-text-main {
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.05;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.1;
   color: #f6f4ef;
-  text-shadow: 0 1px 10px rgba(5, 14, 20, 0.5);
+  text-shadow: 0 1px 10px rgba(5, 14, 20, 0.36);
 }
 
 .home-page .progress-text-hint {
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: #fff3b6;
+  text-align: right;
+}
+
+.home-page .progress-text-hint::before {
+  content: "";
+  display: inline-block;
+  width: 0.98rem;
+  height: 0.98rem;
+  margin-right: 0.45rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M15.5 16.2C10.3 16.2 7.1 13.7 6.2 9.3V3.5' stroke='%23fff3b6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M3.7 5.9L6.2 3.4L8.7 5.9' stroke='%23fff3b6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  transform: translateY(0.1rem);
 }
 
 .home-page .book-btn {
@@ -781,19 +797,44 @@ body.public-lock-page {
   }
 
   .home-page .progress-trigger {
-    min-height: 3.00rem;
-    height: 3.0rem;
-    background-color: rgba(255, 255, 255, 0.18);
-    backdrop-filter: none;
-    box-shadow: 0 12px 24px rgba(4, 11, 16, 0.2);
+    min-height: 4rem;
+    padding: 0.78rem 0.8rem 0.82rem;
+    background: transparent;
+    box-shadow: none;
   }
 
   .home-page .progress-text-main {
-    font-size: 0.91rem;
+    font-size: 0.88rem;
   }
 
   .home-page .progress-text-hint {
-    font-size: 0.62rem;
+    font-size: 0.66rem;
+  }
+
+  .home-page .progress-text {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.22rem;
+    padding-top: 0.62rem;
+    text-align: center;
+  }
+
+  .home-page .progress-rail {
+    height: 0.5rem;
+  }
+
+  .home-page .progress-bar {
+    box-shadow:
+      inset -1px 0 0 rgba(255, 255, 255, 0.2),
+      0 0 14px rgba(124, 211, 118, 0.14);
+  }
+
+  .home-page .progress-text-hint {
+    text-align: center;
+  }
+
+  .home-page .progress-text-hint::before {
+    display: none;
   }
 
   .public-lock-page .public-lock-password-row {

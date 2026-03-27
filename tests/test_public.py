@@ -107,7 +107,7 @@ def test_home_page(client):
     assert response.status_code == 200
     page = response.get_data(as_text=True)
     assert "Boka kanot" in page
-    assert "Tryck för att se deltagare" in page
+    assert "Tryck för att visa deltagare" in page
     assert "Visa bilder från tidigare år" in page
     assert "Steg 1 av 3" in page
     assert "Regler och vanliga frågor" in page
