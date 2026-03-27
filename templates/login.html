@@ -7,10 +7,19 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
-<body class="admin-login-page">
+{% set flashed_messages = get_flashed_messages(with_categories=true) %}
+<body class="admin-login-page{% if flashed_messages %} admin-login-page--with-toast{% endif %}">
+  {% if flashed_messages %}
+    <div class="login-toast-stack" aria-live="polite">
+      {% for category, msg in flashed_messages %}
+        <div class="login-toast login-toast-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <main class="login-shell">
     <section class="login-card-section">
-      <div class="login-card">
+      <div class="login-card admin-reveal admin-reveal--1">
         <div class="login-card-header">
           <p class="login-step-label">Administratör</p>
           <h1>Logga in</h1>
@@ -18,16 +27,6 @@
             Använd dina adminuppgifter för att öppna kontrollpanelen.
           </p>
         </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="login-toast-stack" aria-live="polite">
-              {% for category, msg in messages %}
-                <div class="login-toast login-toast-{{ category }}">{{ msg }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
 
         <form method="post" class="login-form">
           <input

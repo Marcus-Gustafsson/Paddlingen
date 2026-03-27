@@ -14,6 +14,23 @@ Why it is separate:
 
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
+:root {
+  --lake-mist-surface: #eef3f2;
+  --lake-mist-surface-strong: #f5f1e8;
+  --lake-mist-glass: rgba(233, 241, 241, 0.82);
+  --lake-mist-glass-soft: rgba(247, 249, 246, 0.72);
+  --lake-mist-border: rgba(90, 123, 128, 0.18);
+  --lake-mist-border-strong: rgba(82, 123, 131, 0.28);
+  --lake-mist-text: #20323b;
+  --lake-mist-text-muted: #536874;
+  --lake-mist-accent: #cfb15b;
+  --lake-mist-accent-soft: rgba(207, 177, 91, 0.18);
+  --lake-mist-action: #547d84;
+  --lake-mist-action-strong: #456971;
+  --lake-mist-shadow: 0 24px 54px rgba(24, 47, 56, 0.18);
+  --lake-mist-shadow-soft: 0 14px 28px rgba(24, 47, 56, 0.1);
+}
+
 * {
   margin: 0;
   padding: 0;

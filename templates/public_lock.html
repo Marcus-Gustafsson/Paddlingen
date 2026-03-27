@@ -67,17 +67,14 @@
                   name="password"
                   autocomplete="current-password"
                   placeholder="Lösenord"
+                  data-required-message="Lösenord måste fyllas i."
                   required
                   autofocus
                 >
               </label>
             </div>
 
-            <button type="submit" class="progress-container progress-trigger public-lock-submit-trigger">
-              <div class="progress-text public-lock-submit-text">
-                <span class="progress-text-main">Öppna sidan</span>
-              </div>
-            </button>
+            <button type="submit" class="public-lock-submit-button">Öppna sidan</button>
 
             <div class="book-btn public-lock-book-placeholder" aria-hidden="true"></div>
           </form>
@@ -88,5 +85,28 @@
     </section>
   </main>
   <script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
+  <script>
+    (function () {
+      const passwordInput = document.getElementById("publicSitePassword");
+
+      if (!passwordInput) {
+        return;
+      }
+
+      const requiredMessage = passwordInput.dataset.requiredMessage || "Det här fältet måste fyllas i.";
+
+      passwordInput.addEventListener("invalid", function () {
+        if (passwordInput.validity.valueMissing) {
+          passwordInput.setCustomValidity(requiredMessage);
+        } else {
+          passwordInput.setCustomValidity("");
+        }
+      });
+
+      passwordInput.addEventListener("input", function () {
+        passwordInput.setCustomValidity("");
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -20,7 +20,7 @@
 </head>
 {% set flashed_messages = get_flashed_messages(with_categories=true) %}
 <body class="admin-page{% if flashed_messages %} admin-page--with-toast{% endif %}" data-open-admin-panel="{{ open_admin_panel }}">
-  <div class="admin-top-row" aria-label="Adminöversikt">
+  <div class="admin-top-row admin-reveal admin-reveal--1" aria-label="Adminöversikt">
     <a class="admin-home-link" href="{{ url_for('main.index') }}">← Till hemsidan</a>
 
     <header class="admin-header">
@@ -70,53 +70,131 @@
   {% endif %}
 
   <main class="admin-container">
-    <section class="admin-action-grid" aria-label="Huvudåtgärder">
-      <button
-        class="admin-action-card"
-        type="button"
-        data-open-admin-panel="bookingsPanel"
-      >
+    <section class="admin-dashboard-section admin-reveal admin-reveal--2" aria-label="Adminverktyg">
+      <section class="admin-tool-grid" aria-label="Adminverktyg">
+        <button
+          class="admin-action-card admin-tool-card admin-tool-card--primary"
+          type="button"
+          data-open-admin-panel="bookingsPanel"
+        >
+        <span class="admin-tool-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 5.5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M8.5 10.25h7M8.5 13h7M8.5 15.75H13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="admin-tool-card-ghost" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 5.5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M8.5 10.25h7M8.5 13h7M8.5 15.75H13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
         <strong>Hantera bokningar</strong>
-        <span>
-          Lägg till bokningar, justera namn och ta bort felaktiga bokningar.
+        <span class="admin-tool-card-copy">
+          Lägg till bokningar, rätta namn och ta bort fel.
         </span>
-      </button>
+        <span class="admin-tool-card-action">Öppna bokningar →</span>
+        </button>
 
-      <button
-        class="admin-action-card"
-        type="button"
-        data-open-admin-panel="eventsPanel"
-      >
+        <button
+          class="admin-action-card admin-tool-card admin-tool-card--primary"
+          type="button"
+          data-open-admin-panel="eventsPanel"
+        >
+        <span class="admin-tool-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 6.25h10a1.75 1.75 0 0 1 1.75 1.75v9a1.75 1.75 0 0 1-1.75 1.75H7A1.75 1.75 0 0 1 5.25 17V8A1.75 1.75 0 0 1 7 6.25Z" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M8.5 4.75v3M15.5 4.75v3M5.25 10.25h13.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="admin-tool-card-ghost" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 6.25h10a1.75 1.75 0 0 1 1.75 1.75v9a1.75 1.75 0 0 1-1.75 1.75H7A1.75 1.75 0 0 1 5.25 17V8A1.75 1.75 0 0 1 7 6.25Z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M8.5 4.75v3M15.5 4.75v3M5.25 10.25h13.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
         <strong>Hantera event</strong>
-        <span>
-          Redigera det aktiva eventet, skapa nästa års event och välj vilket
-          event som ska visas på hemsidan.
+        <span class="admin-tool-card-copy">
+          Redigera aktivt event och förbered nästa års publicering.
         </span>
-      </button>
-    </section>
+        <span class="admin-tool-card-action">Öppna event →</span>
+        </button>
 
-    <section class="admin-support-grid" aria-label="Fler adminverktyg">
-      <button
-        class="admin-support-card"
-        type="button"
-        data-open-admin-panel="publicSitePasswordPanel"
-      >
-        <strong>Byt hemsidans lösenord</strong>
-        <span>
-          Uppdatera det gemensamma lösenordet som krävs för att öppna hemsidan.
+        <button
+          class="admin-support-card admin-tool-card"
+          type="button"
+          data-open-admin-panel="checklistPanel"
+        >
+        <span class="admin-tool-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 7.5h10M8 12h10M8 16.5h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M4.5 7.5h.01M4.5 12h.01M4.5 16.5h.01" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          </svg>
         </span>
-      </button>
-
-      <button
-        class="admin-support-card"
-        type="button"
-        data-open-admin-panel="checklistPanel"
-      >
+        <span class="admin-tool-card-ghost" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 7.5h10M8 12h10M8 16.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M4.5 7.5h.01M4.5 12h.01M4.5 16.5h.01" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </span>
         <strong>Checklista</strong>
-        <span>
-          Markera vilka kanoter som har hämtats ut och spara statusen direkt.
+        <span class="admin-tool-card-copy">
+          Markera uthämtade kanoter och spara status direkt.
         </span>
-      </button>
+        <span class="admin-tool-card-action">Öppna checklista →</span>
+        </button>
+
+        <button
+          class="admin-support-card admin-tool-card"
+          type="button"
+          data-open-admin-panel="publicSitePasswordPanel"
+        >
+        <span class="admin-tool-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8.5 11V8.75a3.5 3.5 0 1 1 7 0V11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <rect x="6.25" y="11" width="11.5" height="8.25" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+        </span>
+        <span class="admin-tool-card-ghost" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8.5 11V8.75a3.5 3.5 0 1 1 7 0V11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <rect x="6.25" y="11" width="11.5" height="8.25" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+        </span>
+        <strong>Byt hemsidans lösenord</strong>
+        <span class="admin-tool-card-copy">
+          Byt lösenordet som krävs för att öppna hemsidan.
+        </span>
+        <span class="admin-tool-card-action">Öppna lösenord →</span>
+        </button>
+
+        <button
+          class="admin-support-card admin-tool-card admin-tool-card--placeholder"
+          type="button"
+          disabled
+          aria-disabled="true"
+        >
+          <span class="admin-tool-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4.75" y="6" width="14.5" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <path d="m8 14 2.1-2.35a1 1 0 0 1 1.48-.04L14 14l1.32-1.45a1 1 0 0 1 1.46-.02L19.25 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9" cy="9.75" r="1.15" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            </svg>
+          </span>
+          <span class="admin-tool-card-ghost" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4.75" y="6" width="14.5" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <path d="m8 14 2.1-2.35a1 1 0 0 1 1.48-.04L14 14l1.32-1.45a1 1 0 0 1 1.46-.02L19.25 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9" cy="9.75" r="1.15" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </span>
+          <strong>Bildgalleri</strong>
+          <span class="admin-tool-card-copy">
+            Hantera bilder från tidigare år direkt i adminvyn.
+          </span>
+          <span class="admin-tool-card-action">Kommer snart</span>
+        </button>
+      </section>
     </section>
   </main>
 

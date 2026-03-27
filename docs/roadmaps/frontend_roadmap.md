@@ -1,6 +1,6 @@
 # Frontend Roadmap
 
-Last updated: 2026-03-26
+Last updated: 2026-03-27
 
 ## TODO:S
 - Review the booking-confirmation and payment pages on real mobile and tablet devices after each larger layout change.
@@ -148,6 +148,37 @@ How to test:
   - `Tryck för att visa deltagare` on the right.
 - Confirm the whole strip still opens the participant list.
 
+### Step 7. Move the public-site modals to a lighter Lake Mist theme (Completed 2026-03-27)
+
+Completed work:
+
+- Replaced the shared dark modal shell with a lighter frosted Lake Mist surface.
+- Updated the FAQ, contact, participant overview, and booking modal to use the
+  same softer modal language.
+- Reduced the heavy dashboard-style feel inside the booking modal by switching
+  panels, summary areas, and form fields to lighter surfaces.
+- Updated the public booking buttons so the main action now reads clearly on
+  the new lighter modal background.
+
+Why:
+
+- The older coal and dark-blue modal styling worked functionally, but it felt
+  heavier and more product-dashboard-like than the outdoor event homepage.
+- A lighter modal system should better match the hero image, the newer frosted
+  homepage surfaces, and the intended calm event feeling.
+
+How to test:
+
+- Open every public homepage modal on desktop, tablet, and phone:
+  - participant overview,
+  - rules/questions,
+  - contact,
+  - booking.
+- Confirm the modal surfaces now feel lighter, calmer, and more coherent with
+  the homepage hero.
+- Confirm the booking modal still keeps clear contrast for labels, fields,
+  selected canoe counts, and action buttons.
+
 ## Phase 2: Redesign The Admin Login Page
 
 Goal:
@@ -188,6 +219,27 @@ Why:
 How to test:
 
 - Try an invalid login and confirm the message is easy to see.
+
+### Step 3. Move the admin login card to the Lake Mist theme (Completed 2026-03-27)
+
+Completed work:
+
+- Updated the login card surface to use the lighter Lake Mist material system.
+- Switched the login inputs, secondary link, and status feedback to the same
+  calmer admin theme.
+- Kept the login layout and behavior unchanged so the visual update stays easy
+  to review.
+
+Why:
+
+- The public site no longer uses the older coal-heavy look, so the login page
+  should not feel disconnected from the newer modal and homepage styling.
+
+How to test:
+
+- Open `/login` on desktop and mobile.
+- Confirm the page still feels clear and easy to use.
+- Try an invalid login and confirm the error state still reads clearly.
 
 
 ## Phase 3: Redesign The Admin Dashboard
@@ -292,6 +344,33 @@ How to test:
   value.
 - Confirm a non-technical admin can understand which values affect the public
   page without needing developer help.
+
+### Step 3A. Move the main admin dashboard surfaces to the Lake Mist theme (Completed 2026-03-27)
+
+Completed work:
+
+- Updated the top dashboard shell, session summary card, back-to-home link, and
+  main action cards to use the lighter Lake Mist styling.
+- Rebuilt the admin action area into one clearer card grid with premium hover
+  feedback and action hints.
+- Added the same fade-in entrance style used elsewhere on the site to the
+  admin login card and dashboard card sections.
+- Kept the existing admin layout and interaction flow intact.
+- Left the deeper admin panels for a later dedicated pass so the surface
+  redesign can be reviewed on its own first.
+
+Why:
+
+- The admin dashboard should feel related to the public site without losing its
+  clarity for non-technical admins.
+- Updating the dashboard shell first makes it easier to judge the theme before
+  carrying it into the heavier admin panels.
+
+How to test:
+
+- Log in as admin and confirm the dashboard cards, header, and support actions
+  now feel lighter and more aligned with the public site.
+- Confirm the two primary actions still stand out clearly.
 
 ### Step 4. Add room for future booking metadata
 
@@ -641,6 +720,34 @@ How to test:
 
 - Reload the homepage with the browser network panel open.
 - Confirm fewer or smaller image files are loaded on first view.
+
+### Step 5. Add one admin tool for previous-years image management
+
+What to do:
+
+- Add one dedicated admin card and matching admin panel for image management.
+- Let admins:
+  - upload new images,
+  - remove existing images,
+  - and replace one image without needing shell access.
+- Keep the first version simple and safe:
+  - work only with the current previous-years image folders,
+  - reuse the metadata sync workflow,
+  - and clearly explain what happens when one image is removed or replaced.
+
+Why:
+
+- Image handling is still developer-driven today.
+- A lightweight admin image tool would remove one of the remaining content
+  tasks that still needs direct file access.
+
+How to test:
+
+- Add one image and confirm it appears in the expected gallery/ribbon views.
+- Remove one image and confirm the generated image variants and metadata stay in
+  sync.
+- Confirm a non-technical admin can understand the workflow without reading
+  developer docs first.
 
 ## Current Recommended Next Step
 

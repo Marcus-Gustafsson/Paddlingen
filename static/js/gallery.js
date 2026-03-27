@@ -109,7 +109,7 @@
       imageElement.src = imageUrl;
       imageElement.alt = `Galleri bild ${imageId}`;
       counterElement.textContent = `${currentImageIndex + 1} / ${galleryImages.length}`;
-      infoImageIdElement.textContent = `ID: ${imageId}`;
+      infoImageIdElement.textContent = `${imageId}`;
       previousButton.style.display = galleryImages.length > 1 ? "block" : "none";
       nextButton.style.display = galleryImages.length > 1 ? "block" : "none";
 

@@ -117,7 +117,8 @@ def test_home_page(client):
     assert 'id="heroCalendarAction"' in page
     assert "/event.ics" in page
     assert 'download="paddlingen-event.ics"' in page
-    assert "Samlingsplats: Havsjömossen" in page
+    assert "Samlingsplats:" in page
+    assert "Havsjömossen" in page
     assert "Visa bildinformation" in page
     assert "Bildinformation" in page
     assert "/previous-years-images/ribbon/" in page

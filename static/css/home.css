@@ -23,15 +23,15 @@ body.public-lock-page {
   background-image:
     linear-gradient(
       180deg,
-      rgba(4, 11, 16, 0.2) 0%,
-      rgba(5, 16, 24, 0.4) 46%,
-      rgba(6, 17, 25, 0.62) 100%
+      rgba(4, 11, 16, 0.16) 0%,
+      rgba(5, 16, 24, 0.32) 46%,
+      rgba(6, 17, 25, 0.54) 100%
     ),
     linear-gradient(
       120deg,
-      rgba(5, 23, 32, 0.34) 0%,
-      rgba(5, 23, 32, 0.1) 40%,
-      rgba(5, 23, 32, 0.4) 100%
+      rgba(5, 23, 32, 0.26) 0%,
+      rgba(5, 23, 32, 0.08) 40%,
+      rgba(5, 23, 32, 0.3) 100%
     ),
     url("/static/images/nitten.png");
   background-position: center center;
@@ -59,9 +59,17 @@ body.public-lock-page {
 .home-toast {
   padding: 0.9rem 1rem;
   border-radius: 18px;
-  border: 1px solid transparent;
-  background: rgba(10, 28, 35, 0.88);
-  box-shadow: 0 18px 40px rgba(4, 12, 16, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(246, 249, 247, 0.94) 0%,
+      rgba(230, 239, 239, 0.9) 58%,
+      rgba(239, 233, 223, 0.94) 100%
+    );
+  box-shadow:
+    0 18px 40px rgba(4, 12, 16, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
   font-size: 0.95rem;
   line-height: 1.45;
   cursor: pointer;
@@ -73,7 +81,9 @@ body.public-lock-page {
 
 .home-toast:hover,
 .home-toast:focus-visible {
-  box-shadow: 0 22px 42px rgba(4, 12, 16, 0.28);
+  box-shadow:
+    0 22px 42px rgba(4, 12, 16, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .home-toast.toast-is-hiding {
@@ -82,18 +92,36 @@ body.public-lock-page {
 }
 
 .home-toast-error {
-  border-color: rgba(220, 98, 109, 0.4);
-  color: #ffd9dd;
+  border-color: rgba(220, 98, 109, 0.26);
+  color: #8a2e37;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(252, 244, 244, 0.96) 0%,
+      rgba(248, 233, 234, 0.92) 100%
+    );
 }
 
 .home-toast-success {
-  border-color: rgba(113, 184, 144, 0.32);
-  color: #e2ffe8;
+  border-color: rgba(113, 184, 144, 0.24);
+  color: #365f47;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(244, 250, 246, 0.96) 0%,
+      rgba(231, 242, 235, 0.92) 100%
+    );
 }
 
 .home-toast-info {
-  border-color: rgba(113, 186, 211, 0.32);
-  color: #def6ff;
+  border-color: rgba(113, 186, 211, 0.24);
+  color: #355560;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(243, 249, 251, 0.96) 0%,
+      rgba(229, 240, 244, 0.92) 100%
+    );
 }
 
 .home-page main {
@@ -107,15 +135,15 @@ body.public-lock-page {
   background-image:
     linear-gradient(
       180deg,
-      rgba(4, 11, 16, 0.2) 0%,
-      rgba(5, 16, 24, 0.4) 46%,
-      rgba(6, 17, 25, 0.62) 100%
+      rgba(4, 11, 16, 0.16) 0%,
+      rgba(5, 16, 24, 0.32) 46%,
+      rgba(6, 17, 25, 0.54) 100%
     ),
     linear-gradient(
       120deg,
-      rgba(5, 23, 32, 0.34) 0%,
-      rgba(5, 23, 32, 0.1) 40%,
-      rgba(5, 23, 32, 0.4) 100%
+      rgba(5, 23, 32, 0.26) 0%,
+      rgba(5, 23, 32, 0.08) 40%,
+      rgba(5, 23, 32, 0.3) 100%
     ),
     url("/static/images/nitten.png");
   background-position: center center;
@@ -166,7 +194,7 @@ body.public-lock-page {
 .home-page .weather-widget-hero {
   width: min(100%, 340px);
   margin: 0;
-  padding: 1rem 1.05rem;
+  padding: 0.92rem 0.98rem;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 1.5rem;
   background: linear-gradient(
@@ -210,8 +238,8 @@ body.public-lock-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: 2.7rem;
+  height: 2.7rem;
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 999px;
   background: linear-gradient(
@@ -234,8 +262,8 @@ body.public-lock-page {
 }
 
 .home-page .hero-icon-svg {
-  width: 1.32rem;
-  height: 1.32rem;
+  width: 1.14rem;
+  height: 1.14rem;
 }
 
 .home-page .hero-icon-button:hover {
@@ -259,25 +287,26 @@ body.public-lock-page {
 }
 
 .home-page .hero-center {
-  width: min(100%, 860px);
+  width: min(100%, 740px);
   margin: 0.1rem auto 0;
-  padding: 0.2rem 1rem 1.5rem;
+  padding: 0.05rem 1rem 1.05rem;
   text-align: center;
 }
 
 .home-page .main-title {
-  font-size: clamp(3.2rem, 10vw, 6.4rem);
-  line-height: 0.95;
+  font-size: clamp(2.75rem, 7.6vw, 5.2rem);
+  line-height: 0.92;
   font-weight: 300;
-  letter-spacing: -0.04em;
-  margin-bottom: 0.9rem;
+  letter-spacing: -0.05em;
+  margin-bottom: 0.62rem;
 }
 
 .home-page .main-subtitle {
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.62rem;
   color: rgba(244, 241, 234, 0.84);
-  font-size: clamp(1rem, 2.2vw, 1.20rem);
+  font-size: clamp(0.9rem, 1.45vw, 1rem);
   font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .home-page .hero-details {
@@ -286,15 +315,15 @@ body.public-lock-page {
   align-items: stretch;
   justify-content: center;
   gap: 0.45rem;
-  width: min(100%, 340px);
-  margin: 0 auto 1.55rem;
+  width: min(100%, 305px);
+  margin: 0 auto 1.15rem;
 }
 
 .home-page .hero-action-row {
   display: grid;
   grid-template-columns: 1.75rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.62rem;
   padding: 0;
   margin: 0;
   width: 100%;
@@ -312,8 +341,8 @@ body.public-lock-page {
 }
 
 .home-page .hero-action-icon-svg {
-  width: 1.42rem;
-  height: 1.42rem;
+  width: 1.26rem;
+  height: 1.26rem;
 }
 
 .home-page .hero-action-link {
@@ -344,7 +373,7 @@ body.public-lock-page {
 
 .home-page .hero-action-value {
   color: rgba(248, 246, 241, 0.98);
-  font-size: clamp(0.84rem, 1.55vw, 1.04rem);
+  font-size: clamp(0.78rem, 1.15vw, 0.92rem);
   font-weight: 500;
   line-height: 1.2;
 }
@@ -357,7 +386,7 @@ body.public-lock-page {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: min(100%, 620px);
+  width: min(100%, 540px);
   min-height: 4.3rem;
   margin: 0 auto;
   padding: 0.9rem 1rem 0.95rem;
@@ -446,7 +475,7 @@ body.public-lock-page {
 }
 
 .home-page .progress-text-main {
-  font-size: 1.02rem;
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.1;
   color: #f6f4ef;
@@ -454,7 +483,7 @@ body.public-lock-page {
 }
 
 .home-page .progress-text-hint {
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   color: #fff3b6;
@@ -475,7 +504,7 @@ body.public-lock-page {
 }
 
 .home-page .book-btn {
-  margin-top: 1.8rem;
+  margin-top: 1.15rem;
   min-width: 220px;
   padding: 0.85rem 1.8rem;
   border: none;
@@ -521,17 +550,22 @@ body.public-lock-page {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: min(100%, 760px);
+  margin: 0 auto;
 }
 
 .public-lock-page .public-lock-form {
-  width: min(100%, 620px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: min(100%, 460px);
+  display: grid;
+  gap: 0.95rem;
+  justify-items: center;
+  padding: 0;
 }
 
 .public-lock-page .public-lock-details {
   width: 100%;
+  display: grid;
+  gap: 0.8rem;
 }
 
 .public-lock-page .public-lock-detail-placeholder,
@@ -548,7 +582,7 @@ body.public-lock-page {
 }
 
 .public-lock-page .public-lock-password-row {
-  width: min(100%, 460px);
+  width: min(100%, 360px);
   margin: 0 auto;
 }
 
@@ -566,32 +600,66 @@ body.public-lock-page {
 
 .public-lock-page .public-lock-password-row input {
   width: 100%;
-  min-height: 3.05rem;
-  padding: 0.8rem 0.95rem;
+  min-height: 3rem;
+  padding: 0.84rem 1rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(232, 241, 245, 0.22) 0%,
+      rgba(208, 224, 232, 0.14) 100%
+    );
   color: #f5f4ef;
-  font-size: 1rem;
+  font-size: 0.96rem;
   text-align: center;
-  box-shadow: 0 14px 30px rgba(4, 11, 16, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 16px 30px rgba(4, 11, 16, 0.16);
 }
 
 .public-lock-page .public-lock-password-row input::placeholder {
-  color: rgba(245, 244, 239, 0.74);
+  color: rgba(245, 244, 239, 0.76);
 }
 
 .public-lock-page .public-lock-password-row input:focus {
-  outline: 2px solid rgba(255, 243, 182, 0.68);
-  outline-offset: 2px;
+  outline: none;
+  border-color: rgba(207, 177, 91, 0.44);
+  box-shadow:
+    0 0 0 4px rgba(207, 177, 91, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 18px 32px rgba(4, 11, 16, 0.18);
 }
 
-.public-lock-page .public-lock-submit-trigger {
-  margin-top: 0;
+.public-lock-page .public-lock-submit-button {
+  min-width: 220px;
+  width: auto;
+  min-height: 0;
+  padding: 0.85rem 1.8rem;
+  border: none;
+  border-radius: 999px;
+  background: #f4f1ea;
+  color: #0b202a;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 18px 30px rgba(5, 14, 20, 0.2);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    background-color 0.22s ease;
 }
 
-.public-lock-page .public-lock-submit-text .progress-text-main {
-  color: #f6f4ef;
+.public-lock-page .public-lock-submit-button:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+  box-shadow: 0 18px 30px rgba(5, 14, 20, 0.2);
+}
+
+.public-lock-page .public-lock-submit-button:focus-visible {
+  outline: 2px solid rgba(255, 243, 182, 0.88);
+  outline-offset: 3px;
 }
 
 .public-lock-page .public-lock-book-placeholder {
@@ -695,27 +763,23 @@ body.public-lock-page {
     align-items: flex-start;
   }
 
-  .home-page .weather-widget-hero {
-    width: min(100%, 320px);
-  }
-
   .home-page .hero-center {
-    width: min(100%, 760px);
+    width: min(100%, 720px);
     margin-top: 5rem;
-    padding-top: 2.5rem;
-    padding-bottom: 1.25rem;
+    padding-top: 2.2rem;
+    padding-bottom: 1.1rem;
   }
 
   .home-page .main-title {
-    font-size: clamp(4rem, 8vw, 5.8rem);
+    font-size: clamp(3.7rem, 7.4vw, 5.3rem);
   }
 
   .home-page .main-subtitle {
-    font-size: 1rem;
+    font-size: 0.96rem;
   }
 
   .home-page .progress-trigger {
-    width: min(100%, 600px);
+    width: min(100%, 560px);
   }
 }
 
@@ -747,7 +811,7 @@ body.public-lock-page {
   }
 
   .home-page .weather-widget-hero {
-    width: min(100%, 320px);
+    width: min(100%, 330px);
     padding: 0.8rem 0.9rem;
   }
 
@@ -758,22 +822,22 @@ body.public-lock-page {
 
   .home-page .hero-center {
     margin-top: 1rem;
-    padding: 1.15rem 0.25rem 1.1rem;
+    padding: 0.95rem 0.25rem 1rem;
   }
 
   .home-page .main-title {
-    font-size: clamp(2.9rem, 15vw, 4.25rem);
+    font-size: clamp(2.7rem, 14vw, 4rem);
   }
 
   .home-page .main-subtitle {
-    font-size: 1rem;
-    margin-bottom: 0.7rem;
+    font-size: 0.94rem;
+    margin-bottom: 0.62rem;
   }
 
   .home-page .hero-details {
-    width: min(100%, 295px);
+    width: min(100%, 285px);
     gap: 0.4rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.1rem;
   }
 
   .home-page .hero-action-row {
@@ -793,7 +857,7 @@ body.public-lock-page {
   }
 
   .home-page .hero-action-value {
-    font-size: clamp(0.8rem, 3.9vw, 0.92rem);
+    font-size: clamp(0.78rem, 3.6vw, 0.9rem);
   }
 
   .home-page .progress-trigger {
@@ -838,7 +902,15 @@ body.public-lock-page {
   }
 
   .public-lock-page .public-lock-password-row {
+    width: min(100%, 340px);
+  }
+
+  .public-lock-page .public-lock-form {
     width: min(100%, 380px);
+  }
+
+  .public-lock-page .public-lock-submit-button {
+    min-width: 200px;
   }
 
   .public-lock-page .public-lock-ribbon-placeholder {

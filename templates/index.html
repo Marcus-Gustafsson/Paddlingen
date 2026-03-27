@@ -643,19 +643,46 @@ Why it’s here:
   <div id="galleryModal" class="gallery-modal">
     <div class="gallery-content">
       <button class="gallery-close" aria-label="Stäng">&times;</button>
-      <button class="gallery-info-trigger" type="button" aria-label="Visa bildinformation">?</button>
+      <button class="gallery-info-trigger" type="button" aria-label="Visa bildinformation">
+        <svg
+          class="gallery-info-trigger-icon"
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle cx="12" cy="12" r="8.2" stroke="currentColor" stroke-width="1.7" />
+          <path
+            d="M12 10.2v5.1M12 7.9h.01"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
       <button class="gallery-prev" aria-label="Föregående bild">&#10094;</button>
       <img src="" alt="Galleri bild" class="gallery-image">
       <button class="gallery-next" aria-label="Nästa bild">&#10095;</button>
       <div class="gallery-info-panel" hidden role="dialog" aria-modal="true" aria-labelledby="galleryInfoTitle">
         <button class="gallery-info-close" type="button" aria-label="Stäng bildinformation">&times;</button>
-        <h3 id="galleryInfoTitle">Bildinformation</h3>
-        <p class="gallery-info-image-id"></p>
-        <p class="gallery-info-text">
-          Om du har frågor om bilden eller vill att den ska tas bort, mejla
-          <a href="mailto:{{ event_settings.contact_email }}">{{ event_settings.contact_email }}</a>
-          och ange orsak samt ID.
-        </p>
+        <div class="gallery-info-header">
+          <p class="gallery-info-kicker">Bildinformation</p>
+        </div>
+        <div class="gallery-info-meta">
+          <span class="gallery-info-meta-label">Bild-ID</span>
+          <p class="gallery-info-image-id"></p>
+        </div>
+        <div class="gallery-info-copy">
+          <p class="gallery-info-text">
+            Om du vill fråga om bilden eller be att den tas bort kan du kontakta oss via mejl.
+          </p>
+          <p class="gallery-info-text">
+            Skriv till
+            <a href="mailto:{{ event_settings.contact_email }}">{{ event_settings.contact_email }}</a>
+            och ange bild-ID samt anledning.
+          </p>
+        </div>
       </div>
       <div class="gallery-caption">
         <span class="gallery-counter"></span>
