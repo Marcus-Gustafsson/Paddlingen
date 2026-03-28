@@ -1,6 +1,6 @@
 # Backend Roadmap
 
-Last updated: 2026-03-25
+Last updated: 2026-03-28
 
 ## Goal
 
@@ -212,16 +212,14 @@ How to test:
 - Set the event date to a past date.
 - Confirm the widget shows the chosen post-event behavior.
 
-### Step 7. Add admin editing for the active event settings
+### Step 7. Add admin editing for the active event settings (Completed 2026-03-20)
 
-What to do:
+Completed work:
 
-- Add a simple admin form for editing the active event row.
-
-Why:
-
-- This is the actual user-facing reason to move event settings into the
-  database.
+- Added an admin event-management panel for the active event row.
+- Added editing for the public event fields that now live in the database.
+- Added the create-new-event flow and active-event switching workflow.
+- Kept the admin-facing date and time fields aligned with Swedish formats.
 
 How to test:
 
@@ -391,26 +389,46 @@ Implementation note:
   path if the shared password is forgotten and the admin page cannot be
   reached.
 
-### Step 6. Use a production-grade rate-limit storage backend
+### Step 6. Use a production-grade rate-limit storage backend (Completed 2026-03-28)
 
-What to do:
+Completed work:
 
-- Keep the existing request limits on `/unlock` and `/login`.
-- Replace Flask-Limiter's in-memory storage with a shared backend for
-  deployment, such as Redis.
+- Kept the existing request limits on `/unlock` and `/login`.
+- Added explicit app configuration for `RATELIMIT_STORAGE_URI`.
+- Kept `memory://` as the simple local-development default.
+- Made `RATELIMIT_STORAGE_URI` required when `FLASK_ENV=production` so the app
+  fails fast instead of silently deploying with in-memory limiter storage.
+- Chose Redis Open Source as the first shared production backend for the
+  project.
+- Added the Redis Python dependency and updated the environment examples and
+  deployment docs to match the new configuration.
 
 Why:
 
-- The brute-force protection routes already exist, but the current in-memory
+- The brute-force protection routes already exist, but the old in-memory
   storage is only suitable for local development and very simple deployments.
 - A shared backend keeps the limits consistent across restarts, multiple
   workers, or multiple app instances.
+- Failing fast in production reduces the chance of launching the VPS with the
+  wrong limiter storage by mistake.
 
 How to test:
 
+- In local development, leave `RATELIMIT_STORAGE_URI=memory://` and confirm the
+  current behavior is unchanged.
+- In a production-like environment, set
+  `RATELIMIT_STORAGE_URI=redis://<host>:6379/0`.
 - Trigger the `/unlock` and `/login` limits from the same IP address.
 - Confirm the limit still applies correctly after an app restart or when using
   multiple app workers.
+
+Implementation note:
+
+- The code support for Redis-backed limiter storage is now implemented.
+- The remaining manual work is operational:
+  - create the Redis service,
+  - connect it in Coolify,
+  - and test it in the staged deployment.
 
 ### Step 7. Add event-day checklist and PDF export support
 
@@ -431,46 +449,31 @@ How to test:
 - Generate the checklist from the admin page.
 - Confirm the list can be used on screen and exported to PDF.
 
-### Step 8. Support grouped participant overviews for multi-canoe bookings
+### Step 8. Support grouped participant overviews for multi-canoe bookings (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Update the booking model and overview queries so one lead person can hold
-  multiple canoes in the public participant view.
-- Show the person name on the left and the canoe count on the right.
-
-Why:
-
-- The current participant list is still oriented toward one row per canoe.
-- A grouped overview will matter once one person can book several canoes under
-  their own name.
+- Grouped the public participant overview by pickup person instead of one row
+  per canoe.
+- Added one canoe count on the grouped row so multi-canoe bookings read more
+  clearly.
+- Added shared grouping helpers so the same booking shape can support both the
+  public overview and the admin checklist.
 
 How to test:
 
 - Create a booking where one person holds multiple canoes.
 - Confirm the overview shows the grouped name plus canoe count correctly.
 
-### Step 9. Support up to three named riders per canoe before Stripe
+### Step 9. Support up to three named riders per canoe before Stripe (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Change the meaning of one `booked_canoes` row so it represents one canoe,
-  not just one displayed participant name.
-- Keep the current required pickup person on the row.
-- Add optional rider slots for rider two and rider three on the same row.
-- Add model helper properties so the rest of the code can ask simple questions
-  such as:
-  - what the pickup person's full name is,
-  - what rider two should display when blank,
-  - whether the canoe has a third rider,
-  - how to format the canoe's rider names for display.
-
-Why:
-
-- Stripe should be added only after the booking data shape matches the real
-  canoe usage.
-- Keeping one canoe on one row still matches the checklist and payment logic
-  better than creating one row per rider.
+- Changed the meaning of one `booked_canoes` row so it now represents one
+  canoe with one required pickup person plus optional second and third riders.
+- Added the optional rider fields to the model and the related booking flows.
+- Added helper properties for pickup-person display, placeholder text, and
+  formatted rider-name output.
 
 How to test:
 
@@ -478,22 +481,16 @@ How to test:
 - Confirm the new optional rider fields can stay empty without breaking the
   model or existing routes.
 
-### Step 10. Prepare grouped canoe-detail view models for overview and checklist
+### Step 10. Prepare grouped canoe-detail view models for overview and checklist (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Keep grouping the public overview and admin checklist by pickup person.
-- Add child detail rows under each group so one person can expand the grouped
-  row and inspect each canoe separately.
-- Make the grouped row itself a button, not only the name text.
-
-Why:
-
-- Grouping keeps the summary view compact.
-- Expandable child rows expose the missing canoe-by-canoe detail without
-  cluttering the default view.
-- Making the whole row a button improves mobile usability, creates a larger
-  click target, and is easier to use with a keyboard.
+- Added shared grouped canoe-detail view models for both the public overview
+  and the admin checklist.
+- Added expandable child rows so each grouped pickup person can reveal the
+  canoe-by-canoe rider details.
+- Made the grouped summary row a button in the public overview and in the
+  checklist summary area.
 
 How to test:
 

@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ".admin-session-link[data-open-admin-panel]"
   );
   const closePanelButtons = document.querySelectorAll("[data-close-admin-panel]");
-  const passwordToggleButtons = document.querySelectorAll("[data-password-toggle]");
   const groupedDetailToggleButtons = document.querySelectorAll(
     "[data-toggle-grouped-details]"
   );
@@ -240,57 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .querySelectorAll(".admin-booking-editor")
     .forEach((bookingEditor) => setupAdminBookingEditor(bookingEditor));
-
-  function applyPasswordVisibilityState(toggleButton, isPasswordVisible) {
-    const hiddenPasswordIcon = toggleButton.querySelector(
-      ".password-visibility-icon--password-hidden"
-    );
-    const visiblePasswordIcon = toggleButton.querySelector(
-      ".password-visibility-icon--password-visible"
-    );
-
-    function setIconVisibility(iconElement, shouldShow) {
-      if (!iconElement) {
-        return;
-      }
-
-      iconElement.hidden = !shouldShow;
-      iconElement.style.display = shouldShow ? "block" : "none";
-    }
-
-    setIconVisibility(hiddenPasswordIcon, !isPasswordVisible);
-    setIconVisibility(visiblePasswordIcon, isPasswordVisible);
-
-    toggleButton.setAttribute("aria-pressed", String(isPasswordVisible));
-    toggleButton.setAttribute(
-      "aria-label",
-      isPasswordVisible
-        ? toggleButton.dataset.hideLabel || "Dölj lösenord"
-        : toggleButton.dataset.showLabel || "Visa lösenord"
-    );
-  }
-
-  passwordToggleButtons.forEach((toggleButton) => {
-    const inputShell = toggleButton.closest(".password-input-shell");
-    const passwordInput = inputShell?.querySelector("input");
-    if (passwordInput) {
-      passwordInput.type = "password";
-    }
-
-    applyPasswordVisibilityState(toggleButton, false);
-
-    toggleButton.addEventListener("click", () => {
-      const buttonInputShell = toggleButton.closest(".password-input-shell");
-      const passwordInput = buttonInputShell?.querySelector("input");
-      if (!passwordInput) {
-        return;
-      }
-
-      const isCurrentlyHidden = passwordInput.type === "password";
-      passwordInput.type = isCurrentlyHidden ? "text" : "password";
-      applyPasswordVisibilityState(toggleButton, isCurrentlyHidden);
-    });
-  });
 
   panelOverlays.forEach((panelOverlay) => {
     panelOverlay.addEventListener("click", (event) => {

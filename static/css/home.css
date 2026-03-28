@@ -586,6 +586,11 @@ body.public-lock-page {
   margin: 0 auto;
 }
 
+.public-lock-page .public-lock-password-row .password-input-shell {
+  position: relative;
+  width: 100%;
+}
+
 .public-lock-page .public-lock-label-sr {
   position: absolute;
   width: 1px;
@@ -601,7 +606,7 @@ body.public-lock-page {
 .public-lock-page .public-lock-password-row input {
   width: 100%;
   min-height: 3rem;
-  padding: 0.84rem 1rem;
+  padding: 0.84rem 3.2rem 0.84rem 1rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.34);
   background:
@@ -629,6 +634,49 @@ body.public-lock-page {
     0 0 0 4px rgba(207, 177, 91, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     0 18px 32px rgba(4, 11, 16, 0.18);
+}
+
+.public-lock-page .public-lock-password-row .password-visibility-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  height: 2.2rem;
+  padding: 0 0.55rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(245, 244, 239, 0.94);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.public-lock-page .public-lock-password-row .password-visibility-toggle:hover {
+  transform: translateY(-50%) translateY(-1px);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.public-lock-page .public-lock-password-row .password-visibility-toggle:focus-visible {
+  outline: 2px solid rgba(255, 243, 182, 0.88);
+  outline-offset: 2px;
+}
+
+.public-lock-page .public-lock-password-row .password-visibility-icon {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  pointer-events: none;
+}
+
+.public-lock-page .public-lock-password-row .password-visibility-icon[hidden] {
+  display: none;
 }
 
 .public-lock-page .public-lock-submit-button {

@@ -144,6 +144,7 @@ ADMIN_USERNAME=your-bootstrap-admin-username
 ADMIN_PASSWORD=your-bootstrap-admin-password
 PUBLIC_SITE_PASSWORD_HASH=the-fallback-shared-password-hash
 DATABASE_URL=postgresql+psycopg://...
+RATELIMIT_STORAGE_URI=redis://redis:6379/0
 SESSION_COOKIE_SECURE=True
 TRUST_REVERSE_PROXY_HEADERS=True
 PORT=8080
@@ -160,6 +161,10 @@ Notes:
   endpoint later in the payment implementation.
 - `STRIPE_PUBLIC_BASE_URL` should be the public HTTPS root URL of the site, not
   a deeper path.
+- `RATELIMIT_STORAGE_URI` should point at the shared Redis service used by
+  Flask-Limiter inside Coolify. If Coolify shows a `Redis URL (Internal)` for
+  the Redis resource, prefer copying that exact value instead of typing the URL
+  manually.
 - `ADMIN_USERNAME` and `ADMIN_PASSWORD` are still required by the current
   production config validation, even if you later add more admin users through
   the CLI.
@@ -334,7 +339,60 @@ What to test:
 - confirm the container starts
 - confirm the domain serves the app over HTTPS
 
-### Step 10. Run smoke tests against the live app
+### Step 10. Add Redis for shared rate limiting
+
+What to do:
+
+- Create one Redis resource in Coolify.
+- Give it a simple name, for example `redis`, so it is easy to recognize later.
+- Open the Redis resource in Coolify and go to its general configuration.
+- Copy the value labeled `Redis URL (Internal)` if Coolify shows it.
+- If Coolify does not show that value, build the URL from the internal service
+  name, for example `redis://redis:6379/0` when the resource is named `redis`.
+- Add that value to the Flask application environment as
+  `RATELIMIT_STORAGE_URI`.
+- Redeploy the Flask application after saving the new environment variable.
+
+Why:
+
+- Flask-Limiter uses this backend to keep request counters shared across
+  multiple Gunicorn workers and across app restarts.
+- The local `memory://` backend is fine for development, but it is not suitable
+  for the deployed VPS setup.
+- Using Coolify's internal Redis URL is safer than guessing the hostname,
+  because it follows Coolify's own service/network configuration.
+
+Step-by-step inside Coolify:
+
+1. Open the project where the Flask application lives.
+2. Create a new database resource and choose `Redis`.
+3. Give the resource a clear name such as `redis`.
+4. Deploy the Redis resource.
+5. Open the Redis resource settings and find the internal connection string.
+6. Copy the internal Redis URL.
+7. Open the Flask application resource.
+8. Add or update this environment variable:
+
+```env
+RATELIMIT_STORAGE_URI=redis://redis:6379/0
+```
+
+9. Replace the example value above with the exact internal URL from Coolify if
+   it differs.
+10. Save the environment variable.
+11. Redeploy the Flask application.
+
+What to test:
+
+- Open the public unlock page and submit the wrong password repeatedly until the
+  `/unlock` limit is reached.
+- Open the admin login page and trigger the `/login` limit from the same IP.
+- Confirm both routes still return HTTP 429 when the limit is exceeded.
+- Restart or redeploy the Flask application and repeat the test.
+- Confirm the limiter still works after the restart, which shows the counters
+  are no longer stored only inside one app process.
+
+### Step 11. Run smoke tests against the live app
 
 What to test:
 

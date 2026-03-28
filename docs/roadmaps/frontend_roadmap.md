@@ -1,6 +1,6 @@
 # Frontend Roadmap
 
-Last updated: 2026-03-27
+Last updated: 2026-03-28
 
 ## TODO:S
 - Review the booking-confirmation and payment pages on real mobile and tablet devices after each larger layout change.
@@ -53,100 +53,33 @@ Completed work:
 - Limited one booking to five canoes.
 - Improved the booking summary and quantity selector behavior.
 
-### Step 4. Refresh the homepage weather card with a lighter frosted-glass style
+### Step 4. Refresh the homepage weather card with a lighter frosted-glass style (Completed 2026-03-19)
 
-What to do:
+Completed work:
 
-- Keep the current weather content, placement, and logic exactly as they are.
-- Replace only the current weather-card surface styling with a lighter frosted
-  glass treatment.
-- Remove the darker current card/background look and rebuild it with:
-  - larger rounded corners,
-  - a lighter semi-transparent glass background,
-  - a softer border,
-  - stronger blur,
-  - and a gentler premium shadow.
-- Do not redesign the content structure during this step.
+- Kept the weather content and placement the same.
+- Rebuilt the weather card with a lighter frosted-glass surface, softer border,
+  stronger blur, and gentler shadow.
+- Kept the widget readable against the homepage hero image on desktop and
+  smaller layouts.
 
-Why:
+### Step 5. Turn the date and location block into clickable action rows (Completed 2026-03-19)
 
-- The weather block already works functionally, but the current darker widget
-  surface feels heavier and older than the desired inspiration.
-- A lighter frosted-glass card should match the water-background hero better
-  without changing the information architecture.
+Completed work:
 
-How to test:
+- Replaced the old plain date and location text with two icon-led action rows.
+- Added the `.ics` calendar download action for the event date row.
+- Added the maps action for the location row.
+- Kept the visual treatment lightweight so the rows fit naturally into the hero.
 
-- Open the homepage on desktop, tablet, and phone.
-- Confirm the weather widget keeps the same content and placement.
-- Confirm the card now feels lighter and more premium.
-- Confirm the card stays readable against both lighter and darker parts of the
-  hero background image.
+### Step 6. Rebuild the booking progress bar into a premium editorial strip (Completed 2026-03-19)
 
-### Step 5. Turn the date and location block into clickable action rows
+Completed work:
 
-What to do:
-
-- Replace the current plain date and location text lines with two simple,
-  aligned rows in the hero center.
-- Keep the visual treatment minimal:
-  - icon on the left,
-  - readable text on the right,
-  - no card background,
-  - no rounded icon background.
-- Make only the text part clickable.
-- Use one row to download or open an `.ics` calendar event as the first
-  calendar solution.
-- Use the other row to open the existing Google Maps location link.
-- Keep the font size slightly smaller than the previous hero text so the rows
-  flow better with the rest of the homepage.
-
-Why:
-
-- The current date and location lines are readable, but they do not clearly
-  communicate that they can become practical user actions.
-- Turning them into icon-led text rows should make the hero feel more useful
-  and intentional without adding extra visual weight.
-- Starting with an `.ics` file is a practical first calendar solution and a
-  common best-practice format.
-
-How to test:
-
-- Click the date text and confirm it opens or downloads a valid `.ics` event.
-- Import that event into a calendar app and confirm the date/time are correct.
-- Click the location text and confirm it opens the correct Google Maps location.
-- Confirm both rows remain readable and easy to tap on mobile.
-
-### Step 6. Rebuild the booking progress bar into a premium editorial strip
-
-What to do:
-
-- Keep the component clickable so it still opens the participant view.
-- Replace the current heavier pill-button progress look with a more editorial
-  strip layout.
-- Use:
-  - a thinner premium gradient progress line,
-  - the booking count clearly below the line on the left,
-  - and the interaction hint on the right with the wording
-    `Tryck för att visa deltagare`.
-- Keep the live booking count and color behavior, but present them in a more
-  modern and premium way.
-
-Why:
-
-- The current progress element works, but it still reads more like a filled
-  button than a refined live booking-status strip.
-- Splitting the status and click hint should make the interaction clearer and
-  make the homepage feel more deliberate.
-
-How to test:
-
-- Open the homepage with low, medium, and high booking counts.
-- Confirm the thinner gradient line still reflects the correct booking level.
-- Confirm the text hierarchy is clear:
-  - booking count on the left,
-  - `Tryck för att visa deltagare` on the right.
-- Confirm the whole strip still opens the participant list.
+- Rebuilt the booking progress display into the thinner editorial strip layout.
+- Kept the live booking count and color behavior.
+- Added the clearer hint text `Tryck för att visa deltagare`.
+- Kept the whole strip clickable so it still opens the participant overview.
 
 ### Step 7. Move the public-site modals to a lighter Lake Mist theme (Completed 2026-03-27)
 
@@ -389,7 +322,7 @@ How to test:
 
 - Review the new layout and confirm it can grow without another redesign.
 
-### Step 5. Prepare the public booking flow for Stripe-hosted Checkout
+### Step 5. Prepare the public booking flow for Stripe-hosted Checkout (Completed 2026-03-25)
 
 Implementation note:
 
@@ -419,33 +352,15 @@ Implementation note:
   the payer email. The remaining frontend work is mostly copy, clarity, and
   later webhook-aware status messaging.
 
-What to do:
+Completed work:
 
-- Keep the public booking modal focused on booking review and participant
-  details, not card entry.
-- Redirect the user from the booking summary step back into booking-modal
-  Step 3, then let that step continue into Stripe-hosted Checkout instead of
-  trying to collect payment details in the site itself.
-- Add clear return states for:
-  - successful payment return,
-  - canceled payment return,
-  - declined or otherwise failed payment attempts.
-
-Why:
-
-- Stripe-hosted Checkout keeps the public payment UI simpler and safer for the
-  first real payment release.
-- The user should still understand what happened when they return to the site.
-
-How to test:
-
-- Start a booking and confirm:
-  - the site moves directly from Step 2 into Step 3 without reloading the page,
-  - that Step 3 shows the timer and cancel action clearly,
-  - the `Fortsätt till betalning` action redirects cleanly to Stripe Checkout,
-  - the success return is clear,
-  - the cancel return is clear,
-  - the site does not claim payment success before the backend has verified it.
+- Kept the booking modal focused on booking review and rider details instead of
+  card entry.
+- Added booking-modal Step 3 with the reservation timer, cancel action, and
+  Stripe handoff.
+- Added the public success and cancel return states around Stripe Checkout.
+- Kept the payment-success messaging aligned with backend verification so the
+  page does not falsely claim payment confirmation too early.
 
 ### Step 5A. Brand Stripe-hosted Checkout to match the public site better
 
@@ -488,24 +403,16 @@ How to test:
   - and legal policy links.
 - Confirm the page still feels recognizably connected to the rest of the site.
 
-### Step 6. Add secondary admin utility actions
+### Step 6. Add secondary admin utility actions (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Add smaller secondary admin actions below the main booking and event cards.
-- Start with:
-  - shared public-password rotation,
-  - one reserved checklist action slot for later.
-
-Why:
-
-- Some admin workflows are important but should not compete visually with the
-  two primary actions.
-
-How to test:
-
-- Confirm the new utility actions are easy to find without overpowering the
-  main booking and event actions.
+- Added smaller secondary admin actions alongside the main booking and event
+  actions.
+- Added the shared public-password rotation action.
+- Added the checklist action entry point.
+- Kept these utilities visually secondary so they do not overpower the two main
+  admin workflows.
 
 ### Step 7. Add an event-day checklist tool later
 
@@ -527,20 +434,14 @@ How to test:
 - Open the checklist tool from the admin page and confirm it works both on
   screen and for print/PDF use.
 
-### Step 8. Refine the public participant overview for grouped canoe counts
+### Step 8. Refine the public participant overview for grouped canoe counts (Completed 2026-03-24)
 
-What to do:
+Completed work:
 
-- Show the participant name on the left and the canoe count on the right once
-  grouped multi-canoe bookings are supported.
-
-Why:
-
-- The current overview is still built around one row per canoe.
-
-How to test:
-
-- Confirm the overview stays readable when one person holds multiple canoes.
+- Updated the participant overview to show the grouped pickup-person name on
+  the left and the canoe count on the right.
+- Kept the grouped overview readable when one person holds multiple canoes.
+- Kept the expandable canoe-detail rows connected to the grouped summary view.
 
 ### Step 9. Extend the booking modal for named riders inside each canoe (Completed 2026-03-24)
 

@@ -61,16 +61,37 @@
               </div>
               <label class="location hero-location public-lock-password-row" for="publicSitePassword">
                 <span class="public-lock-label-sr">Lösenord</span>
-                <input
-                  id="publicSitePassword"
-                  type="password"
-                  name="password"
-                  autocomplete="current-password"
-                  placeholder="Lösenord"
-                  data-required-message="Lösenord måste fyllas i."
-                  required
-                  autofocus
-                >
+                <div class="password-input-shell">
+                  <input
+                    id="publicSitePassword"
+                    type="password"
+                    name="password"
+                    autocomplete="current-password"
+                    placeholder="Lösenord"
+                    data-required-message="Lösenord måste fyllas i."
+                    required
+                    autofocus
+                  >
+                  <button
+                    type="button"
+                    class="password-visibility-toggle"
+                    data-password-toggle
+                    data-show-label="Visa lösenord"
+                    data-hide-label="Dölj lösenord"
+                    aria-label="Visa lösenord"
+                    aria-pressed="false"
+                  >
+                    <svg class="password-visibility-icon password-visibility-icon--password-hidden" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      <path d="M10.7 5.3A11 11 0 0 1 12 5.2c6.4 0 10 6 10 6a18.1 18.1 0 0 1-4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.2 6.2C3.6 8 2 11.2 2 11.2s3.6 6 10 6c1.3 0 2.4-.2 3.5-.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <svg class="password-visibility-icon password-visibility-icon--password-visible" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                      <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                  </button>
+                </div>
               </label>
             </div>
 
@@ -85,6 +106,7 @@
     </section>
   </main>
   <script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/password_visibility_toggle.js') }}"></script>
   <script>
     (function () {
       const passwordInput = document.getElementById("publicSitePassword");

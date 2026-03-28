@@ -813,9 +813,10 @@ Flask-Limiter is used to rate-limit some routes, such as login and booking.
 
 Important current limitation:
 
-- The current limiter backend is in-memory.
-- That is acceptable for local development, but not ideal for a real deployed
-  production setup with multiple instances.
+- The limiter backend now comes from `RATELIMIT_STORAGE_URI`.
+- Local development still defaults to `memory://`.
+- The planned production path should use a shared Redis backend instead of
+  in-memory storage so limits stay consistent across workers and restarts.
 
 ## CLI Commands
 

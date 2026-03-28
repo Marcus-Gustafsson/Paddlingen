@@ -1,6 +1,6 @@
 # Roadmaps Overview
 
-Last updated: 2026-03-19
+Last updated: 2026-03-28
 
 ## Purpose
 
@@ -33,7 +33,9 @@ combined document.
 
 ## Current Priority
 
-The current next priority is in `backend_roadmap.md`:
+The current next deployment-readiness priority is in `misc_roadmap.md`:
 
-- `Phase 2: Move Event Settings Into The Database`
-- `Step 1. Design the events table and active-event rule`
+- `Phase 5: Test Deployment On Hetzner + Coolify + Cloudflare`
+- `Step 2. Connect the production config to Supabase`
+- `Step 3. Apply migrations in the deployed environment`
+- `Step 4. Seed the first production event and admin access manually`

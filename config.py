@@ -161,6 +161,13 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_PUBLIC_BASE_URL = os.getenv("STRIPE_PUBLIC_BASE_URL")
 STRIPE_CHECKOUT_PRODUCT_ID = os.getenv("STRIPE_CHECKOUT_PRODUCT_ID")
 
+# Flask-Limiter can store rate-limit counters in different backends. The local
+# development default remains in-memory, but deployed environments should use a
+# shared backend such as Redis so limits survive worker restarts and apply
+# consistently across multiple Gunicorn workers.
+RAW_RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI")
+RATELIMIT_STORAGE_URI = RAW_RATELIMIT_STORAGE_URI or "memory://"
+
 # Credentials for creating the first administrator account.
 # Storing them here is a simple way to get started. In a larger application,
 # you might create the first admin using a separate command-line script.
@@ -184,6 +191,8 @@ if os.getenv("FLASK_ENV") == "production":
         }.items()
         if not value
     ]
+    if not RAW_RATELIMIT_STORAGE_URI or RAW_RATELIMIT_STORAGE_URI == "memory://":
+        _missing.append("RATELIMIT_STORAGE_URI")
     if _missing:
         joined = ", ".join(_missing)
         raise RuntimeError(

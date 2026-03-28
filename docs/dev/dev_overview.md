@@ -315,8 +315,10 @@ Current admin dashboard behavior:
   - opening a grouped checklist from the admin dashboard,
   - saving which booked canoes have been picked up,
   - reopening the checklist later with the saved state still visible.
-- Both `/unlock` and `/login` are rate limited already, but the current
-  limiter storage is still the simple in-memory development setup.
+- Both `/unlock` and `/login` are rate limited already.
+- The app now supports `RATELIMIT_STORAGE_URI` for a shared limiter backend.
+- Local development can still use `memory://`.
+- The planned production path should use Redis instead of in-memory storage.
 
 ## Current Known Workflow Gaps
 

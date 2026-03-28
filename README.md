@@ -37,6 +37,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    TRUST_REVERSE_PROXY_HEADERS=False
    FLASK_DEBUG=True
    SESSION_COOKIE_SECURE=False
+   RATELIMIT_STORAGE_URI=memory://
    DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<database-password>@<host>:5432/postgres?sslmode=require
    # Optional later if you test Supabase API features
    SUPABASE_URL=https://<project-ref>.supabase.co
@@ -45,6 +46,7 @@ A small Flask application for managing canoe rentals. The app lets visitors book
    ```
 
    `DATABASE_URL` controls which database is used. Leave it unset to store data in `instance/paddlingen.db` (SQLite). To test the current app against Supabase, set it to the Supabase Postgres connection string.
+   `RATELIMIT_STORAGE_URI` controls where Flask-Limiter stores request counters. Keep `memory://` locally. The production path should use Redis, for example `redis://redis:6379/0`.
 
    The public homepage access gate uses `PUBLIC_SITE_PASSWORD_HASH`, not a
    plaintext password. Generate a new hash with:

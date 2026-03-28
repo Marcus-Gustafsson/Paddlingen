@@ -1,6 +1,6 @@
 # Misc Roadmap
 
-Last updated: 2026-03-25
+Last updated: 2026-03-28
 
 ## Goal
 
@@ -230,16 +230,15 @@ Current note:
   - Cloudflare in front of the public domains,
   - Supabase as managed Postgres.
 
-### Step 1. Prepare the app container for the real deployment path
+### Step 1. Prepare the app container for the real deployment path (Completed 2026-03-23)
 
-What to do:
+Completed work:
 
-- Confirm the Docker image, startup command, and environment variables work for
-  the Coolify deployment path.
-
-Why:
-
-- The deployment path should be verified locally before a VPS is involved.
+- Switched the container runtime from `flask run` to Gunicorn.
+- Added the production-oriented Docker image and documented how to run it
+  locally.
+- Added optional reverse-proxy header trust for the planned Coolify setup.
+- Added a dedicated beginner-friendly Hetzner and Coolify deployment guide.
 
 How to test:
 

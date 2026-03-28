@@ -1,6 +1,7 @@
 """Common pytest fixtures for the Paddlingen test suite."""
 
 from datetime import datetime, timedelta, timezone
+import sys
 
 import pytest
 import os
@@ -53,6 +54,10 @@ def client():
     """
 
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    # The config module reads environment variables at import time. When tests
+    # run in one shared process, removing the cached module keeps each app
+    # instance aligned with the environment values set in this fixture.
+    sys.modules.pop("config", None)
     flask_application = create_app()
     flask_application.config.update(
         TESTING=True,

@@ -33,6 +33,7 @@ dependencies = [
     "pytest==8.2.0",
     "python-dotenv==1.1.0",
     "requests==2.32.4",
+    "redis==7.2.1",
     "rich==13.9.4",
     "sqlalchemy==2.0.41",
     "stripe==14.1.0",
